@@ -59,9 +59,6 @@ def fine_tune(nsp_prediction: bool = False,
 
     else:
         # if not using the next sentence prediction, we have to use the sequence classification model
-        # TODO DO i really need the sequence classifier here? Since i only want a latent representation of the sequences
-        # TODO Fix label, optimizer for classification wants a label array of shape [batch_size, 1] but since i mask
-        # TODO AA's in the sequence the labels are in shape of [batch_size, max_length]
         model = BertForSequenceClassification.from_pretrained('Rostlab/prot_bert_bfd', num_labels=2)
         for param in model.parameters(): param.data = param.data.contiguous()
         # whitespaces between aa's of sequences needed for tokenization
