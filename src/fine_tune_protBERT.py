@@ -8,7 +8,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from PeptideDataset import PeptideDataset
 
-device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 
 def fine_tune(nsp_prediction: bool = False,
