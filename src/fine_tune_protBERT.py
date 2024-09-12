@@ -31,7 +31,7 @@ def fine_tune(nsp_prediction: bool = False,
     """
     # Load the data
     df = pd.read_csv("../data/hemo/splitted_hemo_labeled.csv", sep=';')
-    df = df[:10]
+
     sequence_data = df['sequence'].values
 
     # sequence_data_size = len(sequence_data)
