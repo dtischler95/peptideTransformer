@@ -1,8 +1,9 @@
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
+from py_markdown_table.markdown_table import markdown_table
 
-device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
+#device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 
 
 def get_overall_stats():
@@ -18,15 +19,13 @@ def get_overall_stats():
     our_positive_df = pd.read_csv('../data/base_data/our_positive.csv', sep=';')
     our_negative_df = pd.read_csv('../data/base_data/our_negative.csv', sep=';')
     whitelab_negative_df = pd.read_csv('../data/base_data/whitelab_data_negative_formatted.csv', sep=';')
-    whitelab_positive_df = pd.read_csv('data/base_data/whitelab_data_positive_formatted.csv', sep=';')
+    whitelab_positive_df = pd.read_csv('../data/base_data/whitelab_data_positive_formatted.csv', sep=';')
 
-    # Gets basic statistics for the data and returns the percentage of positive and negative data for later plotting
-    our_positive_percent, our_negative_percent = print_basic_info(negative_df=our_negative_df,
-                                                                  positive_df=our_positive_df, info_for='Our Data')
 
-    whitelab_positive_percent, whitelab_negative_percent = print_basic_info(negative_df=whitelab_negative_df,
-                                                                            positive_df=whitelab_positive_df,
-                                                                            info_for='Whitelab Data')
+    our_positive_percent, our_negative_percent, whitelab_positive_percent, whitelab_negative_percent = analyse_ambiguous_labeled_sequences_tabular(negative_df_our=our_negative_df,
+                                                                                                                                       positive_df_our=our_positive_df,
+                                                                                                                                       negative_df_whitelab=whitelab_negative_df,
+                                                                                                                                       positive_df_whitelab=whitelab_positive_df)
 
     # Plot the relation between the positive and negative data
     plot_data_relation(x_data=['Positive', 'Negative'],
@@ -36,9 +35,9 @@ def get_overall_stats():
                        dataset_info2='Whitelab Data')
 
     # Get the common and uncommon sequences between our data and whitelab data and stats about the specific datafiles
-    our_percent_uncommon_positive, whitelab_percent_uncommon_positive, our_percent_common_positive, whitelab_percent_common_positive = get_sequences_common_in_data(
+    our_percent_uncommon_positive, whitelab_percent_uncommon_positive, our_percent_common_positive, whitelab_percent_common_positive = compare_sequence_occurences_between_datasets_tabular(
         our_data=our_positive_df, whitelab_data=whitelab_positive_df, dataset_info='Positive Data')
-    our_percent_uncommon_negative, whitelab_percent_uncommon_negative, our_percent_common_negative, whitelab_percent_common_negative = get_sequences_common_in_data(
+    our_percent_uncommon_negative, whitelab_percent_uncommon_negative, our_percent_common_negative, whitelab_percent_common_negative = compare_sequence_occurences_between_datasets_tabular(
         our_data=our_negative_df, whitelab_data=whitelab_negative_df, dataset_info='Negative Data')
 
     # Plot the relation between the common and uncommon sequences
@@ -50,8 +49,8 @@ def get_overall_stats():
                        dataset_info1='Positive Data',
                        dataset_info2='Negative Data')
 
-
-def print_basic_info(negative_df: pd.DataFrame, positive_df: pd.DataFrame, info_for: str) -> (float, float):
+def analyse_ambiguous_labeled_sequences_tabular(negative_df_our: pd.DataFrame, positive_df_our: pd.DataFrame,
+                                                negative_df_whitelab: pd.DataFrame, positive_df_whitelab: pd.DataFrame) -> (float, float):
     """
     Count all data points in one dataset and calculate number and percent of unique sequences
     for positive and negative data
@@ -62,33 +61,98 @@ def print_basic_info(negative_df: pd.DataFrame, positive_df: pd.DataFrame, info_
 
     :return: percentage of positive and negative data
     """
-    data_sum = positive_df['count'].sum() + negative_df['count'].sum()
+    ambiguous_sequences_df_our, data_sum_our, negative_percent_our, positive_percent_our, positives_that_are_in_negatives_our = _calc_statistics(
+        negative_df_our, positive_df_our)
+
+    ambiguous_sequences_df_whitelab, data_sum_whitelab, negative_percent_whitelab, positive_percent_whitelab, positives_that_are_in_negatives_whitelab = _calc_statistics(
+        negative_df_whitelab, positive_df_whitelab)
+
+    df_dict = {
+        "Sum Data Points": [data_sum_our, data_sum_whitelab],
+        "Positive Data [%]": [positive_percent_our, positive_percent_whitelab],
+        "Negative Data [%]": [negative_percent_our, negative_percent_whitelab],
+        "Unique Sequences": [len(positive_df_our) + len(negative_df_our),
+                             len(positive_df_whitelab) + len(negative_df_whitelab)],
+        "Unique Positives": [len(positive_df_our), len(positive_df_whitelab)],
+        "Individual Positive data points": [positive_df_our['count'].sum(), positive_df_whitelab['count'].sum()],
+        "Unique Negatives": [len(negative_df_our), len(negative_df_whitelab)],
+        "Individual Negative data points": [negative_df_our['count'].sum(), negative_df_whitelab['count'].sum()],
+        "Ambiguous unique sequences": [len(positives_that_are_in_negatives_our),
+                                       len(positives_that_are_in_negatives_whitelab)],
+        "Individual data points in both datasets": [ambiguous_sequences_df_our['count'].sum(),
+                                                    ambiguous_sequences_df_whitelab['count'].sum()],
+        "Percent of data points in both datasets [%]": [
+            round((len(positives_that_are_in_negatives_our) / (len(positive_df_our) + len(negative_df_our))) * 100, 2),
+            round((len(positives_that_are_in_negatives_whitelab) / (
+                        len(positive_df_whitelab) + len(negative_df_whitelab))) * 100, 2)],
+        "Percent individual ambiguous of positive data [%]": [
+            round((ambiguous_sequences_df_our['count'].sum() / positive_df_our['count'].sum()) * 100, 2),
+            round((ambiguous_sequences_df_whitelab['count'].sum() / positive_df_whitelab['count'].sum()) * 100, 2)],
+        "Percent individual ambiguous of negative data [%]": [
+            round((ambiguous_sequences_df_our['count'].sum() / negative_df_our['count'].sum()) * 100, 2),
+            round((ambiguous_sequences_df_whitelab['count'].sum() / negative_df_whitelab['count'].sum()) * 100, 2)]
+    }
+
+    df = pd.DataFrame(df_dict).T
+    df = df.rename(columns={0: "Our Data", 1: "Whitelab Data"})
+
+    print(df.to_markdown() + '\n')
+
+    return positive_percent_our, negative_percent_our, positive_percent_whitelab, negative_percent_whitelab
+
+
+def _calc_statistics(negative_df, positive_df):
+    sequence_df = pd.concat([positive_df, negative_df])
+    data_sum = sequence_df['count'].sum()
     positive_percent = (positive_df['count'].sum() / data_sum) * 100
     negative_percent = (negative_df['count'].sum() / data_sum) * 100
     positive_sequences = set(positive_df['sequence'])
     negative_sequences = set(negative_df['sequence'])
-    common_sequences = positive_sequences.intersection(negative_sequences)
-    sequence_df = pd.concat([positive_df, negative_df])
-    sequence_df = sequence_df[sequence_df['sequence'].isin(common_sequences)]
+    # get unique sequences of positive sequences that are in negative sequences
+    positives_that_are_in_negatives = positive_sequences.intersection(negative_sequences)
+    ambiguous_sequences_df = sequence_df[sequence_df['sequence'].isin(positives_that_are_in_negatives)]
+    return ambiguous_sequences_df, data_sum, negative_percent, positive_percent, positives_that_are_in_negatives
+
+
+def analyse_ambiguous_labeled_sequences_verbose(negative_df: pd.DataFrame, positive_df: pd.DataFrame, info_for: str) -> (float, float):
+    """
+    Count all data points in one dataset and calculate number and percent of unique sequences
+    for positive and negative data
+
+    :param negative_df: dataframe with negative data
+    :param positive_df: dataframe with positive data
+    :param info_for: name of the dataset
+
+    :return: percentage of positive and negative data
+    """
+    ambiguous_sequences_df, data_sum, negative_percent, positive_percent, positives_that_are_in_negatives = _calc_statistics(
+        negative_df, positive_df)
 
     print(f"\nInfo for: {info_for}")
-    print(f"\tNumber of all our data_points: {data_sum}")
-    print(f"\tPercent of positive Data {round(positive_percent, 2)}%")
-    print(f"\tPercent of negative Data {round(negative_percent, 2)}%")
-    print(f"\tNumber of unique sequences: {len(positive_df) + len(negative_df)}")
-    print(f"\tNumber of unique Positives: {len(positive_df)}")
-    print(f"\tNumber of unique Negatives: {len(negative_df)}")
-    print(f"\tNumber of unique sequences appearing in positive and negative data: {len(common_sequences)}")
-    print(f"\tNumber of individual data points in positive and negative data: {sequence_df['count'].sum()}")
+    print(f"\tStats for both positive and negative data together:")
+    print(f"\t\tNumber of all our data_points: {data_sum}")
+    print(f"\t\tPercent of positive Data {round(positive_percent, 2)}%")
+    print(f"\t\tPercent of negative Data {round(negative_percent, 2)}%")
+    print(f"\t\tNumber of unique sequences: {len(positive_df) + len(negative_df)}")
+    print(f"\t\tNumber of unique Positives: {len(positive_df)}")
+    print(f"\t\tNumber of individual Positive data points: {positive_df['count'].sum()}")
+    print(f"\t\tNumber of unique Negatives: {len(negative_df)}")
+    print(f"\t\tNumber of individual Negative data points: {negative_df['count'].sum()}\n")
+    print(f"\tStats for ambiguous labeled sequences:")
+    print(f"\t\tNumber of unique negative labeled sequences appearing in positive and negativ data: {len(positives_that_are_in_negatives)}")
+    print(f"\t\tNumber of individual data points in positive and negative data: {ambiguous_sequences_df['count'].sum()}")
     print(
-        f"\tPercent of unique sequences appearing in both positive and negative data: {round((len(common_sequences) / (len(positive_df) + len(negative_df))) * 100, 2)}%")
+        f"\t\tPercent of unique sequences appearing in both positive and negative data: {round((len(positives_that_are_in_negatives) / (len(positive_df) + len(negative_df))) * 100, 2)}%")
     print(
-        f"\tPercent of individual data points in positive and negative data: {round((sequence_df['count'].sum() / data_sum) * 100, 2)}%")
+        f"\t\tPercent of individual data points in positive and negative data: {round((ambiguous_sequences_df['count'].sum() / data_sum) * 100, 2)}%")
+    print(f"\t\t\tAmbiguous sequences are  {round((ambiguous_sequences_df['count'].sum() / positive_df['count'].sum()) * 100 ,2)}% the size of the positive dataset")
+    print(f"\t\t\tAmbiguous sequences are  {round((ambiguous_sequences_df['count'].sum() / negative_df['count'].sum()) * 100 ,2)}% the size of the negative dataset")
+
 
     return positive_percent, negative_percent
 
 
-def get_sequences_common_in_data(our_data: pd.DataFrame, whitelab_data: pd.DataFrame, dataset_info: str) -> (
+def compare_sequence_occurences_between_datasets_verbose(our_data: pd.DataFrame, whitelab_data: pd.DataFrame, dataset_info: str) -> (
         float, float, float, float):
     """
     Get the common sequences between our data and whitelab data, and calculate the percentage of common sequences
@@ -131,6 +195,55 @@ def get_sequences_common_in_data(our_data: pd.DataFrame, whitelab_data: pd.DataF
 
     return our_percent_uncommon, whitelab_percent_uncommon, our_percent_common, whitelab_percent_common
 
+def compare_sequence_occurences_between_datasets_tabular(our_data: pd.DataFrame, whitelab_data: pd.DataFrame, dataset_info: str) -> (
+        float, float, float, float):
+    """
+    Get the common sequences between our data and whitelab data, and calculate the percentage of common sequences
+
+    :param our_data: dataframe with our data
+    :param whitelab_data: dataframe with whitelab data
+    :param dataset_info: name of the dataset
+
+    :return: percentage of unique sequences in our and whitelab data
+    """
+    # TODO ADD ABSOLUTE NUMBERS
+    our_data_set = set(our_data['sequence'])
+    whitelab_data_set = set(whitelab_data['sequence'])
+
+    common_sequences = our_data_set.intersection(whitelab_data_set)
+    our_not_common_sequences = our_data_set.difference(whitelab_data_set)
+    whitelab_not_common_sequences = whitelab_data_set.difference(our_data_set)
+
+    our_percent_common = (len(common_sequences) / len(our_data_set)) * 100
+    whitelab_percent_common = (len(common_sequences) / len(whitelab_data_set)) * 100
+    our_percent_uncommon = (len(our_not_common_sequences) / len(our_data_set)) * 100
+    whitelab_percent_uncommon = (len(whitelab_not_common_sequences) / len(whitelab_data_set)) * 100
+
+    stats_dict = {
+        "Seqs in our data": [len(our_data_set)],
+        "Seqs in whitelab data": [len(whitelab_data_set)],
+        "Common seqs": [len(common_sequences)],
+        "Common seqs % (our)": [round(our_percent_common, 2)],
+        "Common seqs % (whitelab)": [round(whitelab_percent_common, 2)],
+        "Seqs in our not in whitelab": [len(our_not_common_sequences)],
+        "Seqs % (our not in whitelab)": [round(our_percent_uncommon, 2)],
+        "Seqs in whitelab not in our": [len(whitelab_not_common_sequences)],
+        "Seqs % (whitelab not in our)": [round(whitelab_percent_uncommon, 2)]
+    }
+
+    df = pd.DataFrame(stats_dict).T
+    df = df.rename(columns={0: dataset_info})
+
+    print(df.to_markdown() + '\n')
+
+    # print sequences in common sequences to file
+    print_set_to_file(sequences=common_sequences, dataset_info=dataset_info, file_tag='common_sequences')
+    print_set_to_file(sequences=our_not_common_sequences, dataset_info=dataset_info,
+                      file_tag='our_not_common_sequences')
+    print_set_to_file(sequences=whitelab_not_common_sequences, dataset_info=dataset_info,
+                      file_tag='whitelab_not_common_sequences')
+
+    return our_percent_uncommon, whitelab_percent_uncommon, our_percent_common, whitelab_percent_common
 
 def plot_data_relation(x_data, y_data1, y_data2, dataset_info1: str, dataset_info2: str):
     """
