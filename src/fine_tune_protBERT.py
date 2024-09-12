@@ -42,7 +42,15 @@ def fine_tune(nsp_prediction: bool = False,
     # choose of using the next sentence prediction
     if nsp_prediction:
         model = BertForPreTraining.from_pretrained('Rostlab/prot_bert_bfd')
+        # needed otherwise the model will not work
+        #
+        # https://github.com/huggingface/transformers/issues/28293
+        #
+
         for param in model.parameters(): param.data = param.data.contiguous()
+
+        # prepare the data for the next sentence prediction and also adding whitespace between the amino acids
+        # for the tokenization
         nsp_label, sequence_end, sequence_start = prepare_sequences_for_nsp(sequence_data=sequence_data)
 
         # Tokenize the data, sequence_start and sequence_end are getting concatenated with a [SEP] token
@@ -60,10 +68,14 @@ def fine_tune(nsp_prediction: bool = False,
     else:
         # if not using the next sentence prediction, we have to use the sequence classification model
         model = BertForSequenceClassification.from_pretrained('Rostlab/prot_bert_bfd', num_labels=2)
+        # needed otherwise the model will not work
+        #
+        # https://github.com/huggingface/transformers/issues/28293
+        #
+
         for param in model.parameters(): param.data = param.data.contiguous()
         # whitespaces between aa's of sequences needed for tokenization
-        input_data_formatted = [' '.join(seq) for seq in sequence_data]
-        inputs = tokenizer(input_data_formatted, padding='max_length', truncation=True, return_tensors='pt',
+        inputs = tokenizer([' '.join(seq) for seq in sequence_data], padding='max_length', truncation=True, return_tensors='pt',
                            max_length=max_length)
         get_encoding(tokenizer=tokenizer) if show_encoding else None
         inputs['labels'] = torch.LongTensor(df['label'].values)
