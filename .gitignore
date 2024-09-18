@@ -14,7 +14,6 @@ venv/
 .env/
 .venv/
 env/
-.venv/
 venv.bak/
 env.bak/
 
@@ -51,7 +50,6 @@ Thumbs.db
 *.user
 *.userosscache
 *.sln
-*.suo
 *.ncb
 
 # Model checkpoints and output
