@@ -72,6 +72,14 @@ def decoded_sequences_to_file(outfile_name: str,
     :return:
     """
 
+    special_tokens = [
+        "[CLS]",
+        "[SEP]",
+        "[MASK]",
+        "[UNK]",
+        "[PAD]"
+    ]
+
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd')
 
     """
@@ -87,8 +95,18 @@ def decoded_sequences_to_file(outfile_name: str,
     df_positiv = write_sequences_to_list(f"./{outfile_name}_raw_positive.txt", pos_data['arr_0'], tokenizer,
                                          to_file=create_intermediate_files)
 
-    format_whitelab_sequences(df=df_negativ, outfile_name=f"{outfile_name}_negative", verbose=verbose)
-    format_whitelab_sequences(df=df_positiv, outfile_name=f"{outfile_name}_positive", verbose=verbose)
+    if create_intermediate_files:
+        produce_whitelab_csv_file(df_positiv, df_negativ, special_tokens)
+
+    format_whitelab_sequences(df=df_negativ,
+                              outfile_name=f"{outfile_name}_negative",
+                              verbose=verbose,
+                              special_tokens=special_tokens)
+
+    format_whitelab_sequences(df=df_positiv,
+                              outfile_name=f"{outfile_name}_positive",
+                              verbose=verbose,
+                              special_tokens=special_tokens)
 
 
 def write_sequences_to_list(file_name: str, sequences: list, tokenizer: BertTokenizer,
@@ -116,20 +134,14 @@ def write_sequences_to_list(file_name: str, sequences: list, tokenizer: BertToke
     return tmp_df
 
 
-def format_whitelab_sequences(df: pd.DataFrame, outfile_name: str, verbose: bool = False):
+def format_whitelab_sequences(df: pd.DataFrame, outfile_name: str, special_tokens :list[str], verbose: bool = False):
     """
     Formats the whitelab data to a csv file with the unique sequences and their counts
 
     :param df: dataframe with the sequences
     :param outfile_name: name of the output file
     """
-    special_tokens = [
-        "[CLS]",
-        "[SEP]",
-        "[MASK]",
-        "[UNK]",
-        "[PAD]"
-    ]
+
     unique_sequences = {}
 
     for line in df.iloc[:, 0]:
@@ -163,7 +175,20 @@ def split_positive_and_negativ(file_path: str):
     negative_df.to_csv('our_negative.csv', sep=';', index=False)
 
 
+
+
+def produce_whitelab_csv_file(positiv_data: pd.DataFrame, negativ_data: pd.DataFrame, special_tokens: list[str]):
+    def format_whitelab_file(df: pd.DataFrame, label: int) -> pd.DataFrame:
+        df['sequence'] = df['sequence'].apply(
+            lambda x: ''.join([amino_acid for amino_acid in x.split(' ') if amino_acid not in special_tokens])
+        )
+        df['label'] = label
+        return df
+
+    negativ_df = format_whitelab_file(negativ_data, 0)
+    positiv_df = format_whitelab_file(positiv_data, 1)
+    result_df = pd.concat([negativ_df, positiv_df])
+    result_df.to_csv('./whitelab_hemo_data.csv', sep=';', index=False)
+
 if __name__ == '__main__':
-    download_and_prepare_whitelab_data(create_intermediate_files=True,
-                                       verbose=False)
-    split_positive_and_negativ('./splitted_hemo_labeled.csv')
+    decoded_sequences_to_file('whitelab_data', create_intermediate_files=True, verbose=False)

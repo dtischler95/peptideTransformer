@@ -292,6 +292,7 @@ def perform_culstering(data, labels):
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
+
     pca, pca_fit = run_pca(data)
     tsne_fit = run_tsne(data)
     umap_fit = run_umap(data)
@@ -302,9 +303,11 @@ def perform_culstering(data, labels):
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, labels)
-
-    print("[Clustering] Plotting PCA")
-    plot_pca(pca, pca_fit, labels, plot_path="../data/out/pca_plot")
+    try:
+        print("[Clustering] Plotting PCA")
+        plot_pca(pca, pca_fit, labels, plot_path="../data/out/pca_plot")
+    except Exception as e:
+        print(f"PCA Plotting failed: {e}")
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, labels, plot_path="../data/out/tsne_plot")
     print("[Clustering] Plotting UMAP")
@@ -340,20 +343,21 @@ def encode_peptides(peptides, batch_size: int = 32):
 
     # Load the pre-trained model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-    model = BertModel.from_pretrained("Rostlab/prot_bert")
+    model = BertModel.from_pretrained("./peptideBERT_model")
 
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in peptides]
+
+    # TODO PUSHEN!
 
     # Generate embeddings in batches
     progress = 0
     embeddings = []
     for i in range(0, len(peptides_prepared), batch_size):
         batch_peptides = peptides_prepared[i:i + batch_size]
-        enc = tokenizer(batch_peptides, return_tensors="pt", padding=True, truncation=True, max_length=36)
-        with torch.no_grad():
-            outputs = model(**enc)
-        batch_embeddings = outputs.last_hidden_state.mean(dim=1).detach().numpy()
+        enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36)
+        outputs = model(**enc)
+        batch_embeddings = outputs.pooler_output.detach().numpy()
         embeddings.append(batch_embeddings)
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
@@ -370,7 +374,6 @@ def main(file_path: str, batch_size: int):
     df = read_apd3(file_path)
 
 
-    #df = df[['sequence', 'label']]
     labels = df.get_column("label").to_list()
     seqs = df.get_column("sequence").to_list()
 
@@ -387,6 +390,6 @@ def main_plot_amino(file_path: str):
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
-    main(file_path="../data/hemo/splitted_hemo_labeled.csv", batch_size=128)
+    main(file_path="../data/base_data/splitted_hemo_labeled.csv", batch_size=64)
     # main_plot_amino(file_path="../data/hemo/splitted_hemo_labeled.csv")
 
