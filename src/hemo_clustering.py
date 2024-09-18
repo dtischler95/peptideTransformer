@@ -344,7 +344,7 @@ def encode_peptides(peptides, batch_size: int = 32):
     # Load the pre-trained model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
     model = BertModel.from_pretrained("./peptideBERT_model")
-
+    model.eval()
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in peptides]
 
@@ -357,7 +357,7 @@ def encode_peptides(peptides, batch_size: int = 32):
         batch_peptides = peptides_prepared[i:i + batch_size]
         enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36)
         outputs = model(**enc)
-        batch_embeddings = outputs.pooler_output.detach().numpy()
+        batch_embeddings = outputs.last_hidden_state.detach().numpy()
         embeddings.append(batch_embeddings)
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
