@@ -1,0 +1,59 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+*.env
+
+# Virtual environment directories
+venv/
+.env/
+.venv/
+env/
+.venv/
+venv.bak/
+env.bak/
+
+# PyTorch specific
+*.pt
+*.pth
+*.ckpt
+
+# Hugging Face specific
+transformers_cache/
+datasets_cache/
+*.h5
+*.bin
+*.json
+
+# TensorBoard logs
+runs/
+tensorboard/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln
+*.suo
+*.ncb
+
+# Model checkpoints and output
+checkpoints/
+output/
