@@ -9,9 +9,11 @@ from sklearn.model_selection import train_test_split
 from transformers import Trainer, TrainingArguments
 import logging
 from transformer_utils import compute_metrics
+from PeptideTrainer import PeptideTrainer
+
 
 # this line should be included in the TrainingArguments
-device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +54,7 @@ def fine_tune(binary_or_mlm: str,
         do_eval=True,  # Perform evaluation
         do_predict=True,  # Perform prediction
         output_dir='./results',  # Output directory
-        num_train_epochs=50,  # Number of training epochs
+        num_train_epochs=3,  # Number of training epochs
         per_device_train_batch_size=64,  # Batch size for training
         per_device_eval_batch_size=64,  # Batch size for evaluation
         warmup_steps=500,  # Number of warmup steps
@@ -67,7 +69,7 @@ def fine_tune(binary_or_mlm: str,
         optim= 'adamw_torch',  # Optimizer to use
         lr_scheduler_type='linear',  # Learning rate scheduler type
         learning_rate=5e-5,  # Learning rate
-        use_cpu=True
+        # use_cpu = True # Only for local testing purposes
     )
 
     log_level = training_args.get_process_log_level()
@@ -78,7 +80,7 @@ def fine_tune(binary_or_mlm: str,
     # Log on each process the small summary:
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}, "
-        + f"distributed training: {training_args.parallel_mode.value == 'distributed'}, 16-bits training: {training_args.fp16}"
+        + f"distributed training: {training_args.parallel_mode.value == 'distributed'}"
     )
     logger.info(f"Training/evaluation parameters {training_args}")
 
@@ -86,7 +88,6 @@ def fine_tune(binary_or_mlm: str,
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')
-    df = df[:50]
 
     # Split the data into training, validation and test sets
     # TODO Create Accuracy Validation for Testdata
@@ -131,7 +132,7 @@ def fine_tune(binary_or_mlm: str,
     get_encoding(tokenizer=tokenizer) if show_encoding else None
 
     # Initialize the Trainer
-    trainer = Trainer(
+    trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above TODO check for PeptideBERT
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
@@ -146,10 +147,6 @@ def fine_tune(binary_or_mlm: str,
         trainer.train()
 
         # params seems not to be contiguous, so we need to make them contiguous
-        # TODO Why is it this way? Is it because of the model?
-        for param in model.parameters():
-            if not param.is_contiguous():
-                param.data = param.contiguous()
         trainer.save_model(model_save_path)
 
     if training_args.do_eval:
