@@ -11,7 +11,7 @@ class PeptideDataset(Dataset):
             tokenizer: Tokenizer to tokenize the peptide sequences.
             max_length: Maximum length for padding/truncation.
         """
-        self.peptides = peptides
+        self.peptides = [' '.join(seq) for seq in peptides]
         self.labels = labels  # Labels are optional for self-supervised learning tasks
         self.tokenizer = tokenizer
         self.max_length = max_length

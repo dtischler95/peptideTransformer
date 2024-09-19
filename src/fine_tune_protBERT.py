@@ -69,7 +69,7 @@ def fine_tune(binary_or_mlm: str,
         optim= 'adamw_torch',  # Optimizer to use
         lr_scheduler_type='linear',  # Learning rate scheduler type
         learning_rate=5e-5,  # Learning rate
-        # use_cpu = True # Only for local testing purposes
+        use_cpu = True # Only for local testing purposes
     )
 
     log_level = training_args.get_process_log_level()
@@ -88,6 +88,7 @@ def fine_tune(binary_or_mlm: str,
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')
+    df = df[:500]
 
     # Split the data into training, validation and test sets
     # TODO Create Accuracy Validation for Testdata
@@ -118,14 +119,14 @@ def fine_tune(binary_or_mlm: str,
         model = BertForMaskedLM.from_pretrained(model_path)
         data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
     elif binary_or_mlm == 'both':
-        raise NotImplementedError("Not implemented yet") # TODO THink of Logic and how to implement
+        raise NotImplementedError("Not implemented yet") # TODO Think of Logic and how to implement
     else:
         raise ValueError("binary_or_mlm must be either 'binary' or 'mlm' or 'both'")
 
     # Create a Dataset Class for the training and validation data for our use case
     # TODO Create Dataset Class for self-supervised learning
     train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train)
-    val_dataset = PeptideDataset(peptides=sequence_data_val, tokenizer=tokenizer, labels=label_data_val)
+    val_dataset = PeptideDataset(peptides=sequence_data_val , tokenizer=tokenizer, labels=label_data_val)
     test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
@@ -148,17 +149,20 @@ def fine_tune(binary_or_mlm: str,
 
         # params seems not to be contiguous, so we need to make them contiguous
         trainer.save_model(model_save_path)
+        logger.info("*** Model saved ***")
 
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
         eval_result = trainer.evaluate()
         logger.info(eval_result)
+        logger.info("*** Evaluation finished ***")
 
     if training_args.do_predict:
         logger.info("*** Predict ***")
         predictions = trainer.predict(test_dataset)
         # TODO Find a cool representation for the predictions
         # logger.info(predictions.predictions)
+        logger.info("*** Prediction finished ***")
 
 
 def get_encoding(tokenizer: BertTokenizer):
