@@ -59,6 +59,8 @@ def analyse_ambiguous_labeled_sequences_tabular(negative_df_our: pd.DataFrame, p
     :param positive_df_whitelab: dataframe with positive data from whitelab data
 
     :return: percentage of positive and negative data
+
+    # TODO Track how many ambiguous labels we have with my labeling algorithm
     """
     ambiguous_sequences_df_our, data_sum_our, negative_percent_our, positive_percent_our, positives_that_are_in_negatives_our = _calc_statistics(
         negative_df_our, positive_df_our)
