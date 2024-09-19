@@ -11,12 +11,13 @@ import logging
 from transformer_utils import compute_metrics
 
 # this line should be included in the TrainingArguments
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
 def fine_tune(binary_or_mlm: str,
               model_path: str,
+              train_file: str,
               show_encoding: bool = False,
               model_save_path: str = './peptideBERT_model'
               ):
@@ -62,10 +63,11 @@ def fine_tune(binary_or_mlm: str,
         log_level='info',  # Set logging level
         seed=42,  # Seed for reproducibility
         dataloader_drop_last=False, # Drop the last incomplete batch
-        dataloader_num_workers=-1,  # Number of workers for data loading
-        optim= 'AdamW',  # Optimizer to use
+        dataloader_num_workers=4,  # Number of workers for data loading
+        optim= 'adamw_torch',  # Optimizer to use
         lr_scheduler_type='linear',  # Learning rate scheduler type
         learning_rate=5e-5,  # Learning rate
+        use_cpu=True
     )
 
     log_level = training_args.get_process_log_level()
@@ -83,7 +85,8 @@ def fine_tune(binary_or_mlm: str,
     # ------------------------------------------------------------------------------------------------------------------
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
-    df = pd.read_csv("../data/base_data/splitted_hemo_labeled.csv", sep=';')
+    df = pd.read_csv(train_file, sep=';')
+    df = df[:50]
 
     # Split the data into training, validation and test sets
     # TODO Create Accuracy Validation for Testdata
@@ -141,6 +144,12 @@ def fine_tune(binary_or_mlm: str,
         logger.info("*** Train ***")
         # TODO May implement ReduceLROnPlateau, but need to step manually since Trainer class does not support it natively
         trainer.train()
+
+        # params seems not to be contiguous, so we need to make them contiguous
+        # TODO Why is it this way? Is it because of the model?
+        for param in model.parameters():
+            if not param.is_contiguous():
+                param.data = param.contiguous()
         trainer.save_model(model_save_path)
 
     if training_args.do_eval:
@@ -169,7 +178,8 @@ def get_encoding(tokenizer: BertTokenizer):
 
 
 if __name__ == '__main__':
-    fine_tune(binary_or_mlm='mlm',
+    fine_tune(binary_or_mlm='binary',
+              train_file="../data/base_data/splitted_hemo_labeled.csv",
               model_path='Rostlab/prot_bert_bfd',
               model_save_path='./peptideBERT_model',
               show_encoding=False,
