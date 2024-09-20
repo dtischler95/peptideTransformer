@@ -3,6 +3,11 @@ import torch
 
 
 class PeptideDataset(Dataset):
+    """
+    Dataset class for peptide sequences.
+
+    This class tokenizes the peptide sequences and returns the tokenized input_ids and attention_mask tensors.
+    """
     def __init__(self, peptides, tokenizer, labels=None, max_length=36):
         """
         Args:
@@ -17,6 +22,9 @@ class PeptideDataset(Dataset):
         self.max_length = max_length
 
     def __len__(self):
+        """
+        :return: Number of peptide sequences in the dataset.
+        """
         return len(self.peptides)
 
     def __getitem__(self, idx):

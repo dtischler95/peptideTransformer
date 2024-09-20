@@ -6,7 +6,7 @@ import torch
 import pandas as pd
 from PeptideDataset import PeptideDataset
 from sklearn.model_selection import train_test_split
-from transformers import Trainer, TrainingArguments
+from transformers import TrainingArguments
 import logging
 from transformer_utils import compute_metrics
 from PeptideTrainer import PeptideTrainer
@@ -123,6 +123,14 @@ def fine_tune(binary_or_mlm: str,
     else:
         raise ValueError("binary_or_mlm must be either 'binary' or 'mlm' or 'both'")
 
+    total_params = sum(p.numel() for p in model.parameters())
+
+    # Get the number of trainable parameters
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"Total parameters: {total_params}")
+    print(f"Trainable parameters: {trainable_params}")
+
     # Create a Dataset Class for the training and validation data for our use case
     # TODO Create Dataset Class for self-supervised learning
     train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train)
@@ -147,6 +155,8 @@ def fine_tune(binary_or_mlm: str,
         # TODO May implement ReduceLROnPlateau, but need to step manually since Trainer class does not support it natively
         trainer.train()
 
+        # TODO MCC !!!
+
         # params seems not to be contiguous, so we need to make them contiguous
         trainer.save_model(model_save_path)
         logger.info("*** Model saved ***")
@@ -167,9 +177,9 @@ def fine_tune(binary_or_mlm: str,
 
 def get_encoding(tokenizer: BertTokenizer):
     """
-    Prints the encoding of the vocabulary for the tokenizer after input is given
+    Prints out the encoding of the vocabulary used by the tokenizer
 
-    :param tokenizer:
+    :param tokenizer: The tokenizer used for encoding
     :return:
     """
 

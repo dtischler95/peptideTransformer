@@ -55,3 +55,6 @@ Thumbs.db
 # Model checkpoints and output
 checkpoints/
 output/
+
+# Project Files
+src/try_out_zone.py
