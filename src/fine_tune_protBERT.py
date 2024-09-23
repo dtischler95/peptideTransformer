@@ -54,7 +54,7 @@ def fine_tune(binary_or_mlm: str,
         do_eval=True,  # Perform evaluation
         do_predict=True,  # Perform prediction
         output_dir='./results',  # Output directory
-        num_train_epochs=3,  # Number of training epochs
+        num_train_epochs=50,  # Number of training epochs
         per_device_train_batch_size=64,  # Batch size for training
         per_device_eval_batch_size=64,  # Batch size for evaluation
         warmup_steps=500,  # Number of warmup steps
@@ -65,11 +65,11 @@ def fine_tune(binary_or_mlm: str,
         log_level='info',  # Set logging level
         seed=42,  # Seed for reproducibility
         dataloader_drop_last=False, # Drop the last incomplete batch
-        dataloader_num_workers=4,  # Number of workers for data loading
+        dataloader_num_workers=1,  # Number of workers for data loading
         optim= 'adamw_torch',  # Optimizer to use
         lr_scheduler_type='linear',  # Learning rate scheduler type
         learning_rate=5e-5,  # Learning rate
-        use_cpu = True # Only for local testing purposes
+        # use_cpu = True # Only for local testing purposes
     )
 
     log_level = training_args.get_process_log_level()
@@ -88,7 +88,7 @@ def fine_tune(binary_or_mlm: str,
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')
-    df = df[:500]
+
 
     # Split the data into training, validation and test sets
     # TODO Create Accuracy Validation for Testdata
@@ -187,11 +187,12 @@ def get_encoding(tokenizer: BertTokenizer):
         character = tokenizer.decode(i)
         print(f"{i}: {character}")
 
+# TO-DO check for data leakage
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='binary',
-              train_file="../data/base_data/splitted_hemo_labeled.csv",
+              train_file="../data/base_data/whitelab_hemo_data.csv",
               model_path='Rostlab/prot_bert_bfd',
-              model_save_path='./peptideBERT_model',
+              model_save_path='./small_BERT',
               show_encoding=False,
               )
