@@ -5,7 +5,7 @@
 - [ ] Make data_preprocessing Jupyter Notebook more beatiful
 - [ ] Train_Data_viewer.py -> make sense of statistics 
   - [ ] Add data to Train Dataset
-- [x] Add ProtBERT config
+
 
 #### Training
 - [ ] Train StarPep MLMBert
