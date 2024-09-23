@@ -2,6 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+# TODO Move DFs to Signature, since this compare two Data Sets no matter if its whitelab data
+# TODO COMPLETE REFACTOR! First Markdown makes sense, but for secend i need to remove the ambigous data first
+
 def get_overall_stats():
     """
     Basic algorithm to compare a column of four different datasets and the occurrences of entries between each other
@@ -83,15 +86,10 @@ def analyse_ambiguous_labeled_sequences_tabular(negative_df_our: pd.DataFrame, p
         "Individual data points in both datasets": [ambiguous_sequences_df_our['count'].sum(),
                                                     ambiguous_sequences_df_whitelab['count'].sum()],
         "Percent of data points in both datasets [%]": [
-            round((len(positives_that_are_in_negatives_our) / (len(positive_df_our) + len(negative_df_our))) * 100, 2),
-            round((len(positives_that_are_in_negatives_whitelab) / (
-                    len(positive_df_whitelab) + len(negative_df_whitelab))) * 100, 2)],
-        "Percent individual ambiguous of positive data [%]": [
-            round((ambiguous_sequences_df_our['count'].sum() / positive_df_our['count'].sum()) * 100, 2),
-            round((ambiguous_sequences_df_whitelab['count'].sum() / positive_df_whitelab['count'].sum()) * 100, 2)],
-        "Percent individual ambiguous of negative data [%]": [
-            round((ambiguous_sequences_df_our['count'].sum() / negative_df_our['count'].sum()) * 100, 2),
-            round((ambiguous_sequences_df_whitelab['count'].sum() / negative_df_whitelab['count'].sum()) * 100, 2)]
+            round((ambiguous_sequences_df_our['count'].sum() / (
+                        positive_df_our['count'].sum() + negative_df_our['count'].sum())) * 100, 2),
+            round((ambiguous_sequences_df_whitelab['count'].sum() / (
+                    positive_df_whitelab['count'].sum() + negative_df_whitelab['count'].sum())) * 100, 2)]
     }
 
     df = pd.DataFrame(df_dict).T
