@@ -163,16 +163,22 @@ def format_whitelab_sequences(df: pd.DataFrame, outfile_name: str, special_token
             print(f"Seq {sequence} with count: {count}")
 
 
-def split_positive_and_negativ(file_path: str):
+def split_positive_and_negativ(file_path: str, to_file: bool = False):
     """
     Splits our data into positive and negative data for further analysis
     """
-    df = pd.read_csv(file_path, sep=';')
+    # TODO MOVE FUNCTION TO ANOTHER FILE
+    df_to_split = pd.read_csv(file_path, sep=';')
 
-    positive_df = df[df['label'] == 1].groupby('sequence').size().reset_index(name='count')
-    positive_df.to_csv('our_positive.csv', sep=';', index=False)
-    negative_df = df[df['label'] == 0].groupby('sequence').size().reset_index(name='count')
-    negative_df.to_csv('our_negative.csv', sep=';', index=False)
+    positive_df = df_to_split[df_to_split['label'] == 1].groupby('sequence').size().reset_index(name='count')
+
+    negative_df = df_to_split[df_to_split['label'] == 0].groupby('sequence').size().reset_index(name='count')
+
+    if to_file:
+        positive_df.to_csv('our_positive.csv', sep=';', index=False)
+        negative_df.to_csv('our_negative.csv', sep=';', index=False)
+    else:
+        return positive_df, negative_df
 
 
 
@@ -191,4 +197,6 @@ def produce_whitelab_csv_file(positiv_data: pd.DataFrame, negativ_data: pd.DataF
     result_df.to_csv('./whitelab_hemo_data.csv', sep=';', index=False)
 
 if __name__ == '__main__':
-    decoded_sequences_to_file('whitelab_data', create_intermediate_files=True, verbose=False)
+    #decoded_sequences_to_file('whitelab_data', create_intermediate_files=True, verbose=False)
+    df = pd.read_csv('splitted_hemo.csv', sep=';')
+    print(df)
