@@ -57,4 +57,10 @@ checkpoints/
 output/
 
 # Project Files
-src/try_out_zone.py
+src_train/try_out_zone.py
+src_train/wandb/
+src_train/results/
+src_train/logs/
+
+data/out/
+
