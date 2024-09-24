@@ -2,27 +2,39 @@ import pandas as pd
 import numpy as np
 import re
 from peptides import Peptide as Pep
-from preprocess_utils import load_and_filter_data
-from preprocess_utils import split_positive_and_negative
+from preprocess_utils import load_and_filter_data, split_positive_and_negative, filter_and_evaluate_ambiguous_sequences
 
 
-def get_filtered_and_combined_dataframe():
+
+def get_filtered_and_combined_dataframe(*dataframes) -> pd.DataFrame:
     """
+    Used Data:
+    - "../data/data_from_database/dbaasp_scraped.csv"
+    - "../data/data_from_database/Hemolytik_scraped.csv"
+
     If more databases need to be parsed, add the corresponding file as a DataFrame here
     NO GUARANTEE THAT DOWNSTREAM PROCESSING WILL WORK WITH NEW DATA. YOU NEED TO MAKE SURE NEW DATA IS FETCHED CORRECTLY
+
+    :param dataframes: DataFrames containing the data from the databases
+
+    :return: DataFrame containing the combined and filtered data
     """
     # Load the data first. If new data is added, add it here.
 
-    # dbaasp_scraped.csv is creatable from the dbaasp_preprocesser function
-    df1 = load_and_filter_data("../data/data_from_database/dbaasp_scraped.csv")
-    df1 = df1[['sequence', 'measure_type', 'activity']]
+    if not dataframes:
+        raise ValueError('No dataframes provided. Please provide the dataframes containing the data from the databases.')
 
-    # Hemolytik_scraped.csv is created by the work group
-    df2 = load_and_filter_data("../data/data_from_database/Hemolytik_scraped.csv")
-    df2 = df2[['sequence', 'measure_type', 'activity']]
+    df_to_concat = []
+    for df in dataframes:
+
+        # Filter Sequences by seq_length and Ambiguous Amino Acids
+        df = load_and_filter_data(df)
+        df = df[['sequence', 'measure_type', 'activity']]
+        df_to_concat.append(df)
+
 
     # Concatenate the dataframes and select only the relevant columns
-    df = pd.concat([df1, df2])
+    df = pd.concat(df_to_concat)
     df = df[['sequence', 'measure_type']]
     return df
 
@@ -168,7 +180,7 @@ def _process_units(final, verbose: bool = False):
         "pM": "µM",
         "M/l": "µM",
     }
-
+    units_before = "Something went Wrong with Unit conversion"
     # If verbose, show units before processing
     if verbose:
         units_before = final["unit"].nunique()
@@ -254,14 +266,32 @@ def _process_units(final, verbose: bool = False):
 
 
 def give_label_by_threshold(x):
+    """
+    Set the Label via threshold for a given sequences.
+    Used as a DataFrame.apply() function.
+
+    :param x: The relation between hemo_percent and hemo_concentration
+    """
     if x >= 0.8:
         return 1
     else:
         return 0
 
 
-def parse_and_label_hemolytic_data():
-    base_df = get_filtered_and_combined_dataframe()
+def parse_and_label_hemolytic_data(our_data: pd.DataFrame, whitelab_data: pd.DataFrame, *dataframes, filter_sequences: bool = False):
+    """
+    Main logic for creating the Training Files for the Hemolytic Activity Prediction.
+    This function is specific for our data and should be refactored if new data is added.
+    I tried to be as general as possible, but some of our data needs to be handled specifically.
+
+    :param our_data: DataFrame containing our labeled data
+    :param whitelab_data: DataFrame containing the Whitelab data
+
+    :param dataframes: Additional Dataframes that should be included in the training data. NO GUARANTEE OF WORKING HERE!
+                            - Bring new Data in our Format and name Columns correctly!
+                            - You may add new cases for column parsing in the split_measure_type function
+    """
+    base_df = get_filtered_and_combined_dataframe(our_data, whitelab_data)
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
     df_hc = base_df[base_df['measure_type'].str.contains('HC5')]
@@ -320,54 +350,23 @@ def parse_and_label_hemolytic_data():
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True)
 
-    # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
-    filter_and_evaluate_ambiguous_sequences(labeled_df=result_df)
+    if filter_sequences:
+        # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
+        filter_and_evaluate_ambiguous_sequences(labeled_df=result_df)
+    else:
+        # If you dont want to filter ambiguous sequences, just save the data
+        print("Skipping filtering of ambiguous sequences.")
+        result_df.to_csv('../data/train_data/our_hemo_labeled.csv', sep=';', index=False)
 
-
-def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame):
-    """
-    Filter ambiguous sequences and sort them into positive or negative based on the majority label.
-
-    :param labeled_df: DataFrame containing labeled sequences.
-    """
-
-    result_df = pd.DataFrame()
-
-    # Group by sequence and check if there are multiple labels for the same sequence
-    for seq_df in labeled_df.groupby(by=['sequence']):
-
-        # If there are multiple labels for the same sequence, sort them into positive or negative based on the majority label
-        if seq_df[1]['label'].unique().shape[0] > 1:
-            positive_compare = pd.DataFrame()
-            negative_compare = pd.DataFrame()
-            for label_df in seq_df[1].groupby(by=['label']):
-
-                # sort the data into positive or negative
-                if label_df[0][0] == 0:
-                    negative_compare = label_df[1]
-                elif label_df[0][0] == 1:
-                    positive_compare = label_df[1]
-
-            # Choosing Majority label is done here
-            if positive_compare.shape[0] > negative_compare.shape[0]:
-                result_df = pd.concat([result_df, positive_compare])
-            elif positive_compare.shape[0] < negative_compare.shape[0]:
-                result_df = pd.concat([result_df, negative_compare])
-
-            # If the number of positive and negative labels is the same, choose the positive label
-            else:
-                result_df = pd.concat([result_df, positive_compare])
-
-        # If there is only one label for the sequence, add it to the result DataFrame
-        else:
-            result_df = pd.concat([result_df, seq_df[1]])
-
-    result_df.to_csv('../data/train_data/our_hemo_labeled.csv', sep=';', index=False)
 
 
 if __name__ == '__main__':
     # dbaasp_preprocessor() need to be called to create the dbaasp_scraped.csv file needed for parse_and_label_hemolytic_data()
     # This part is hardcoded since this algorithm is specific for our data
     # This is meant for the preprocessing step
+    our_df = pd.read_csv('../data/train_data/our_hemo_labeled.csv', sep=';')
+    whitelab_df = pd.read_csv('../data/train_data/whitelab_hemo_data.csv', sep=';')
 
-    parse_and_label_hemolytic_data()
+    parse_and_label_hemolytic_data(our_data=our_df, whitelab_data=whitelab_df)
+
+
