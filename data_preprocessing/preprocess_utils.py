@@ -52,6 +52,43 @@ def split_positive_and_negative(data: str or pd.DataFrame, to_file: bool = False
     else:
         return positive_df, negative_df
 
+def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str = '../data/train_data/our_hemo_filtered_labeled.csv'):
+    """
+    Filter ambiguous sequences and sort them into positive or negative based on the majority label.
 
-if __name__ == '__main__':
-    split_positive_and_negative('../data/train_data/our_hemo_labeled.csv', to_file=True)
+    :param labeled_df: DataFrame containing labeled sequences.
+    """
+
+    result_df = pd.DataFrame()
+
+    # Group by sequence and check if there are multiple labels for the same sequence
+    for seq_df in labeled_df.groupby(by=['sequence']):
+
+        # If there are multiple labels for the same sequence, sort them into positive or negative based on the majority label
+        if seq_df[1]['label'].unique().shape[0] > 1:
+            positive_compare = pd.DataFrame()
+            negative_compare = pd.DataFrame()
+            for label_df in seq_df[1].groupby(by=['label']):
+
+                # sort the data into positive or negative
+                if label_df[0][0] == 0:
+                    negative_compare = label_df[1]
+                elif label_df[0][0] == 1:
+                    positive_compare = label_df[1]
+
+            # Choosing Majority label is done here
+            if positive_compare.shape[0] > negative_compare.shape[0]:
+                result_df = pd.concat([result_df, positive_compare])
+            elif positive_compare.shape[0] < negative_compare.shape[0]:
+                result_df = pd.concat([result_df, negative_compare])
+
+            # If the number of positive and negative labels is the same, choose the positive label
+            else:
+                result_df = pd.concat([result_df, positive_compare])
+
+        # If there is only one label for the sequence, add it to the result DataFrame
+        else:
+            result_df = pd.concat([result_df, seq_df[1]])
+
+    result_df.to_csv(out_path, sep=';', index=False)
+
