@@ -69,7 +69,7 @@ def fine_tune(binary_or_mlm: str,
         optim= 'adamw_torch',  # Optimizer to use
         lr_scheduler_type='linear',  # Learning rate scheduler type
         learning_rate=5e-5,  # Learning rate
-        # use_cpu = True # Only for local testing purposes
+        use_cpu = True # Only for local testing purposes
     )
 
     log_level = training_args.get_process_log_level()
@@ -88,6 +88,7 @@ def fine_tune(binary_or_mlm: str,
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')
+    df = df.drop_duplicates(subset=['sequence'])
 
 
     # Split the data into training, validation and test sets
@@ -191,8 +192,8 @@ def get_encoding(tokenizer: BertTokenizer):
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='binary',
-              train_file="../data/base_data/whitelab_hemo_data.csv",
+              train_file="../data/train_data/our_hemo_labeled.csv",
               model_path='Rostlab/prot_bert_bfd',
-              model_save_path='./small_BERT',
+              model_save_path='./our_BERT',
               show_encoding=False,
               )
