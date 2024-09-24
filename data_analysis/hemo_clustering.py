@@ -5,13 +5,11 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-import yaml
 from sklearn.decomposition import PCA
 from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
 from warnings import filterwarnings
 from collections import Counter
-
 from transformers import BertTokenizer, BertModel
 
 
@@ -355,7 +353,7 @@ def encode_peptides(peptides, batch_size: int = 32):
         batch_peptides = peptides_prepared[i:i + batch_size]
         enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36)
         outputs = model(**enc)
-        batch_embeddings = outputs.last_hidden_state.detach().numpy()
+        batch_embeddings = outputs.pooler_output.detach().numpy()
         embeddings.append(batch_embeddings)
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
@@ -365,6 +363,7 @@ def encode_peptides(peptides, batch_size: int = 32):
     embeddings = np.vstack(embeddings)
 
     # save embeddings to npz file
+
     np.savez_compressed("../data/out/embeddings.npz", embeddings)
 
 
@@ -374,7 +373,6 @@ def encode_peptides(peptides, batch_size: int = 32):
 # TODO later include 2rd class?
 def main(file_path: str, batch_size: int):
     df = read_apd3(file_path)
-
 
     labels = df.get_column("label").to_list()
     seqs = df.get_column("sequence").to_list()
