@@ -35,7 +35,7 @@ def create_dbaasp_hemo_file(in_path: str,
     """
     This function creates a csv file with the hemolysis data from DBAASP. The data is filtered on human hemolysis data.
     """
-    df = load_and_filter_data(path=in_path,
+    df = load_and_filter_data(data=in_path,
                               sep=',',
                               filter_on_column='Sequence')
 
