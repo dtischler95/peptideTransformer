@@ -1,17 +1,17 @@
 import pandas as pd
 
 
-def load_and_filter_data(path: str, sep: str = ';', filter_on_column: str = 'sequence') -> pd.DataFrame:
+def load_and_filter_data(data: str or pd.DataFrame, sep: str = ';', filter_on_column: str = 'sequence') -> pd.DataFrame:
     """
     Load AMP related data from a csv file and filter out sequences with our Filter Schema.
 
-    :param path: Path to the csv file.
+    :param data: Path to the csv file.
     :param sep: Separator used in the csv file.
     :param filter_on_column: Column to filter on. should be always sequence. But sometimes the column is named differently.
 
     :return: Filtered DataFrame.
     """
-    df = pd.read_csv(filepath_or_buffer=path, sep=sep)
+    df = check_data_type(data, sep=sep)
     df = df[df[filter_on_column].str.len() <= 36]
     df = df[df[filter_on_column].str.len() >= 3]
 
@@ -36,12 +36,7 @@ def split_positive_and_negative(data: str or pd.DataFrame, to_file: bool = False
     :param to_file: Flag to save the split data to files
     :return: DataFrames for positive and negative data if to_file is False
     """
-    if type(data) == str:
-        df = pd.read_csv(data, sep=';')
-    elif type(data) == pd.DataFrame:
-        df = data
-    else:
-        raise ValueError('Invalid data type. Please provide a path to a CSV file or a DataFrame.')
+    df = check_data_type(data)
 
     positive_df = df[df['label'] == 1].groupby('sequence').size().reset_index(name='count')
     negative_df = df[df['label'] == 0].groupby('sequence').size().reset_index(name='count')
@@ -51,6 +46,17 @@ def split_positive_and_negative(data: str or pd.DataFrame, to_file: bool = False
         negative_df.to_csv('../data/data_for_data_viewer/our_negative.csv', sep=';', index=False)
     else:
         return positive_df, negative_df
+
+
+def check_data_type(data, sep=';') -> pd.DataFrame:
+    if type(data) == str:
+        df = pd.read_csv(data, sep=sep)
+    elif type(data) == pd.DataFrame:
+        df = data
+    else:
+        raise ValueError('Invalid data type. Please provide a path to a CSV file or a DataFrame.')
+    return df
+
 
 def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str = '../data/train_data/our_hemo_filtered_labeled.csv'):
     """
