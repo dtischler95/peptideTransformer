@@ -294,24 +294,24 @@ def perform_culstering(data, labels):
 
 
     pca, pca_fit = run_pca(data)
-    tsne_fit = run_tsne(data)
-    umap_fit = run_umap(data)
+    # tsne_fit = run_tsne(data)
+    # umap_fit = run_umap(data)
 
     print("[Clustering] Running KMeans for PCA")
     pca_kmeans, pca_kmeans_labels = clustering(pca_fit, labels)
-    print("[Clustering] Running KMeans for TSNE")
-    tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, labels)
-    print("[Clustering] Running KMeans for UMAP")
-    umap_kmeans, umap_kmeans_labels = clustering(umap_fit, labels)
+    # print("[Clustering] Running KMeans for TSNE")
+    # tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, labels)
+    # print("[Clustering] Running KMeans for UMAP")
+    # umap_kmeans, umap_kmeans_labels = clustering(umap_fit, labels)
     try:
         print("[Clustering] Plotting PCA")
         plot_pca(pca, pca_fit, labels, plot_path="../data/out/pca_plot")
     except Exception as e:
         print(f"PCA Plotting failed: {e}")
-    print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, labels, plot_path="../data/out/tsne_plot")
-    print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, labels, plot_path="../data/out/umap_plot")
+    # print("[Clustering] Plotting TSNE")
+    # plot_tsne(tsne_fit, labels, plot_path="../data/out/tsne_plot")
+    # print("[Clustering] Plotting UMAP")
+    # plot_umap(umap_fit, labels, plot_path="../data/out/umap_plot")
 
 
 
@@ -343,12 +343,10 @@ def encode_peptides(peptides, batch_size: int = 32):
 
     # Load the pre-trained model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-    model = BertModel.from_pretrained("./peptideBERT_model")
+    model = BertModel.from_pretrained("../peptideBERT")
     model.eval()
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in peptides]
-
-    # TODO PUSHEN!
 
     # Generate embeddings in batches
     progress = 0
@@ -365,6 +363,10 @@ def encode_peptides(peptides, batch_size: int = 32):
 
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
+
+    # save embeddings to npz file
+    np.savez_compressed("../data/out/embeddings.npz", embeddings)
+
 
     return embeddings
 
@@ -390,6 +392,6 @@ def main_plot_amino(file_path: str):
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
-    main(file_path="../data/base_data/splitted_hemo_labeled.csv", batch_size=64)
+    main(file_path="../data/train_data/whitelab_hemo_data.csv", batch_size=64)
     # main_plot_amino(file_path="../data/hemo/splitted_hemo_labeled.csv")
 
