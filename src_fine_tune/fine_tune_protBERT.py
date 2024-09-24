@@ -1,16 +1,14 @@
-from transformers import BertTokenizer, BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
+import os
+
+from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import sys
 import torch
-import pandas as pd
-from PeptideDataset import PeptideDataset
-from sklearn.model_selection import train_test_split
-from transformers import TrainingArguments
 import logging
-from transformer_utils import compute_metrics
+from transformer_metrics import compute_metrics
 from PeptideTrainer import PeptideTrainer
-
+from fine_tune_utils import prepare_datasets, load_training_arguments
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -21,8 +19,11 @@ def fine_tune(binary_or_mlm: str,
               model_path: str,
               train_file: str,
               show_encoding: bool = False,
-              model_save_path: str = './peptideBERT_model'
-              ):
+              model_save_path: str = './peptideBERT_model',
+              drop_duplicates: bool = False,
+              use_cpu: bool = False,
+              ignore_leakage: bool = False,
+              mlm_probability: float = 0.15):
     """
     Fine-tunes the model on the hemo dataset, should contain basic functionality for fine-tuning
     Also includes the next sentence prediction, but can be turned off. I'm not sure if the next sentence prediction
@@ -30,17 +31,30 @@ def fine_tune(binary_or_mlm: str,
 
     Script adapted from https://github.com/huggingface/transformers/blob/main/examples/pytorch/token-classification/run_ner.py
 
+    DataLoader also checks for data leakage between the datasets. If data leakage is detected, the training will stop if
+    ignore_leakage is set to False. If ignore_leakage is set to True, the training will continue, but a warning will be
+    printed with the number of leaked data points. Use only if you want to see how data leakage affects the training,
+    since it seems like that PeptideBERT is affected by data leakage. [I used my check_data_loader_for_leakage function
+    on PeptideBERTs train algorithm, and it seems like the model is affected by data leakage]
+
 
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
                       Can be set to 'binary' or 'mlm' or 'both'
     :param model_path: either provide path to the HuggingFace Repository or a local path of the model
+    :param train_file : path to the training data
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param model_save_path: path to save the model
-
+    :param drop_duplicates: if duplicated sequences should be dropped
+    :param use_cpu: if the CPU should be used for training
+    :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
+    :param mlm_probability: probability of masking tokens for MLM. Only shows effect if binary_or_mlm is set to 'mlm'
 
     :return:
     """
 
+    check_directory(model_save_path)
+
+    # --------------------- Setup logging and configs ---------------------
     # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -48,29 +62,9 @@ def fine_tune(binary_or_mlm: str,
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
-    # Define training arguments
-    training_args = TrainingArguments(
-        do_train=True,  # Perform training
-        do_eval=True,  # Perform evaluation
-        do_predict=True,  # Perform prediction
-        output_dir='./results',  # Output directory
-        num_train_epochs=50,  # Number of training epochs
-        per_device_train_batch_size=64,  # Batch size for training
-        per_device_eval_batch_size=64,  # Batch size for evaluation
-        warmup_steps=500,  # Number of warmup steps
-        weight_decay=0.01,  # Strength of weight decay
-        logging_dir='./logs',  # Directory for storing logs
-        logging_steps=10,
-        evaluation_strategy="epoch",  # Evaluate at the end of each epoch
-        log_level='info',  # Set logging level
-        seed=42,  # Seed for reproducibility
-        dataloader_drop_last=False, # Drop the last incomplete batch
-        dataloader_num_workers=1,  # Number of workers for data loading
-        optim= 'adamw_torch',  # Optimizer to use
-        lr_scheduler_type='linear',  # Learning rate scheduler type
-        learning_rate=5e-5,  # Learning rate
-        use_cpu = True # Only for local testing purposes
-    )
+    training_args = load_training_arguments(config_file='./fine_tune_config.yaml',
+                                            training_type=binary_or_mlm,
+                                            use_cpu=use_cpu)
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
@@ -84,30 +78,16 @@ def fine_tune(binary_or_mlm: str,
     )
     logger.info(f"Training/evaluation parameters {training_args}")
 
-    # ------------------------------------------------------------------------------------------------------------------
-    # Load the data
-    # Extract to method if I want to pipe binary and mlm fine-tuning
-    df = pd.read_csv(train_file, sep=';')
-    df = df.drop_duplicates(subset=['sequence'])
+    # --------------------- Prepare tokenizer and datasets ---------------------
 
+    # Prepare tokenizer and datasets
+    tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=binary_or_mlm,
+                                                                           drop_duplicates=drop_duplicates,
+                                                                           show_encoding=show_encoding,
+                                                                           train_file=train_file,
+                                                                           ignore_leakage=ignore_leakage)
 
-    # Split the data into training, validation and test sets
-    # TODO Create Accuracy Validation for Testdata
-    df_train, df_val_handler = train_test_split(df, test_size=0.2)
-    df_val, df_test = train_test_split(df_val_handler, test_size=0.5)
-
-    sequence_data_train = df_train['sequence'].values
-    sequence_data_val = df_val['sequence'].values
-    sequence_data_test = df_test['sequence'].values
-
-    label_data_train = df_train['label'].values if binary_or_mlm == 'binary' else None
-    label_data_val = df_val['label'].values if binary_or_mlm == 'binary' else None
-    label_data_test = df_test['label'].values if binary_or_mlm == 'binary' else None
-
-    # ------------------------------------------------------------------------------------------------------------------
-
-    # Load the tokenizer
-    tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
+    # --------------------- Prepare model and trainer ---------------------
 
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
@@ -116,30 +96,16 @@ def fine_tune(binary_or_mlm: str,
     if binary_or_mlm == 'binary':
         model = BertForSequenceClassification.from_pretrained(model_path, num_labels=2)
         data_collator = DefaultDataCollator()
+
+    # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
+    # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
+    # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
+    # first.
     elif binary_or_mlm == 'mlm':
         model = BertForMaskedLM.from_pretrained(model_path)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
-    elif binary_or_mlm == 'both':
-        raise NotImplementedError("Not implemented yet") # TODO Think of Logic and how to implement
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=mlm_probability)
     else:
-        raise ValueError("binary_or_mlm must be either 'binary' or 'mlm' or 'both'")
-
-    total_params = sum(p.numel() for p in model.parameters())
-
-    # Get the number of trainable parameters
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-    print(f"Total parameters: {total_params}")
-    print(f"Trainable parameters: {trainable_params}")
-
-    # Create a Dataset Class for the training and validation data for our use case
-    # TODO Create Dataset Class for self-supervised learning
-    train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train)
-    val_dataset = PeptideDataset(peptides=sequence_data_val , tokenizer=tokenizer, labels=label_data_val)
-    test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test)
-
-    # print out the encoding of the vocabulary used by the tokenizer if wanted
-    get_encoding(tokenizer=tokenizer) if show_encoding else None
+        raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
 
     # Initialize the Trainer
     trainer = PeptideTrainer(
@@ -171,29 +137,28 @@ def fine_tune(binary_or_mlm: str,
     if training_args.do_predict:
         logger.info("*** Predict ***")
         predictions = trainer.predict(test_dataset)
+        print(predictions)
         # TODO Find a cool representation for the predictions
         # logger.info(predictions.predictions)
         logger.info("*** Prediction finished ***")
 
 
-def get_encoding(tokenizer: BertTokenizer):
-    """
-    Prints out the encoding of the vocabulary used by the tokenizer
+def check_directory(paths: list[str]):
+    for path in paths:
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass
 
-    :param tokenizer: The tokenizer used for encoding
-    :return:
-    """
-
-    for i in range(tokenizer.vocab_size):
-        character = tokenizer.decode(i)
-        print(f"{i}: {character}")
-
-# TO-DO check for data leakage
 
 if __name__ == '__main__':
-    fine_tune(binary_or_mlm='binary',
-              train_file="../data/train_data/our_hemo_labeled.csv",
-              model_path='Rostlab/prot_bert_bfd',
-              model_save_path='./our_BERT',
-              show_encoding=False,
+    fine_tune(binary_or_mlm='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+              train_file="../data/train_data/our_hemo_labeled.csv",  # Path to the training data
+              model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
+              model_save_path='./our_BERT',  # Path to save the model
+              show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
+              drop_duplicates=False,  # Set to True if you want to drop duplicate sequences
+              use_cpu=True,  # Set to True if you want to use the CPU instead of GPU for training
+              ignore_leakage=False,  # Set to True if you want to compare how data leakage affects the training
+              mlm_probability=0.15  # Probability of masking tokens for MLM.
               )
