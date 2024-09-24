@@ -9,10 +9,13 @@
 - [ ] Train_Data_viewer.py -> make sense of statistics 
   - [ ] Add data to Train Dataset
 - [x] Need datafile with and without filtered ambiguous sequences * Function now accepts bool
+- [x] Check for data leakage in Train Data
 
 #### Training
+- [ ] Implement MLM training
 - [ ] Train StarPep MLMBert
 - [ ] Refactor src Folder
+- [ ] Look after max_length parameter
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline
