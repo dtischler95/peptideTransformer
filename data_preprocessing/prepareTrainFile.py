@@ -6,7 +6,7 @@ from preprocess_utils import load_and_filter_data, split_positive_and_negative, 
 
 
 
-def get_filtered_and_combined_dataframe(*dataframes) -> pd.DataFrame:
+def get_filtered_and_combined_dataframe(dataframes: list[pd.DataFrame]) -> pd.DataFrame:
     """
     Used Data:
     - "../data/data_from_database/dbaasp_scraped.csv"
@@ -278,7 +278,7 @@ def give_label_by_threshold(x):
         return 0
 
 
-def parse_and_label_hemolytic_data(our_data: pd.DataFrame, whitelab_data: pd.DataFrame, *dataframes, filter_sequences: bool = False):
+def parse_and_label_hemolytic_data(*data_paths: str, filter_sequences: bool = False):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
     This function is specific for our data and should be refactored if new data is added.
@@ -291,7 +291,14 @@ def parse_and_label_hemolytic_data(our_data: pd.DataFrame, whitelab_data: pd.Dat
                             - Bring new Data in our Format and name Columns correctly!
                             - You may add new cases for column parsing in the split_measure_type function
     """
-    base_df = get_filtered_and_combined_dataframe(our_data, whitelab_data)
+
+    data_df_list = []
+    for file_path in data_paths:
+        data_df = pd.read_csv(file_path, sep=';')
+        data_df_list.append(data_df)
+
+
+    base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
     df_hc = base_df[base_df['measure_type'].str.contains('HC5')]
@@ -364,9 +371,11 @@ if __name__ == '__main__':
     # dbaasp_preprocessor() need to be called to create the dbaasp_scraped.csv file needed for parse_and_label_hemolytic_data()
     # This part is hardcoded since this algorithm is specific for our data
     # This is meant for the preprocessing step
-    our_df = pd.read_csv('../data/train_data/our_hemo_labeled.csv', sep=';')
-    whitelab_df = pd.read_csv('../data/train_data/whitelab_hemo_data.csv', sep=';')
 
-    parse_and_label_hemolytic_data(our_data=our_df, whitelab_data=whitelab_df)
+    hemolytik_db = '../data/data_from_database/Hemolytik_scraped.csv'
+    dbaasp_db = '../data/data_from_database/dbaasp_scraped.csv'
+
+    parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
+                                   filter_sequences=False)
 
 
