@@ -1,0 +1,55 @@
+training_arguments:
+  binary:
+    do_train: true
+    do_eval: true
+    do_predict: true
+    output_dir: './results'
+    num_train_epochs: 50
+    per_device_train_batch_size: 64
+    per_device_eval_batch_size: 64
+    warmup_steps: 500
+    weight_decay: 0.01
+    logging_dir: './logs'
+    logging_steps: 10
+    evaluation_strategy: 'epoch'
+    log_level: 'info'
+    seed: 42
+    dataloader_drop_last: false
+    dataloader_num_workers: 1
+    optim: 'adamw_torch'
+    lr_scheduler_type: 'linear'
+    learning_rate: 5e-5
+  mlm:
+    do_train: true
+    do_eval: true
+    do_predict: true
+    output_dir: './results'
+    num_train_epochs: 2000
+    per_device_train_batch_size: 64
+    per_device_eval_batch_size: 64
+    warmup_steps: 1000
+    weight_decay: 0.01
+    logging_dir: './logs'
+    logging_steps: 10
+    evaluation_strategy: 'epoch'
+    log_level: 'info'
+    seed: 42
+    dataloader_drop_last: false
+    dataloader_num_workers: 1
+    optim: 'adamw_torch'
+    lr_scheduler_type: 'linear'
+    learning_rate: 5e-5
+  test:
+    do_train: true
+    do_eval: true
+    do_predict: true
+    num_train_epochs: 10
+    output_dir: './results'
+    per_device_eval_batch_size: 64
+    logging_dir: './logs'
+    logging_steps: 10
+    evaluation_strategy: 'epoch'
+    log_level: 'info'
+    seed: 42
+    dataloader_drop_last: false
+    dataloader_num_workers: 1
