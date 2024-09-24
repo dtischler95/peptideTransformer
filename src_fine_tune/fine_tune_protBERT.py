@@ -1,10 +1,9 @@
 import os
-
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import sys
-import torch
+import torch # pytorch in requirements.txt
 import logging
 from transformer_metrics import compute_metrics
 from PeptideTrainer import PeptideTrainer
