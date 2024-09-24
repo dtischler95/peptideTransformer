@@ -16,7 +16,10 @@
 - [ ] Train StarPep MLMBert
 - [ ] Refactor src Folder
 - [ ] Look after max_length parameter
+- [ ] Add Jupyter Notebook for Training
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline
 - [ ] Change Polars usage in hemo_clustering to pandas
+- [ ] Add Evaluation Jupyter Notebook
+
