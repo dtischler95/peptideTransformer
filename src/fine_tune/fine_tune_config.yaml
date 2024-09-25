@@ -10,8 +10,8 @@ training_arguments:
     warmup_steps: 500
     weight_decay: 0.01
     logging_dir: './logs'
-    logging_steps: 10
-    evaluation_strategy: 'epoch'
+    logging_steps: 20
+    evaluation_strategy: 'steps'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
@@ -30,8 +30,8 @@ training_arguments:
     warmup_steps: 1000
     weight_decay: 0.01
     logging_dir: './logs'
-    logging_steps: 10
-    evaluation_strategy: 'epoch'
+    logging_steps: 1
+    evaluation_strategy: 'steps'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
@@ -39,17 +39,3 @@ training_arguments:
     optim: 'adamw_torch'
     lr_scheduler_type: 'linear'
     learning_rate: 0.00005
-  test:
-    do_train: true
-    do_eval: true
-    do_predict: true
-    num_train_epochs: 10
-    output_dir: './results'
-    per_device_eval_batch_size: 64
-    logging_dir: './logs'
-    logging_steps: 10
-    evaluation_strategy: 'epoch'
-    log_level: 'info'
-    seed: 42
-    dataloader_drop_last: false
-    dataloader_num_workers: 1
