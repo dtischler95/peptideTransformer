@@ -1,15 +1,34 @@
 from transformers import Trainer
 
+
 class PeptideTrainer(Trainer):
+    """
+    Custom Trainer class with overridden methods.
+
+
+    """
+
     def _save(self, output_dir: str):
+        """
+        We constantly got the error message "RuntimeError: input is not contiguous" when saving the model. That's a Quickfix here
+
+        Args:
+            output_dir (str): The output directory where the model should be saved.
+        """
         # Ensure that all model parameters are contiguous before saving
         for param in self.model.parameters():
             if not param.is_contiguous():
                 param.data = param.contiguous()
         super()._save(output_dir)
 
-
     def log(self, logs):
+        """
+        The log function just prints the metric dictionary in a more readable format.
+
+        Args:
+            logs (Dict): The dictionary containing the metrics to be logged.
+
+        """
         # Custom logging logic
         if self.state.epoch is not None:
             logs["epoch"] = round(self.state.epoch, 2)

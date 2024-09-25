@@ -1,13 +1,18 @@
+import warnings
+
+warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
+
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import sys
-import torch # pytorch in requirements.txt
+import torch  # pytorch in requirements.txt
 import logging
 
-from src.fine_tune.transformer_metrics import compute_metrics, mlm_metrics
+from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
 from src.fine_tune.PeptideTrainer import PeptideTrainer
 from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments, check_directory
+from src.fine_tune.PeptideCallbackTrainer import PeptideCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -19,6 +24,7 @@ def fine_tune(binary_or_mlm: str,
               train_file: str,
               show_encoding: bool = False,
               model_save_path: str = './peptideBERT_model',
+              plot_path: str = "../../plot",
               drop_duplicates: bool = False,
               use_cpu: bool = False,
               ignore_leakage: bool = False,
@@ -43,6 +49,7 @@ def fine_tune(binary_or_mlm: str,
     :param train_file : path to the training data
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param model_save_path: path to save the model
+    :param plot_path: path to save the plots
     :param drop_duplicates: if duplicated sequences should be dropped
     :param use_cpu: if the CPU should be used for training
     :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
@@ -109,11 +116,12 @@ def fine_tune(binary_or_mlm: str,
     # Initialize the Trainer
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
-        args=training_args,  # Training arguments from above TODO check for PeptideBERT
+        args=training_args,  # Training arguments from above
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=compute_metrics if binary_or_mlm == 'binary' else mlm_metrics  # TODO Get additional metrics for MLM
+        compute_metrics=binary_metrics if binary_or_mlm == 'binary' else mlm_metrics,
+        callbacks=[PeptideCallback(plot_dir=plot_path, interval=training_args.logging_steps, task_name=binary_or_mlm)]
     )
 
     if training_args.do_train:
@@ -142,12 +150,12 @@ def fine_tune(binary_or_mlm: str,
         logger.info("*** Prediction finished ***")
 
 
-
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
               train_file="../../data/train_data/starpep_sequences.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
-              model_save_path='../our_BERT',  # Path to save the model
+              model_save_path='../first_mlm_BERT',  # Path to save the model
+              plot_path='../../plots',  # Path to save the plots
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               drop_duplicates=True,  # Set to True if you want to drop duplicate sequences
               use_cpu=False,  # Set to True if you want to use the CPU instead of GPU for training

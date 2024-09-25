@@ -2,10 +2,7 @@ import numpy as np
 import evaluate
 
 
-# Metrics
-
-
-def compute_metrics(eval_preds) -> dict:
+def binary_metrics(eval_preds) -> dict:
     """
     Taken and adapted from:
     https://github.com/huggingface/transformers/blob/main/examples/pytorch/token-classification/run_ner.py
@@ -52,5 +49,4 @@ def mlm_metrics(eval_preds) -> dict:
     masked_labels = labels[mask]  # Filter labels using the mask
 
     # Calculate accuracy only on valid predictions
-    return {'accuracy' : accuracy.compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())}
-
+    return {'accuracy': accuracy.compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())}
