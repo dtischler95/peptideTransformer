@@ -341,7 +341,7 @@ def encode_peptides(peptides, batch_size: int = 32):
 
     # Load the pre-trained model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-    model = BertModel.from_pretrained("../peptideBERT")
+    model = BertModel.from_pretrained("../../peptideBERT")
     model.eval()
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in peptides]
@@ -364,7 +364,7 @@ def encode_peptides(peptides, batch_size: int = 32):
 
     # save embeddings to npz file
 
-    np.savez_compressed("../data/out/embeddings.npz", embeddings)
+    np.savez_compressed("../../data/out/embeddings.npz", embeddings)
 
 
     return embeddings
@@ -390,6 +390,6 @@ def main_plot_amino(file_path: str):
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
-    main(file_path="../data/train_data/whitelab_hemo_data.csv", batch_size=64)
+    main(file_path="../../data/train_data/whitelab_hemo_data.csv", batch_size=64)
     # main_plot_amino(file_path="../data/hemo/splitted_hemo_labeled.csv")
 
