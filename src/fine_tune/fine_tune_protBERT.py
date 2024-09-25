@@ -117,6 +117,28 @@ def fine_tune(binary_or_mlm: str,
     # TODO Any way to overwrite trainer to successively increase the percentage of masked tokens during training?
     # TODO TrainerCallback contains the datasets!! I could overwrite a function there to change the mlm_probability on a callback to implement curriculum learning
     # TODO Set a flag on main function call to enable curriculum learning outside for comparison between not using it and using it
+    """
+    
+    ```
+    for epoch in range(num_epochs):
+        current_mlm_prob = min(0.10 + epoch * 0.05, 0.50)  # Increase by 5% per epoch, max 50%
+        data_collator.mlm_probability = current_mlm_prob
+    
+        # Train with the current mlm_probability
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            data_collator=data_collator,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+        )
+        
+        trainer.train()
+    
+    ```
+    
+    """
+
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above
