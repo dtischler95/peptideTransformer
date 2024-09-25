@@ -21,8 +21,8 @@ def decoded_sequences_to_file(outfile_name: str,
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd')
 
     # Load the .npz files containing the data
-    neg_data = np.load('../data/whitelab_data/hemo-negative.npz')
-    pos_data = np.load('../data/whitelab_data/hemo-positive.npz')
+    neg_data = np.load('../../data/whitelab_data/hemo-negative.npz')
+    pos_data = np.load('../../data/whitelab_data/hemo-positive.npz')
 
     # Process sequences and write to files if needed
     df_negative = write_sequences_to_list(f"../data/data_for_data_viewer/{outfile_name}_raw_negativ.txt", neg_data['arr_0'], tokenizer)
@@ -128,11 +128,11 @@ def download_and_prepare_whitelab_data(create_whitelab_csv: bool = False, verbos
     def download_hemolysis():
         urllib.request.urlretrieve(
             'https://github.com/ur-whitelab/peptide-dashboard/raw/master/ml/data/hemo-positive.npz',
-            '../data/whitelab_data/hemo-positive.npz',
+            '../../data/whitelab_data/hemo-positive.npz',
         )
         urllib.request.urlretrieve(
             'https://github.com/ur-whitelab/peptide-dashboard/raw/master/ml/data/hemo-negative.npz',
-            '../data/whitelab_data/hemo-negative.npz',
+            '../../data/whitelab_data/hemo-negative.npz',
         )
 
     def func1(file):
