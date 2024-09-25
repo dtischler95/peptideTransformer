@@ -1,4 +1,4 @@
-from PeptideDataset import PeptideDataset
+from .PeptideDataset import PeptideDataset
 import pandas as pd
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
