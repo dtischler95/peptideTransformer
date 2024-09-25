@@ -5,7 +5,7 @@ import sys
 import torch # pytorch in requirements.txt
 import logging
 
-from src.fine_tune.transformer_metrics import compute_metrics
+from src.fine_tune.transformer_metrics import compute_metrics, mlm_metrics
 from src.fine_tune.PeptideTrainer import PeptideTrainer
 from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments, check_directory
 
@@ -113,7 +113,7 @@ def fine_tune(binary_or_mlm: str,
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=compute_metrics if binary_or_mlm == 'binary' else None  # TODO Get additional metrics for MLM
+        compute_metrics=compute_metrics if binary_or_mlm == 'binary' else mlm_metrics  # TODO Get additional metrics for MLM
     )
 
     if training_args.do_train:
@@ -145,12 +145,12 @@ def fine_tune(binary_or_mlm: str,
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../../data/train_data/train_test_data.csv",  # Path to the training data
+              train_file="../../data/train_data/starpep_sequences.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
               model_save_path='../our_BERT',  # Path to save the model
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
-              drop_duplicates=False,  # Set to True if you want to drop duplicate sequences
-              use_cpu=True,  # Set to True if you want to use the CPU instead of GPU for training
-              ignore_leakage=True,  # Set to True if you want to compare how data leakage affects the training
+              drop_duplicates=True,  # Set to True if you want to drop duplicate sequences
+              use_cpu=False,  # Set to True if you want to use the CPU instead of GPU for training
+              ignore_leakage=False,  # Set to True if you want to compare how data leakage affects the training
               mlm_probability=0.15  # Probability of masking tokens for MLM.
               )
