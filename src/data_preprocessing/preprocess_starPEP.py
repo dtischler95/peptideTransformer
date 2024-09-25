@@ -1,5 +1,5 @@
 import pandas as pd
-from src.data_preprocessing.preprocess_utils import load_and_filter_data
+from .preprocess_utils import load_and_filter_data
 
 
 def extract_starpep_data(file_path: str = '../data/general_peptides.fasta'):
