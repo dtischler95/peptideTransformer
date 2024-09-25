@@ -1,5 +1,5 @@
 import pandas as pd
-from src.data_preprocessing.preprocess_utils import load_and_filter_data
+from .preprocess_utils import load_and_filter_data
 
 
 def expand_rows(df: pd.DataFrame) -> pd.DataFrame:
