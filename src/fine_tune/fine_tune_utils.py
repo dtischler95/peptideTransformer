@@ -151,6 +151,11 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
     if len(train_test_leakage) or len(train_val_leakage) or len(val_test_leakage) > 0:
         print("\n-------------- Data Leakage Detected --------------\n")
 
+        print(f"Number of Training Data Points: {len(train_sequences)}")
+        print(f"Number of Validation Data Points: {len(val_sequences)}")
+        print(f"Number of Test Data Points: {len(test_sequences)}\n")
+
+
         if len(train_val_leakage) > 0:
             print(f"Number of data Points leaked in Training and Validation Data: {len(train_val_leakage)}\n")
         if len(train_test_leakage) > 0:
