@@ -31,7 +31,7 @@
 ### Content
 
 - This repository contains the code to fine-tune ProtBERT for peptide tasks. The code is based on the Huggingface Transformers library and the ProtBERT model. This Repository is structured as follows:  
-    
+- Subpackages are mostly used for this specific use-case or should be updated with new data. Exception is the `fine_tune` package which is a general package for fine-tuning the model.    
     - `data/`: Contains the sequence data
       - `data_for_data_viewer/`: Contains the data for the train_data_viewer.py in `data_analysis/`
       - `data_from_database/`: Contains the data downloaded data from DBs with some basic parsing
