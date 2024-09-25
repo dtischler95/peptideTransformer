@@ -65,4 +65,5 @@ src/fine_tune/logs/
 data/out/
 
 dangerzone/
+peptideBERT/
 
