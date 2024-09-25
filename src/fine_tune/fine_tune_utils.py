@@ -171,7 +171,7 @@ def data_leakage_wrapper():
     """
 
     train_data_loader, val_data_loader, test_data_loader = dummy_data_loader(
-        train_file='../data/train_data/our_hemo_labeled.csv',
+        train_file='../../data/train_data/our_hemo_labeled.csv',
         number_of_data_to_use=1000)
 
     check_data_loader_for_leakage(None, val_data_loader, test_data_loader)
@@ -187,6 +187,15 @@ def load_training_arguments(config_file: str, training_type: str, use_cpu: bool 
     from transformers import TrainingArguments
 
     return TrainingArguments(**training_args_dict)
+
+def check_directory(paths: list[str] or str):
+    paths_to_check = [paths] if type(paths) == str else paths
+    for path in paths_to_check:
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass
+
 
 if __name__ == '__main__':
     data_leakage_wrapper()
