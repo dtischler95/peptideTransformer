@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from peptides import Peptide as Pep
-from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, filter_and_evaluate_ambiguous_sequences
+from .preprocess_utils import load_and_filter_data, split_positive_and_negative, filter_and_evaluate_ambiguous_sequences
 
 
 
