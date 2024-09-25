@@ -1,6 +1,8 @@
 ## Fine Tune ProtBERT for Peptide tasks
 
 ### To-Do
+- [ ] Modularize the code for better usage
+
 #### Data
 - [ ] Think of better DataFolder Structure
 
