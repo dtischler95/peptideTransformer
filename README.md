@@ -21,6 +21,7 @@
 - [x] Refactor src Folder
 - [ ] Look after max_length parameter
 - [ ] Add Jupyter Notebook for Training
+- [ ] is there a way to collected leaked data and put them into train data?
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline
