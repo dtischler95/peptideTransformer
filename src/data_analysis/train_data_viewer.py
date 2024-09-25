@@ -15,10 +15,10 @@ def get_overall_stats():
     """
 
     # Load our and whitelabs positive and negative data
-    our_positive_df = pd.read_csv('../data/data_for_data_viewer/our_positive.csv', sep=';')
-    our_negative_df = pd.read_csv('../data/data_for_data_viewer/our_negative.csv', sep=';')
-    whitelab_negative_df = pd.read_csv('../data/whitelab_data/whitelab_data_negative_formatted.csv', sep=';')
-    whitelab_positive_df = pd.read_csv('../data/whitelab_data/whitelab_data_positive_formatted.csv', sep=';')
+    our_positive_df = pd.read_csv('../../data/data_for_data_viewer/our_positive.csv', sep=';')
+    our_negative_df = pd.read_csv('../../data/data_for_data_viewer/our_negative.csv', sep=';')
+    whitelab_negative_df = pd.read_csv('../../data/whitelab_data/whitelab_data_negative_formatted.csv', sep=';')
+    whitelab_positive_df = pd.read_csv('../../data/whitelab_data/whitelab_data_positive_formatted.csv', sep=';')
 
     our_positive_percent, our_negative_percent, whitelab_positive_percent, whitelab_negative_percent = analyse_ambiguous_labeled_sequences_tabular(
         negative_df_our=our_negative_df,
