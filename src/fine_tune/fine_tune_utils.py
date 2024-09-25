@@ -1,4 +1,4 @@
-from .PeptideDataset import PeptideDataset
+from src.fine_tune.PeptideDataset import PeptideDataset
 import pandas as pd
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
@@ -159,7 +159,7 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
             print(f"Number of data Points leaked in Validation and Test Data: {len(val_test_leakage)}\n")
 
         print("\n-------------- Data Leakage Detected --------------\n")
-        if ignore_leakage:
+        if not ignore_leakage:
             raise ValueError("Data Leakage Detected! Please recheck your data preprocessing steps.")
     else:
         print("\n-------------- No Data Leakage Detected --------------\n")
