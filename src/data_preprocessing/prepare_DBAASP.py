@@ -1,5 +1,5 @@
 import pandas as pd
-from preprocess_utils import load_and_filter_data
+from src.data_preprocessing.preprocess_utils import load_and_filter_data
 
 
 def expand_rows(df: pd.DataFrame) -> pd.DataFrame:
@@ -59,5 +59,5 @@ def create_dbaasp_hemo_file(in_path: str,
 
 if __name__ == '__main__':
 
-    create_dbaasp_hemo_file(in_path = "../data/data_from_database/DBAASP_from_CalcAMP.csv",
-                            out_path = "../data/data_from_database/dbaasp_scraped.csv")
+    create_dbaasp_hemo_file(in_path ="../../data/data_from_database/DBAASP_from_CalcAMP.csv",
+                            out_path ="../../data/data_from_database/dbaasp_scraped.csv")
