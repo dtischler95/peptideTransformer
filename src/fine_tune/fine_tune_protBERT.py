@@ -1,4 +1,3 @@
-import os
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
@@ -7,7 +6,7 @@ import torch # pytorch in requirements.txt
 import logging
 from transformer_metrics import compute_metrics
 from PeptideTrainer import PeptideTrainer
-from fine_tune_utils import prepare_datasets, load_training_arguments
+from fine_tune_utils import prepare_datasets, load_training_arguments, check_directory
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
