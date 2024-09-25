@@ -61,7 +61,7 @@ def fine_tune(binary_or_mlm: str,
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
-    training_args = load_training_arguments(config_file='./fine_tune_config.yaml',
+    training_args = load_training_arguments(config_file='fine_tune_config.yaml',
                                             training_type=binary_or_mlm,
                                             use_cpu=use_cpu)
 
@@ -142,17 +142,10 @@ def fine_tune(binary_or_mlm: str,
         logger.info("*** Prediction finished ***")
 
 
-def check_directory(paths: list[str]):
-    for path in paths:
-        try:
-            os.mkdir(path)
-        except FileExistsError:
-            pass
-
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../data/train_data/our_hemo_labeled.csv",  # Path to the training data
+              train_file="../../data/train_data/our_hemo_labeled.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
               model_save_path='./our_BERT',  # Path to save the model
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
