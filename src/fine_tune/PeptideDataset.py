@@ -17,7 +17,8 @@ class PeptideDataset(Dataset):
             max_length: Maximum length for padding/truncation.
         """
         self.peptides = [' '.join(seq) for seq in peptides]
-        self.labels = labels  # Labels are optional for self-supervised learning tasks
+        if labels is not None:
+            self.labels = labels  # Labels are optional for self-supervised learning tasks
         self.tokenizer = tokenizer
         self.max_length = max_length
 
@@ -44,7 +45,9 @@ class PeptideDataset(Dataset):
             'attention_mask': attention_mask,
         }
 
-        if self.labels is not None:  # Only include labels for binary classification
+        try:  # Only include labels for binary classification
             item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+        except AttributeError:
+            pass
 
         return item
