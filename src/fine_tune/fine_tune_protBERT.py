@@ -114,6 +114,9 @@ def fine_tune(binary_or_mlm: str,
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
 
     # Initialize the Trainer
+    # TODO Any way to overwrite trainer to successively increase the percentage of masked tokens during training?
+    # TODO TrainerCallback contains the datasets!! I could overwrite a function there to change the mlm_probability on a callback to implement curriculum learning
+    # TODO Set a flag on main function call to enable curriculum learning outside for comparison between not using it and using it
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above
