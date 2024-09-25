@@ -3,6 +3,7 @@ import pandas as pd
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
 import yaml
+import os
 
 def prepare_datasets(binary_or_mlm: str,
                      drop_duplicates: bool,
