@@ -2,6 +2,7 @@
 
 ### To-Do
 - [x] Modularize the code for better usage
+  - [ ] I'm to fkn stupid for those import shit. Its working locally but on cluster i still need add to path
 
 #### Data
 - [x] Think of better DataFolder Structure
@@ -17,7 +18,9 @@
 
 #### Training
 - [x] Implement MLM training
-- [ ] Train StarPep MLMBert
+- [x] Train StarPep MLMBert
+  - [ ] Does it make sense to successively increase masked tokens while training?
+    - [ ] RESEARCH CURRICULUM LEARNING !!
 - [x] Refactor src Folder
 - [ ] Look after max_length parameter
 - [ ] Add Jupyter Notebook for Training

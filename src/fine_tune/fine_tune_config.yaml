@@ -30,7 +30,7 @@ training_arguments:
     warmup_steps: 1000
     weight_decay: 0.01
     logging_dir: './logs'
-    logging_steps: 1
+    logging_steps: 100
     evaluation_strategy: 'steps'
     log_level: 'info'
     seed: 42
