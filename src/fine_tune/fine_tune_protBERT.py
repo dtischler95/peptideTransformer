@@ -153,14 +153,14 @@ def fine_tune(binary_or_mlm: str,
 
 
 if __name__ == '__main__':
-    fine_tune(binary_or_mlm='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../../data/train_data/whitelab_hemo_data.csv",  # Path to the training data
+    fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+              train_file="../../data/train_data/train_test_data.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
               model_save_path='../first_mlm_BERT',  # Path to save the model
               plot_path='../../plots',  # Path to save the plots
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               drop_duplicates=True,  # Set to True if you want to drop duplicate sequences
               use_cpu=False,  # Set to True if you want to use the CPU instead of GPU for training
-              ignore_leakage=True,  # Set to True if you want to compare how data leakage affects the training
+              ignore_leakage=False,  # Set to True if you want to compare how data leakage affects the training
               mlm_probability=0.15  # Probability of masking tokens for MLM.
               )
