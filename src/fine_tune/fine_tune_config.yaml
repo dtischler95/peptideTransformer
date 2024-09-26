@@ -10,8 +10,8 @@ training_arguments:
     warmup_steps: 500
     weight_decay: 0.01
     logging_dir: './logs'
-    logging_steps: 20
-    evaluation_strategy: 'steps'
+    logging_strategy: 'epoch'
+    evaluation_strategy: 'epoch'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
@@ -19,6 +19,10 @@ training_arguments:
     optim: 'adamw_torch'
     lr_scheduler_type: 'linear'
     learning_rate: 0.00005
+  binary_reducer:
+    patience: 4
+    factor: 0.1
+    min_lr: 1e-7
   mlm:
     do_train: true
     do_eval: true
@@ -30,8 +34,8 @@ training_arguments:
     warmup_steps: 1000
     weight_decay: 0.01
     logging_dir: './logs'
-    logging_steps: 100
-    evaluation_strategy: 'steps'
+    logging_strategy: 'epoch'
+    evaluation_strategy: 'epoch'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
@@ -39,3 +43,7 @@ training_arguments:
     optim: 'adamw_torch'
     lr_scheduler_type: 'linear'
     learning_rate: 0.00005
+  mlm_reducer:
+    patience: 4
+    factor: 0.1
+    min_lr: 1e-7

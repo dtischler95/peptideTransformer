@@ -1,8 +1,11 @@
 ## Fine Tune ProtBERT for Peptide tasks
 
+- NOTE! PeptideBERT seems to overfit due to data leakage. Binary Classifier seems to bias 100% one class with droped duplicates
+
 ### To-Do
 - [x] Modularize the code for better usage
-  - [ ] I'm to fkn stupid for those import shit. Its working locally but on cluster i still need add to path
+  - [ ] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
+- [ ] Move all parameters to fine_tune_config.yaml and change load_training_args function
 
 #### Data
 - [x] Think of better DataFolder Structure
@@ -17,8 +20,9 @@
 - [ ] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
 
 #### Training
+- [ ] Implement reduceLROnPlateau
 - [x] Implement MLM training
-- [x] Train StarPep MLMBert
+- [x] Train StarPep MLMBert 
   - [ ] Does it make sense to successively increase masked tokens while training?
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [x] Refactor src Folder
