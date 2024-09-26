@@ -1,18 +1,23 @@
 import warnings
+import sys
+import os
+
+# Add the src directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
 
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
-import sys
+
 import torch  # pytorch in requirements.txt
 import logging
 
 from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
-from src.fine_tune.PeptideTrainer import PeptideTrainer
-from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments, check_directory
-from src.fine_tune.PeptideCallbackTrainer import MetricLogCallback
+from src.fine_tune.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
+from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments
+from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import MetricLogCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -20,15 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def fine_tune(binary_or_mlm: str,
-              model_path: str,
-              train_file: str,
-              show_encoding: bool = False,
-              model_save_path: str = './peptideBERT_model',
-              plot_path: str = "../../plot",
-              drop_duplicates: bool = False,
-              use_cpu: bool = False,
-              ignore_leakage: bool = False,
-              mlm_probability: float = 0.15):
+              show_encoding: bool = False):
     """
     Fine-tunes the model on the hemo dataset, should contain basic functionality for fine-tuning
     Also includes the next sentence prediction, but can be turned off. I'm not sure if the next sentence prediction
@@ -45,20 +42,10 @@ def fine_tune(binary_or_mlm: str,
 
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
                       Can be set to 'binary' or 'mlm'
-    :param model_path: either provide path to the HuggingFace Repository or a local path of the model
-    :param train_file : path to the training data
     :param show_encoding: if the encoding of the vocabulary should be shown
-    :param model_save_path: path to save the model
-    :param plot_path: path to save the plots
-    :param drop_duplicates: if duplicated sequences should be dropped
-    :param use_cpu: if the CPU should be used for training
-    :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
-    :param mlm_probability: probability of masking tokens for MLM. Only shows effect if binary_or_mlm is set to 'mlm'
 
     :return:
     """
-
-    check_directory(model_save_path)
 
     # --------------------- Setup logging and configs ---------------------
     # Setup logging
@@ -69,8 +56,7 @@ def fine_tune(binary_or_mlm: str,
     )
 
     training_args = load_training_arguments(config_file='fine_tune_config.yaml',
-                                            training_type=binary_or_mlm,
-                                            use_cpu=use_cpu)
+                                            training_type=binary_or_mlm)
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
@@ -88,10 +74,11 @@ def fine_tune(binary_or_mlm: str,
 
     # Prepare tokenizer and datasets
     tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=binary_or_mlm,
-                                                                           drop_duplicates=drop_duplicates,
+                                                                           drop_duplicates=training_args.drop_duplicates,
                                                                            show_encoding=show_encoding,
-                                                                           train_file=train_file,
-                                                                           ignore_leakage=ignore_leakage)
+                                                                           train_file=training_args.train_file,
+                                                                           ignore_leakage=training_args.ignore_leakage,
+                                                                           max_length=training_args.max_length)
 
     # --------------------- Prepare model and trainer ---------------------
 
@@ -100,7 +87,7 @@ def fine_tune(binary_or_mlm: str,
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
     if binary_or_mlm == 'binary':
-        model = BertForSequenceClassification.from_pretrained(model_path, num_labels=2)
+        model = BertForSequenceClassification.from_pretrained(training_args.model_path, num_labels=2)
         data_collator = DefaultDataCollator()
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
@@ -108,8 +95,9 @@ def fine_tune(binary_or_mlm: str,
     # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
     # first.
     elif binary_or_mlm == 'mlm':
-        model = BertForMaskedLM.from_pretrained(model_path)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=mlm_probability)
+        model = BertForMaskedLM.from_pretrained(training_args.model_path)
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
+                                                        mlm_probability=training_args.mlm_probability)
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
 
@@ -123,7 +111,7 @@ def fine_tune(binary_or_mlm: str,
         compute_metrics=binary_metrics if binary_or_mlm == 'binary' else mlm_metrics,
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
-        callbacks=[MetricLogCallback(plot_dir=plot_path, task_name=binary_or_mlm)]
+        callbacks=[MetricLogCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm)]
     )
 
     if training_args.do_train:
@@ -134,8 +122,8 @@ def fine_tune(binary_or_mlm: str,
         # TODO MCC !!!
 
         # params seems not to be contiguous, so we need to make them contiguous
-        trainer.save_model(model_save_path)
-        logger.info("*** Model saved ***")
+        trainer.save_model(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
@@ -154,13 +142,5 @@ def fine_tune(binary_or_mlm: str,
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../../data/train_data/starpep_sequences.csv",  # Path to the training data
-              model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
-              model_save_path='../first_mlm_BERT',  # Path to save the model
-              plot_path='../../plots',  # Path to save the plots
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
-              drop_duplicates=True,  # Set to True if you want to drop duplicate sequences
-              use_cpu=False,  # Set to True if you want to use the CPU instead of GPU for training
-              ignore_leakage=False,  # Set to True if you want to compare how data leakage affects the training
-              mlm_probability=0.15  # Probability of masking tokens for MLM.
               )

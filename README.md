@@ -4,8 +4,8 @@
 
 ### To-Do
 - [x] Modularize the code for better usage
-  - [ ] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
-- [ ] Move all parameters to fine_tune_config.yaml and change load_training_args function
+  - [x] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
+- [x] Move all parameters to fine_tune_config.yaml and change load_training_args function
 
 #### Data
 - [x] Think of better DataFolder Structure
@@ -26,7 +26,7 @@
   - [ ] Does it make sense to successively increase masked tokens while training?
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [x] Refactor src Folder
-- [ ] Look after max_length parameter
+- [x] Look after max_length parameter
 - [ ] Add Jupyter Notebook for Training
 - [ ] is there a way to collected leaked data and put them into train data?
 
@@ -51,5 +51,6 @@
       - `data_analysis/`: Package for analyzing the data. Clustering and Data Inspection implemented so far
       - `data_preprocessing/`: Package for preprocessing the data our way and also preperation of Whitelab data
       - `fine_tune/`: Package for fine-tuning the model. So far Binary Classification and MLM implemented
+        - `PeptideBERTClasses/`: Contains the classes for the PeptideBERT [training pipeline](https://github.com/huggingface/transformers). 
         - `fine_tune_protBERT.py`: Entry Module for Logic
 
