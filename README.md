@@ -22,7 +22,8 @@
 #### Training
 - [X] Implement ReduceLROnPlateau
 - [x] Implement MLM training
-- [x] Train StarPep MLMBert 
+- [ ] Train StarPep MLMBert 
+  - [ ] Get more Peptide Data for Training
   - [ ] Does it make sense to successively increase masked tokens while training?
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [x] Refactor src Folder
