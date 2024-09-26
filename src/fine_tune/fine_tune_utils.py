@@ -1,15 +1,17 @@
-from src.fine_tune.PeptideDataset import PeptideDataset
 import pandas as pd
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
 import yaml
-import os
+from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.fine_tune.PeptideBERTClasses.PeptideDataset import PeptideDataset
+
 
 def prepare_datasets(binary_or_mlm: str,
                      drop_duplicates: bool,
                      show_encoding: bool,
                      train_file: str,
-                     ignore_leakage: bool = False) -> tuple[
+                     ignore_leakage: bool = False,
+                     max_length:int=36) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
     Creates the datasets for training, validation and testing. for the given transformers Dataset class
@@ -23,6 +25,7 @@ def prepare_datasets(binary_or_mlm: str,
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param train_file: path to the training data
     :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
+    :param max_length: Maximum length for padding/truncation.
 
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
@@ -47,9 +50,9 @@ def prepare_datasets(binary_or_mlm: str,
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
-    train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train)
-    val_dataset = PeptideDataset(peptides=sequence_data_val, tokenizer=tokenizer, labels=label_data_val)
-    test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test)
+    train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
+    val_dataset = PeptideDataset(peptides=sequence_data_val, tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
+    test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
@@ -60,6 +63,7 @@ def prepare_datasets(binary_or_mlm: str,
                                   ignore_leakage=ignore_leakage)
 
     return tokenizer, train_dataset, val_dataset, test_dataset
+
 
 def get_encoding(tokenizer: BertTokenizer):
     """
@@ -88,7 +92,6 @@ def dummy_data_loader(train_file: str, number_of_data_to_use: int = 1000) -> tup
     # Load the data
     # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')[:number_of_data_to_use]
-
 
     # Split the data into training, validation and test sets
     df_train, df_val_handler = train_test_split(df, test_size=0.2)
@@ -156,9 +159,6 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
         # TODO print from sys.stderr
         print("\n-------------- Data Leakage Detected --------------\n")
 
-
-
-
         if len(train_val_leakage) > 0:
             print(f"Number of data Points leaked in Training and Validation Data: {len(train_val_leakage)}\n")
         if len(train_test_leakage) > 0:
@@ -186,24 +186,13 @@ def data_leakage_wrapper():
     check_data_loader_for_leakage(None, val_data_loader, test_data_loader)
 
 
-def load_training_arguments(config_file: str, training_type: str, use_cpu: bool = False):
+def load_training_arguments(config_file: str, training_type: str) -> PeptideTrainingArguments:
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
     training_args_dict = config['training_arguments'][training_type]
-    training_args_dict['use_cpu'] = use_cpu
-
-    from src.fine_tune.PeptideTrainingArguments import PeptideTrainingArguments
 
     return PeptideTrainingArguments(**training_args_dict)
-
-def check_directory(paths: list[str] or str):
-    paths_to_check = [paths] if type(paths) == str else paths
-    for path in paths_to_check:
-        try:
-            os.mkdir(path)
-        except FileExistsError:
-            pass
 
 
 if __name__ == '__main__':
