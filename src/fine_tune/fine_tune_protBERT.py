@@ -12,7 +12,7 @@ import logging
 from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
 from src.fine_tune.PeptideTrainer import PeptideTrainer
 from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments, check_directory
-from src.fine_tune.PeptideCallbackTrainer import PeptideCallback
+from src.fine_tune.PeptideCallbackTrainer import MetricLogCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -44,7 +44,7 @@ def fine_tune(binary_or_mlm: str,
 
 
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
-                      Can be set to 'binary' or 'mlm' or 'both'
+                      Can be set to 'binary' or 'mlm'
     :param model_path: either provide path to the HuggingFace Repository or a local path of the model
     :param train_file : path to the training data
     :param show_encoding: if the encoding of the vocabulary should be shown
@@ -113,32 +113,7 @@ def fine_tune(binary_or_mlm: str,
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
 
-    # Initialize the Trainer
-    # TODO Any way to overwrite trainer to successively increase the percentage of masked tokens during training?
-    # TODO TrainerCallback contains the datasets!! I could overwrite a function there to change the mlm_probability on a callback to implement curriculum learning
-    # TODO Set a flag on main function call to enable curriculum learning outside for comparison between not using it and using it
-    """
-    
-    ```
-    for epoch in range(num_epochs):
-        current_mlm_prob = min(0.10 + epoch * 0.05, 0.50)  # Increase by 5% per epoch, max 50%
-        data_collator.mlm_probability = current_mlm_prob
-    
-        # Train with the current mlm_probability
-        trainer = Trainer(
-            model=model,
-            args=training_args,
-            data_collator=data_collator,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
-        )
-        
-        trainer.train()
-    
-    ```
-    
-    """
-
+    # Initialize the Trainer class
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above
@@ -146,7 +121,9 @@ def fine_tune(binary_or_mlm: str,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         compute_metrics=binary_metrics if binary_or_mlm == 'binary' else mlm_metrics,
-        callbacks=[PeptideCallback(plot_dir=plot_path, interval=training_args.logging_steps, task_name=binary_or_mlm)]
+        # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
+        # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
+        callbacks=[MetricLogCallback(plot_dir=plot_path, task_name=binary_or_mlm)]
     )
 
     if training_args.do_train:
@@ -176,14 +153,14 @@ def fine_tune(binary_or_mlm: str,
 
 
 if __name__ == '__main__':
-    fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../../data/train_data/starpep_sequences.csv",  # Path to the training data
+    fine_tune(binary_or_mlm='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+              train_file="../../data/train_data/whitelab_hemo_data.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
               model_save_path='../first_mlm_BERT',  # Path to save the model
               plot_path='../../plots',  # Path to save the plots
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               drop_duplicates=True,  # Set to True if you want to drop duplicate sequences
               use_cpu=False,  # Set to True if you want to use the CPU instead of GPU for training
-              ignore_leakage=False,  # Set to True if you want to compare how data leakage affects the training
+              ignore_leakage=True,  # Set to True if you want to compare how data leakage affects the training
               mlm_probability=0.15  # Probability of masking tokens for MLM.
               )

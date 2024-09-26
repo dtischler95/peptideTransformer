@@ -3,20 +3,21 @@ import matplotlib.pyplot as plt
 import os
 
 
-class PeptideCallback(TrainerCallback):
+class MetricLogCallback(TrainerCallback):
     """
-    Custom Callback class to individualize Callbacks for the Trainer Class
+    Custom Callback class for pretty logging and creating learning curves for accuracy and loss metrics during training and evaluation.
+    logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
 
-    def __init__(self, plot_dir='plot', interval=100, task_name='no_task_name_provided'):
+    def __init__(self, plot_dir='plot', interval=1, task_name='no_task_name_provided'):
         self.plot_dir = plot_dir
         self.interval = interval
         self.task_name = task_name
         self.mode = 'train'
         self.accuracy_metrics = []
         self.loss_metrics = []
-        self.hasMetricUpdated = False
         os.makedirs(self.plot_dir, exist_ok=True)
+
 
     def on_train_end(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         """
@@ -28,23 +29,18 @@ class PeptideCallback(TrainerCallback):
         self.accuracy_metrics = []
         self.loss_metrics = []
 
-    def on_log(self, args, state: TrainerState, control: TrainerControl, logs=None, **kwargs):
+    def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
         """
-        if logs is None:
-            return
 
-        if "eval_accuracy" in logs:
-            self.accuracy_metrics.append(logs['eval_accuracy']['accuracy'])
-            self.hasMetricUpdated = True
 
-        if "eval_loss" in logs:
-            self.loss_metrics.append(logs["eval_loss"])
+        self.accuracy_metrics.append(kwargs['metrics']['eval_accuracy']['accuracy'])
+        self.loss_metrics.append(kwargs['metrics']['eval_loss'])
 
-        if state.global_step % self.interval == 0 and self.hasMetricUpdated:
+        if state.epoch % self.interval == 0 and len(self.accuracy_metrics) > 1:
             if len(self.accuracy_metrics) != len(self.loss_metrics):
-                # I'm not too sure about when on_log is called in the trainer class and if there could be some bugs with this
+                # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
                 raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
             self.plot_learning_curves()
 
@@ -70,8 +66,12 @@ class PeptideCallback(TrainerCallback):
         # Set the title and legend
         plt.title(f'Learning Curves for {self.mode}_{self.task_name} task')
         plt.legend(loc='upper left')  # Place legend for accuracy on the left
-        ax2.legend(loc='upper right')  # Place legend for loss on the right
+        ax2.legend(loc='upper right')  # Place legend for loss on the right # TODO why is it not working?
 
         # Save the figure
         plt.savefig(os.path.join(self.plot_dir, f"{self.task_name}_{self.mode}_learning_curves.png"))
         plt.close()
+
+
+class CurriculumLearningCallback(TrainerCallback):
+    ...
