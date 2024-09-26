@@ -1,27 +1,38 @@
-from transformers import Trainer
+from typing import Union, Optional
+
+from torch import nn
+from transformers import Trainer, PreTrainedModel
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
 class PeptideTrainer(Trainer):
     """
     Custom Trainer class with overridden methods.
-
-
     """
+    def __init__(self, model: Union[PreTrainedModel, nn.Module]=None, args: PeptideTrainingArguments = None, **kwargs):
+        """
+        Needed so we don't get type hint Errors from the Trainer Class not recognizing the PeptideTrainingArguments class
+        I see no further init logic so far
+        """
+        super().__init__(model=model, args=args, **kwargs)
+        self.args = args
+        # Additional initialization if needed
 
-    def _save(self, output_dir: str):
+    def _save(self, output_dir: Optional[str] = None, state_dict=None):
         """
         We constantly got the error message "RuntimeError: input is not contiguous" when saving the model. That's a Quickfix here
 
         Args:
-            output_dir (str): The output directory where the model should be saved.
+            output_dir (Optional[str]): The directory where the model should be saved.
+            state_dict: The state_dict to save. If None, the model's state_dict is saved.
         """
         # Ensure that all model parameters are contiguous before saving
         for param in self.model.parameters():
             if not param.is_contiguous():
                 param.data = param.contiguous()
-        super()._save(output_dir)
+        super()._save(output_dir=output_dir, state_dict=state_dict)
 
     def log(self, logs):
         """
@@ -49,7 +60,7 @@ class PeptideTrainer(Trainer):
 
     def create_optimizer_and_scheduler(self, num_training_steps: int):
         """
-        Create the optimizer and learning rate scheduler.
+        Create an AdamW optimizer and a ReduceLROnPlateau scheduler for the Training Pipeline.
         """
 
         # TODO make this dynamically to switch to default by invoking super() method if i want to change stuff later example adam with weight decay

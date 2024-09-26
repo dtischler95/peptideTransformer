@@ -1,9 +1,5 @@
-import warnings
 import sys
-import os
-
-# Add the src directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
+import warnings
 
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
@@ -17,7 +13,7 @@ import logging
 from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
 from src.fine_tune.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments
-from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import MetricLogCallback
+from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -28,8 +24,6 @@ def fine_tune(binary_or_mlm: str,
               show_encoding: bool = False):
     """
     Fine-tunes the model on the hemo dataset, should contain basic functionality for fine-tuning
-    Also includes the next sentence prediction, but can be turned off. I'm not sure if the next sentence prediction
-    is actually needed for prediction on peptide sequences, but it is included here for completeness.
 
     Script adapted from https://github.com/huggingface/transformers/blob/main/examples/pytorch/token-classification/run_ner.py
 
@@ -43,8 +37,6 @@ def fine_tune(binary_or_mlm: str,
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
                       Can be set to 'binary' or 'mlm'
     :param show_encoding: if the encoding of the vocabulary should be shown
-
-    :return:
     """
 
     # --------------------- Setup logging and configs ---------------------
@@ -55,9 +47,12 @@ def fine_tune(binary_or_mlm: str,
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
+    # load training params into PeptideTrainingArguments class. Adjust if we need other params
     training_args = load_training_arguments(config_file='fine_tune_config.yaml',
-                                            training_type=binary_or_mlm)
+                                            training_type=binary_or_mlm,
+                                            logger=logger)
 
+    # logging logging logging
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
     enable_default_handler()
@@ -68,7 +63,8 @@ def fine_tune(binary_or_mlm: str,
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}, "
         + f"distributed training: {training_args.parallel_mode.value == 'distributed'}"
     )
-    logger.info(f"Training/evaluation parameters {training_args}")
+
+
 
     # --------------------- Prepare tokenizer and datasets ---------------------
 
@@ -78,7 +74,8 @@ def fine_tune(binary_or_mlm: str,
                                                                            show_encoding=show_encoding,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
-                                                                           max_length=training_args.max_length)
+                                                                           max_length=training_args.max_length,
+                                                                           logger=logger)
 
     # --------------------- Prepare model and trainer ---------------------
 
@@ -101,7 +98,8 @@ def fine_tune(binary_or_mlm: str,
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
 
-    # Initialize the Trainer class
+    # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
+    # configured PeptideTrainingArguments class is provided
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above
@@ -109,35 +107,30 @@ def fine_tune(binary_or_mlm: str,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         compute_metrics=binary_metrics if binary_or_mlm == 'binary' else mlm_metrics,
+        # calculate metrics based on the task
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
-        callbacks=[MetricLogCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm)]
+        callbacks=[LearningCurveCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm)]
     )
 
+    # --------------------- Train, evaluate and predict ---------------------
     if training_args.do_train:
-        logger.info("*** Train ***")
-
         trainer.train()
 
         # TODO MCC !!!
 
-        # params seems not to be contiguous, so we need to make them contiguous
         trainer.save_model(training_args.model_save_path)
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
-        logger.info("*** Evaluate ***")
         eval_result = trainer.evaluate()
         logger.info(eval_result)
-        logger.info("*** Evaluation finished ***")
 
     if training_args.do_predict:
-        logger.info("*** Predict ***")
         predictions = trainer.predict(test_dataset)
-        print(predictions)
+        print(predictions[0])
         # TODO Find a cool representation for the predictions
         # logger.info(predictions.predictions)
-        logger.info("*** Prediction finished ***")
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import pandas as pd
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
 import yaml
+import logging
 from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.fine_tune.PeptideBERTClasses.PeptideDataset import PeptideDataset
 
@@ -10,6 +11,7 @@ def prepare_datasets(binary_or_mlm: str,
                      drop_duplicates: bool,
                      show_encoding: bool,
                      train_file: str,
+                     logger: logging.Logger,
                      ignore_leakage: bool = False,
                      max_length:int=36) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
@@ -24,18 +26,17 @@ def prepare_datasets(binary_or_mlm: str,
     :param drop_duplicates: if duplicated sequences should be dropped
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param train_file: path to the training data
+    :param logger: logger for logging
     :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
     :param max_length: Maximum length for padding/truncation.
 
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
     # Load the data
-    # Extract to method if I want to pipe binary and mlm fine-tuning
     df = pd.read_csv(train_file, sep=';')
     # Drop duplicates only if you explicitly want to
     df = df.drop_duplicates(subset=['sequence']) if drop_duplicates else df
     # Split the data into training, validation and test sets
-    # TODO Create Accuracy Validation for Testdata
     df_train, df_val_handler = train_test_split(df, test_size=0.2)
     df_val, df_test = train_test_split(df_val_handler, test_size=0.5)
 
@@ -57,10 +58,13 @@ def prepare_datasets(binary_or_mlm: str,
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
 
+    # Important Data Leakage Check
+    # TODO I may collect leaked datapoints an return them to the training data for more train data
     check_data_loader_for_leakage(train_data_loader=train_dataset,
                                   val_data_loader=val_dataset,
                                   test_data_loader=test_dataset,
-                                  ignore_leakage=ignore_leakage)
+                                  ignore_leakage=ignore_leakage,
+                                  logger=logger)
 
     return tokenizer, train_dataset, val_dataset, test_dataset
 
@@ -118,17 +122,21 @@ def dummy_data_loader(train_file: str, number_of_data_to_use: int = 1000) -> tup
 def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
                                   val_data_loader: PeptideDataset or None,
                                   test_data_loader: PeptideDataset or None,
+                                  logger: logging.Logger,
                                   decoded_input: bool = False,
                                   ignore_leakage: bool = False):
     """
     Function that can be imported in other scripts to check for data leakage between the data loaders.
     Raises a ValueError if data leakage is detected.
 
+    PeptideDataset is a class that inherits from the transformers useful Dataset class.
+
     Use decoded_input=True if the input is decoded like in whitelab's data case.
 
     :param train_data_loader: Training data loader
     :param val_data_loader: Validation data loader
     :param test_data_loader: Test data loader
+    :param logger: Logger for logging
     :param decoded_input: If the input is decoded or not. Default is False.
     :param ignore_leakage: If the leakage should be ignored. Default is False.
     """
@@ -151,46 +159,58 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
     train_test_leakage = set(train_sequences) & set(test_sequences)
     val_test_leakage = set(val_sequences) & set(test_sequences)
 
-    print(f"Number of Training Data Points: {len(train_sequences)}")
-    print(f"Number of Validation Data Points: {len(val_sequences)}")
-    print(f"Number of Test Data Points: {len(test_sequences)}\n")
+    logger.info(f"Number of Training Data Points: {len(train_sequences)}")
+    logger.info(f"Number of Validation Data Points: {len(val_sequences)}")
+    logger.info(f"Number of Test Data Points: {len(test_sequences)}\n")
 
     if len(train_test_leakage) or len(train_val_leakage) or len(val_test_leakage) > 0:
-        # TODO print from sys.stderr
-        print("\n-------------- Data Leakage Detected --------------\n")
+        logger.warning("\n-------------- Data Leakage Detected --------------\n")
 
         if len(train_val_leakage) > 0:
-            print(f"Number of data Points leaked in Training and Validation Data: {len(train_val_leakage)}\n")
+            logger.warning(f"Number of data Points leaked in Training and Validation Data: {len(train_val_leakage)}\n")
         if len(train_test_leakage) > 0:
-            print(f"Number of data Points leaked in Training and Test Data: {len(train_test_leakage)}\n")
+            logger.warning(f"Number of data Points leaked in Training and Test Data: {len(train_test_leakage)}\n")
         if len(val_test_leakage) > 0:
-            print(f"Number of data Points leaked in Validation and Test Data: {len(val_test_leakage)}\n")
+            logger.warning(f"Number of data Points leaked in Validation and Test Data: {len(val_test_leakage)}\n")
 
-        print("\n-------------- Data Leakage Detected --------------\n")
+        logger.warning("\n-------------- Data Leakage Detected --------------\n")
         if not ignore_leakage:
             raise ValueError("Data Leakage Detected! Please recheck your data preprocessing steps.")
     else:
-        print("\n-------------- No Data Leakage Detected --------------\n")
+        logger.info("\n-------------- No Data Leakage Detected --------------\n")
 
 
 def data_leakage_wrapper():
     """
     cleaner dummy data use for testing data leakage.
-    Just a wrapper for the data leakage check.
+    Just a wrapper for testing the data leakage check.
     """
 
     train_data_loader, val_data_loader, test_data_loader = dummy_data_loader(
         train_file='../../data/train_data/our_hemo_labeled.csv',
         number_of_data_to_use=1000)
 
-    check_data_loader_for_leakage(None, val_data_loader, test_data_loader)
+    check_data_loader_for_leakage(train_data_loader=None,
+                                  val_data_loader=val_data_loader,
+                                  test_data_loader=test_data_loader,
+                                  logger=logging.Logger(name="debug_logger"))
 
 
-def load_training_arguments(config_file: str, training_type: str) -> PeptideTrainingArguments:
+def load_training_arguments(config_file: str, training_type: str, logger: logging.Logger) -> PeptideTrainingArguments:
+    """
+    Function to load the training arguments from a config file for the given training type.
+    The training type is used to select the correct training arguments from the config file.
+    Training Configuration will be logged.
+    """
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
     training_args_dict = config['training_arguments'][training_type]
+
+    # more logging, we all love logging
+    logger.info("Set Parameters for this training run:")
+    for k, v in training_args_dict.items():
+        logger.info(f"  {k}: {v}")
 
     return PeptideTrainingArguments(**training_args_dict)
 

@@ -3,12 +3,11 @@ import matplotlib.pyplot as plt
 import os
 
 
-class MetricLogCallback(TrainerCallback):
+class LearningCurveCallback(TrainerCallback):
     """
     Custom Callback class for pretty logging and creating learning curves for accuracy and loss metrics during training and evaluation.
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
-
     def __init__(self, plot_dir='plot', interval=1, task_name='no_task_name_provided'):
         self.plot_dir = plot_dir
         self.interval = interval
@@ -74,4 +73,8 @@ class MetricLogCallback(TrainerCallback):
 
 
 class CurriculumLearningCallback(TrainerCallback):
+    """
+    Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
+    A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
+    """
     ...
