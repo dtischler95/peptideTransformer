@@ -10,7 +10,7 @@ training_arguments:
     weight_decay: 0.01
     logging_dir: './logs'
     logging_strategy: 'epoch'
-    evaluation_strategy: 'epoch'
+    eval_strategy: 'epoch'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
@@ -39,7 +39,7 @@ training_arguments:
     weight_decay: 0.01
     logging_dir: './logs'
     logging_strategy: 'epoch'
-    evaluation_strategy: 'epoch'
+    eval_strategy: 'epoch'
     log_level: 'info'
     seed: 42
     dataloader_drop_last: false
