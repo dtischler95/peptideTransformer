@@ -128,7 +128,7 @@ def fine_tune(binary_or_mlm: str,
 
     if training_args.do_train:
         logger.info("*** Train ***")
-        # TODO May implement ReduceLROnPlateau, but need to step manually since Trainer class does not support it natively
+
         trainer.train()
 
         # TODO MCC !!!
@@ -154,7 +154,7 @@ def fine_tune(binary_or_mlm: str,
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              train_file="../../data/train_data/train_test_data.csv",  # Path to the training data
+              train_file="../../data/train_data/starpep_sequences.csv",  # Path to the training data
               model_path='Rostlab/prot_bert_bfd',  # Path to the model. Local path or HuggingFace Repository
               model_save_path='../first_mlm_BERT',  # Path to save the model
               plot_path='../../plots',  # Path to save the plots
