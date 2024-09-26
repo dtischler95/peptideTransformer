@@ -67,3 +67,7 @@ data/out/
 dangerzone/
 peptideBERT/
 
+# Model save folders, since models should not be saved in git
+*/mlm_bert/*
+*/binary_bert/*
+
