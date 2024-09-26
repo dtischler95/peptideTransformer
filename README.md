@@ -20,7 +20,7 @@
 - [ ] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
 
 #### Training
-- [ ] Implement reduceLROnPlateau
+- [X] Implement ReduceLROnPlateau
 - [x] Implement MLM training
 - [x] Train StarPep MLMBert 
   - [ ] Does it make sense to successively increase masked tokens while training?
