@@ -3,6 +3,7 @@
 - NOTE! PeptideBERT seems to overfit due to data leakage. Binary Classifier seems to bias 100% one class with droped duplicates
 
 ### To-Do
+- [ ] Rename PeptideBERTClasses Folder to smth else
 - [ ] Think of cool Project Name
 - [x] Modularize the code for better usage
   - [x] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
