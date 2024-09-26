@@ -193,9 +193,9 @@ def load_training_arguments(config_file: str, training_type: str, use_cpu: bool 
     training_args_dict = config['training_arguments'][training_type]
     training_args_dict['use_cpu'] = use_cpu
 
-    from transformers import TrainingArguments
+    from src.fine_tune.PeptideTrainingArguments import PeptideTrainingArguments
 
-    return TrainingArguments(**training_args_dict)
+    return PeptideTrainingArguments(**training_args_dict)
 
 def check_directory(paths: list[str] or str):
     paths_to_check = [paths] if type(paths) == str else paths

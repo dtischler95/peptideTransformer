@@ -7,7 +7,6 @@ training_arguments:
     num_train_epochs: 50
     per_device_train_batch_size: 128
     per_device_eval_batch_size: 128
-    warmup_steps: 500
     weight_decay: 0.01
     logging_dir: './logs'
     logging_strategy: 'epoch'
@@ -16,13 +15,12 @@ training_arguments:
     seed: 42
     dataloader_drop_last: false
     dataloader_num_workers: 1
-    optim: 'adamw_torch'
-    lr_scheduler_type: 'linear'
     learning_rate: 0.00005
-  binary_reducer:
-    patience: 4
-    factor: 0.1
-    min_lr: 1e-7
+    lro_patience: 4
+    lro_factor: 0.1
+    lro_min_lr: 1e-7
+    lro_mode: 'min'
+    metric_for_best_model : 'loss'
   mlm:
     do_train: true
     do_eval: true
@@ -31,7 +29,6 @@ training_arguments:
     num_train_epochs: 2000
     per_device_train_batch_size: 128
     per_device_eval_batch_size: 128
-    warmup_steps: 1000
     weight_decay: 0.01
     logging_dir: './logs'
     logging_strategy: 'epoch'
@@ -40,10 +37,9 @@ training_arguments:
     seed: 42
     dataloader_drop_last: false
     dataloader_num_workers: 1
-    optim: 'adamw_torch'
-    lr_scheduler_type: 'linear'
     learning_rate: 0.00005
-  mlm_reducer:
-    patience: 4
-    factor: 0.1
-    min_lr: 1e-7
+    lro_patience: 10
+    lro_factor: 0.1
+    lro_min_lr: 1e-7
+    lro_mode: 'min'
+    metric_for_best_model : 'loss'

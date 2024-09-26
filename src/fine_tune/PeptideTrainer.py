@@ -1,4 +1,6 @@
 from transformers import Trainer
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class PeptideTrainer(Trainer):
@@ -44,3 +46,19 @@ class PeptideTrainer(Trainer):
 
         # Call the original log method to ensure other logging mechanisms are still in place
         super().log(logs)
+
+    def create_optimizer_and_scheduler(self, num_training_steps: int):
+        """
+        Create the optimizer and learning rate scheduler.
+        """
+
+        # TODO make this dynamically to switch to default by invoking super() method if i want to change stuff later example adam with weight decay
+        if self.optimizer is None:
+            self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate)
+
+        if self.lr_scheduler is None:
+            self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
+                                                  mode=self.args.lro_mode,
+                                                  factor=self.args.lro_factor,
+                                                  patience=self.args.lro_patience,
+                                                  min_lr=self.args.lro_min_lr)
