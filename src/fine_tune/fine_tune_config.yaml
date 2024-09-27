@@ -50,7 +50,7 @@ training_arguments:
     lro_min_lr: 0.0000001
     lro_mode: 'min'
     metric_for_best_model : 'loss'
-    train_file: '../../data/train_data/starpep_sequences.csv'
+    train_file: '../../data/train_data/train_test_data.csv'
     model_path: 'Rostlab/prot_bert_bfd'
     model_save_path: '../mlm_BERT'
     plot_path: '../../plots'
