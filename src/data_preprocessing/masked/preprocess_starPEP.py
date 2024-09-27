@@ -1,8 +1,8 @@
 import pandas as pd
-from .preprocess_utils import load_and_filter_data
+from src.data_preprocessing.preprocess_utils import load_and_filter_data
 
 
-def extract_starpep_data(file_path: str = '../data/general_peptides.fasta'):
+def extract_starpep_data(file_path: str = '../../../data/data_from_database/general_peptides.fasta'):
     """
     Filter the data from StarPEP database and save it to a csv file.
     This data contains a set of bioactive Peptides and is used here for pretrain the BERT model.
@@ -28,7 +28,7 @@ def extract_starpep_data(file_path: str = '../data/general_peptides.fasta'):
     df = load_and_filter_data(pd.DataFrame(data=starpep_data, columns=['sequence']))
 
     # Save data to csv file
-    df.to_csv("../data/train_data/starpep_sequences.csv", index=False)
+    df.to_csv("../../../data/train_data/starpep_sequences.csv", index=False)
 
 
 if __name__ == '__main__':
