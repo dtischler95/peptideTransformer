@@ -28,6 +28,7 @@
 - [x] Need datafile with and without filtered ambiguous sequences * Function now accepts bool
 - [x] Check for data leakage in Train Data
 - [x] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
+- [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
 
 #### Training
 - [X] Implement ReduceLROnPlateau
