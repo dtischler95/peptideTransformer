@@ -15,6 +15,7 @@
 - [ ] Reseach python package how to. Do i really need to make a setup.py?? Script still not easily runnable on cluster
 - [ ] Found nan in mlm train log on some loss metrics. do i calculate loss the right way?
   - [ ] Whats protBERTs stats on mlm accuracy?? Is protBERT rly that good?
+- [ ] Think of using more GPUs
 
 #### Data
 - [x] Think of better DataFolder Structure
