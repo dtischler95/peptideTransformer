@@ -8,6 +8,7 @@
 - [x] Modularize the code for better usage
   - [x] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
 - [x] Move all parameters to fine_tune_config.yaml and change load_training_args function
+- [ ] Implement Path to avoid annoying path problems
 
 #### Data
 - [x] Think of better DataFolder Structure
