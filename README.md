@@ -37,6 +37,7 @@
 
 #### Training
 - [X] Implement ReduceLROnPlateau
+  - [ ] Does it really work?
 - [x] Implement MLM training
 - [ ] Train StarPep MLMBert 
   - [x] Get more Peptide Data for Training
