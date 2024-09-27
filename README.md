@@ -55,6 +55,8 @@
     - `src/`: Contains different packages for Training PeptideBERT. 
       - `data_analysis/`: Package for analyzing the data. Clustering and Data Inspection implemented so far
       - `data_preprocessing/`: Package for preprocessing the data our way and also preperation of Whitelab data
+        - `binary/`: Package for preprocessing the data for binary classification
+        - `masked/`: Package for preprocessing the data for MLM
       - `fine_tune/`: Package for fine-tuning the model. So far Binary Classification and MLM implemented
         - `PeptideBERTClasses/`: Contains the classes for the PeptideBERT [training pipeline](https://github.com/huggingface/transformers). 
         - `fine_tune_protBERT.py`: Entry Module for Logic
