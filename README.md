@@ -1,6 +1,7 @@
 ## Fine Tune ProtBERT for Peptide tasks
 
 - NOTE! PeptideBERT seems to overfit due to data leakage. Binary Classifier seems to bias 100% one class with droped duplicates
+- Reminder for me. When pushing git lfs obejcts on windows, first log in to ssh-agent with start-ssh-agent.cmd
 
 ### To-Do
 - [x] Rename PeptideBERTClasses Folder to smth else
