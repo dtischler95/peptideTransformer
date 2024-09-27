@@ -36,7 +36,7 @@
 - [ ] is there a way to collected leaked data and put them into train data?
 
 #### Evaluation
-- [ ] Think of Evaluation Pipeline
+- [ ] Think of Evaluation Pipeline, do i really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
 - [ ] Change Polars usage in hemo_clustering to pandas
 - [ ] Add Evaluation Jupyter Notebook
 
