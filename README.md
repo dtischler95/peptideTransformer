@@ -5,11 +5,9 @@
 - model really running on gpu? what does cuda:0 n_gpu:1 mean?
 
 ### To-Do
-- [x] Rename PeptideBERTClasses Folder to smth else
 - [ ] Think of cool Project Name
 - [x] Modularize the code for better usage
   - [x] I'm to fkn stupid for those import shit. Its working locally but on cluster I still need add to path
-- [x] Move all parameters to fine_tune_config.yaml and change load_training_args function
 - [x] Implement Path to avoid annoying path problems
   - [ ] Research pathlib. can i do some more cool and convenient stuff?
 - [ ] Reseach python package how to. Do i really need to make a setup.py?? Script still not easily runnable on cluster
@@ -28,9 +26,6 @@
   - [ ] Add data to Train Dataset
     - [x] Added Data to Masked LM. We now have roundabout ~4 Million non bioactive peptides and 40k Bioactive ones
     - [ ] Add more Bioactive Peptides for binary classification
-- [x] Need datafile with and without filtered ambiguous sequences * Function now accepts bool
-- [x] Check for data leakage in Train Data
-- [x] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
 - [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
 - [ ] Think of removing Peptides that scores too similar with scoring tools for Peptide Sequences
   - [ ] Research Scoring Tools for Peptides. Rn i don't recall the name 
@@ -43,8 +38,6 @@
   - [x] Get more Peptide Data for Training
   - [x] Does it make sense to successively increase masked tokens while training?
     - [ ] RESEARCH CURRICULUM LEARNING !!
-- [x] Refactor src Folder
-- [x] Look after max_length parameter
 - [ ] Add Jupyter Notebook for Training
 - [ ] is there a way to collected leaked data and put them into train data?
 
