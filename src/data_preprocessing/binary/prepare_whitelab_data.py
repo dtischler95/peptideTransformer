@@ -47,7 +47,6 @@ def write_sequences_to_list(file_name: str, sequences: np.ndarray, tokenizer: Be
     :param file_name: Name of the output file
     :param sequences: Array of encoded sequences
     :param tokenizer: Tokenizer for decoding the sequences
-    :param to_file: Flag to write the decoded sequences to a file
     :return: DataFrame containing decoded sequences
     """
 
@@ -82,7 +81,7 @@ def format_whitelab_sequences(df: pd.DataFrame, outfile_name: str, special_token
 
     # Convert to DataFrame and save to CSV
     result_df = pd.DataFrame(unique_sequences.items(), columns=['sequence', 'count'])
-    result_df.to_csv(os.path.join(BASE_DIR, f"../../../data/whitelab_data/{outfile_name}_formatted.csv"), sep=';', index=False)
+    result_df.to_csv(os.path.join(BASE_DIR, f"../../../data/data_for_data_viewer/{outfile_name}_formatted.csv"), sep=';', index=False)
 
     if verbose:
         for seq, count in unique_sequences.items():

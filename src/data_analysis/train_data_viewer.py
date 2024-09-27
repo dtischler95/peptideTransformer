@@ -2,23 +2,34 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-# TODO Move DFs to Signature, since this compare two Data Sets no matter if its whitelab data
 # TODO COMPLETE REFACTOR! First Markdown makes sense, but for secend i need to remove the ambigous data first
 
-def get_overall_stats():
+def get_overall_stats(our_positive_path: str,
+                      our_negative_path: str,
+                      positive_to_compare_path: str,
+                      negative_to_compare_path: str,
+                      plot_path: str,
+                      out_path: str):
     """
     Basic algorithm to compare a column of four different datasets and the occurrences of entries between each other
     Used here to get insights of the used sequences in our and whitelabs positive and negative data for
     hemolytic peptides.
 
     File Paths are fixed and should be changed if the data is moved
+
+    :param our_positive_path: path to our positive data
+    :param our_negative_path: path to our negative data
+    :param positive_to_compare_path: path to whitelab positive data
+    :param negative_to_compare_path: path to whitelab negative data
+    :param plot_path: path to save the plots
+    :param out_path: path to save the output files.
     """
 
     # Load our and whitelabs positive and negative data
-    our_positive_df = pd.read_csv('../../data/data_for_data_viewer/our_positive.csv', sep=';')
-    our_negative_df = pd.read_csv('../../data/data_for_data_viewer/our_negative.csv', sep=';')
-    whitelab_negative_df = pd.read_csv('../../data/whitelab_data/whitelab_data_negative_formatted.csv', sep=';')
-    whitelab_positive_df = pd.read_csv('../../data/whitelab_data/whitelab_data_positive_formatted.csv', sep=';')
+    our_positive_df = pd.read_csv(our_positive_path, sep=';')
+    our_negative_df = pd.read_csv(our_negative_path, sep=';')
+    whitelab_negative_df = pd.read_csv(negative_to_compare_path, sep=';')
+    whitelab_positive_df = pd.read_csv(positive_to_compare_path, sep=';')
 
     our_positive_percent, our_negative_percent, whitelab_positive_percent, whitelab_negative_percent = analyse_ambiguous_labeled_sequences_tabular(
         negative_df_our=our_negative_df,
@@ -27,17 +38,15 @@ def get_overall_stats():
         positive_df_whitelab=whitelab_positive_df)
 
     # Plot the relation between the positive and negative data
-    plot_data_relation(x_data=['Positive', 'Negative'],
-                       y_data1=[our_positive_percent, our_negative_percent],
-                       y_data2=[whitelab_positive_percent, whitelab_negative_percent],
-                       dataset_info1='Our Data',
-                       dataset_info2='Whitelab Data')
+    plot_data_relation(x_data=['Positive', 'Negative'], y_data1=[our_positive_percent, our_negative_percent],
+                       y_data2=[whitelab_positive_percent, whitelab_negative_percent], data1_name='Our_Data',
+                       data2_name='Whitelab_Data', plot_path=plot_path, tag="Pos_Neg_distribution")
 
     # Get the common and uncommon sequences between our data and whitelab data and stats about the specific datafiles
     our_percent_uncommon_positive, whitelab_percent_uncommon_positive, our_percent_common_positive, whitelab_percent_common_positive = compare_sequence_occurrences_between_datasets_tabular(
-        our_data=our_positive_df, whitelab_data=whitelab_positive_df, dataset_info='Positive Data')
+        our_data=our_positive_df, whitelab_data=whitelab_positive_df, dataset_info='Positive_Data', out_path=out_path)
     our_percent_uncommon_negative, whitelab_percent_uncommon_negative, our_percent_common_negative, whitelab_percent_common_negative = compare_sequence_occurrences_between_datasets_tabular(
-        our_data=our_negative_df, whitelab_data=whitelab_negative_df, dataset_info='Negative Data')
+        our_data=our_negative_df, whitelab_data=whitelab_negative_df, dataset_info='Negative_Data', out_path=out_path)
 
     # Plot the relation between the common and uncommon sequences
     plot_data_relation(x_data=['Our_common', 'Whitelab_common', 'Our_uncommon', 'Whitelab_uncommon'],
@@ -45,8 +54,8 @@ def get_overall_stats():
                                 our_percent_uncommon_positive, whitelab_percent_uncommon_positive],
                        y_data2=[our_percent_common_negative, whitelab_percent_common_negative,
                                 our_percent_uncommon_negative, whitelab_percent_uncommon_negative],
-                       dataset_info1='Positive Data',
-                       dataset_info2='Negative Data')
+                       data1_name='Positive Data', data2_name='Negative Data', plot_path=plot_path,
+                       tag="Uncommon_Common_distribution")
 
 
 def analyse_ambiguous_labeled_sequences_tabular(negative_df_our: pd.DataFrame, positive_df_our: pd.DataFrame,
@@ -113,8 +122,10 @@ def _calc_statistics(negative_df, positive_df):
     return ambiguous_sequences_df, data_sum, negative_percent, positive_percent, positives_that_are_in_negatives
 
 
-def compare_sequence_occurrences_between_datasets_tabular(our_data: pd.DataFrame, whitelab_data: pd.DataFrame,
-                                                          dataset_info: str) -> (
+def compare_sequence_occurrences_between_datasets_tabular(our_data: pd.DataFrame,
+                                                          whitelab_data: pd.DataFrame,
+                                                          dataset_info: str,
+                                                          out_path: str) -> (
         float, float, float, float):
     """
     Get the common sequences between our data and whitelab data, and calculate the percentage of common sequences
@@ -122,6 +133,7 @@ def compare_sequence_occurrences_between_datasets_tabular(our_data: pd.DataFrame
     :param our_data: dataframe with our data
     :param whitelab_data: dataframe with whitelab data
     :param dataset_info: name of the dataset
+    :param out_path: path to save the files
 
     :return: percentage of unique sequences in our and whitelab data
     """
@@ -156,26 +168,34 @@ def compare_sequence_occurrences_between_datasets_tabular(our_data: pd.DataFrame
     print(df.to_markdown() + '\n')
 
     # print sequences in common sequences to file
-    print_set_to_file(sequences=common_sequences, dataset_info=dataset_info, file_tag='common_sequences')
+    print_set_to_file(sequences=common_sequences, dataset_info=dataset_info, file_tag='common_sequences', out_path=out_path)
     print_set_to_file(sequences=our_not_common_sequences, dataset_info=dataset_info,
-                      file_tag='our_not_common_sequences')
+                      file_tag='our_not_common_sequences', out_path=out_path)
     print_set_to_file(sequences=whitelab_not_common_sequences, dataset_info=dataset_info,
-                      file_tag='whitelab_not_common_sequences')
+                      file_tag='whitelab_not_common_sequences', out_path=out_path)
 
     return our_percent_uncommon, whitelab_percent_uncommon, our_percent_common, whitelab_percent_common
 
 
-def plot_data_relation(x_data, y_data1, y_data2, dataset_info1: str, dataset_info2: str):
+def plot_data_relation(x_data,
+                       y_data1,
+                       y_data2,
+                       data1_name: str,
+                       data2_name: str,
+                       plot_path: str,
+                       tag: str):
     """
     plots the relation between two datasets
 
-    :param x_data: x axis data
-    :param y_data1: y axis data for dataset 1
-    :param y_data2: y axis data for dataset 2
-    :param dataset_info1: name of the first dataset
-    :param dataset_info2: name of the second dataset
+    :param x_data: x_axis data
+    :param y_data1: y_axis data for dataset 1
+    :param y_data2: y_axis data for dataset 2
+    :param data1_name: name of the first dataset
+    :param data2_name: name of the second dataset
+    :param plot_path: path to save the plot
+    :param tag: tag for the plot
     """
-
+    # TODO REFACTOR GRAPHS LAYOUT AND STUFF
     if len(y_data1) == 4:
         y_data1.insert(2, 0.0)
         y_data2.insert(2, 0.0)
@@ -187,7 +207,7 @@ def plot_data_relation(x_data, y_data1, y_data2, dataset_info1: str, dataset_inf
     bars1 = plt.bar(x_data, y_data1)
     plt.xlabel('Positive Data')
     plt.ylabel('Percent of Sequences')
-    plt.title(f"Percent of Sequences in {dataset_info1}")
+    plt.title(f"Percent of Sequences in {data1_name}")
     plt.xticks(rotation=45)
     write_value_on_bars(bars1)
 
@@ -196,12 +216,14 @@ def plot_data_relation(x_data, y_data1, y_data2, dataset_info1: str, dataset_inf
     bars2 = plt.bar(x_data, y_data2)
     plt.xlabel('Negative Data')
     plt.ylabel('Percent of Sequences')
-    plt.title(f"Percent of Sequences in {dataset_info2}")
+    plt.title(f"Percent of Sequences in {data2_name}")
     plt.xticks(rotation=45)
     write_value_on_bars(bars2)
 
     plt.tight_layout()
-    plt.savefig(f'../plots/{dataset_info1}_{dataset_info2}_relation.png')
+    plt.savefig(f'{plot_path}{tag}_{data1_name}_{data2_name}_relation.png')
+    plt.show()
+    plt.close()
 
 
 def write_value_on_bars(bars):
@@ -216,18 +238,24 @@ def write_value_on_bars(bars):
             plt.text(bar.get_x() + bar.get_width() / 2, yval, round(yval, 2), ha='center', va='bottom')
 
 
-def print_set_to_file(sequences: set, dataset_info: str, file_tag: str):
+def print_set_to_file(sequences: set, dataset_info: str, file_tag: str, out_path: str):
     """
     Prints a set of sequences to a file
 
     :param sequences: set of sequences
     :param dataset_info: name of the dataset
     :param file_tag: tag for the file
+    :param out_path: path to save the
     """
-    with open(f'../data/sequence_analysis/{dataset_info}_{file_tag}.txt', 'w') as f:
+    with open(f'{out_path}{dataset_info}_{file_tag}.txt', 'w') as f:
         for seq in sequences:
             f.write(seq + '\n')
 
 
 if __name__ == '__main__':
-    get_overall_stats()
+    get_overall_stats(our_negative_path='../../data/data_for_data_viewer/our_negative.csv',
+                      our_positive_path='../../data/data_for_data_viewer/our_positive.csv',
+                      negative_to_compare_path='../../data/data_for_data_viewer/whitelab_data_negative_formatted.csv',
+                      positive_to_compare_path='../../data/data_for_data_viewer/whitelab_data_positive_formatted.csv',
+                      plot_path='../../plots/',
+                      out_path='../../data/sequence_analysis/')

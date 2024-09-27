@@ -284,9 +284,12 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
     I tried to be as general as possible, but some of our data needs to be handled specifically.
 
     :param data_paths: Paths to the data files containing the hemolytic activity data.
-    :param out_path: Path to the output directory.
+    :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param filter_sequences: Flag to filter ambiguous sequences based on the majority label.
     """
+
+    out_path_train_file = out_path + 'train_data/our_hemo_labeled.csv'
+    out_path_splitted_file = out_path + 'data_for_data_viewer/'
 
     data_df_list = []
     for file_path in data_paths:
@@ -350,7 +353,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
     result_df = df_raw_hemo[['sequence', 'label']]
 
     # Split the data into positive and negative sequences for later analysis
-    split_positive_and_negative(data=result_df, to_file=True, out_path=out_path)
+    split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
 
     if filter_sequences:
         # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
@@ -358,7 +361,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
     else:
         # If you dont want to filter ambiguous sequences, just save the data
         print("Skipping filtering of ambiguous sequences.")
-        result_df.to_csv('../../../data/train_data/our_hemo_labeled.csv', sep=';', index=False)
+        result_df.to_csv(out_path_train_file, sep=';', index=False)
 
 
 if __name__ == '__main__':
@@ -370,5 +373,5 @@ if __name__ == '__main__':
     dbaasp_db = '../../../data/data_from_database/dbaasp_scraped.csv'
 
     parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
-                                   out_path='../../../data/data_for_data_viewer/',
+                                   out_path='../../../data/',
                                    filter_sequences=False)
