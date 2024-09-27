@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import re
 from peptides import Peptide as Pep
-from .preprocess_utils import load_and_filter_data, split_positive_and_negative, filter_and_evaluate_ambiguous_sequences
-
+from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
+    filter_and_evaluate_ambiguous_sequences
 
 
 def get_filtered_and_combined_dataframe(dataframes: list[pd.DataFrame]) -> pd.DataFrame:
@@ -22,16 +22,15 @@ def get_filtered_and_combined_dataframe(dataframes: list[pd.DataFrame]) -> pd.Da
     # Load the data first. If new data is added, add it here.
 
     if not dataframes:
-        raise ValueError('No dataframes provided. Please provide the dataframes containing the data from the databases.')
+        raise ValueError(
+            'No dataframes provided. Please provide the dataframes containing the data from the databases.')
 
     df_to_concat = []
     for df in dataframes:
-
         # Filter Sequences by seq_length and Ambiguous Amino Acids
         df = load_and_filter_data(df)
         df = df[['sequence', 'measure_type', 'activity']]
         df_to_concat.append(df)
-
 
     # Concatenate the dataframes and select only the relevant columns
     df = pd.concat(df_to_concat)
@@ -278,25 +277,21 @@ def give_label_by_threshold(x):
         return 0
 
 
-def parse_and_label_hemolytic_data(*data_paths: str, filter_sequences: bool = False):
+def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_sequences: bool = False):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
     This function is specific for our data and should be refactored if new data is added.
     I tried to be as general as possible, but some of our data needs to be handled specifically.
 
-    :param our_data: DataFrame containing our labeled data
-    :param whitelab_data: DataFrame containing the Whitelab data
-
-    :param dataframes: Additional Dataframes that should be included in the training data. NO GUARANTEE OF WORKING HERE!
-                            - Bring new Data in our Format and name Columns correctly!
-                            - You may add new cases for column parsing in the split_measure_type function
+    :param data_paths: Paths to the data files containing the hemolytic activity data.
+    :param out_path: Path to the output directory.
+    :param filter_sequences: Flag to filter ambiguous sequences based on the majority label.
     """
 
     data_df_list = []
     for file_path in data_paths:
         data_df = pd.read_csv(file_path, sep=';')
         data_df_list.append(data_df)
-
 
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
 
@@ -355,7 +350,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, filter_sequences: bool = Fa
     result_df = df_raw_hemo[['sequence', 'label']]
 
     # Split the data into positive and negative sequences for later analysis
-    split_positive_and_negative(data=result_df, to_file=True)
+    split_positive_and_negative(data=result_df, to_file=True, out_path=out_path)
 
     if filter_sequences:
         # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
@@ -363,8 +358,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, filter_sequences: bool = Fa
     else:
         # If you dont want to filter ambiguous sequences, just save the data
         print("Skipping filtering of ambiguous sequences.")
-        result_df.to_csv('../data/train_data/our_hemo_labeled.csv', sep=';', index=False)
-
+        result_df.to_csv('../../../data/train_data/our_hemo_labeled.csv', sep=';', index=False)
 
 
 if __name__ == '__main__':
@@ -372,10 +366,9 @@ if __name__ == '__main__':
     # This part is hardcoded since this algorithm is specific for our data
     # This is meant for the preprocessing step
 
-    hemolytik_db = '../data/data_from_database/Hemolytik_scraped.csv'
-    dbaasp_db = '../data/data_from_database/dbaasp_scraped.csv'
+    hemolytik_db = '../../../data/data_from_database/Hemolytik_scraped.csv'
+    dbaasp_db = '../../../data/data_from_database/dbaasp_scraped.csv'
 
     parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
+                                   out_path='../../../data/data_for_data_viewer/',
                                    filter_sequences=False)
-
-

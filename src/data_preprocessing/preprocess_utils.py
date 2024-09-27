@@ -27,7 +27,7 @@ def load_and_filter_data(data: str or pd.DataFrame, sep: str = ';', filter_on_co
     return df
 
 
-def split_positive_and_negative(data: str or pd.DataFrame, to_file: bool = False):
+def split_positive_and_negative(data: str or pd.DataFrame, out_path:str, to_file: bool = False):
     """
     Splits data into positive and negative sequences based on labels.
     Used for our train data only so far
@@ -42,8 +42,8 @@ def split_positive_and_negative(data: str or pd.DataFrame, to_file: bool = False
     negative_df = df[df['label'] == 0].groupby('sequence').size().reset_index(name='count')
 
     if to_file:
-        positive_df.to_csv('../data/data_for_data_viewer/our_positive.csv', sep=';', index=False)
-        negative_df.to_csv('../data/data_for_data_viewer/our_negative.csv', sep=';', index=False)
+        positive_df.to_csv(f'{out_path}our_positive.csv', sep=';', index=False)
+        negative_df.to_csv(f'{out_path}our_negative.csv', sep=';', index=False)
     else:
         return positive_df, negative_df
 
