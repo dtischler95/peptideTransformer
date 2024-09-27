@@ -2,6 +2,7 @@
 
 - NOTE! PeptideBERT seems to overfit due to data leakage. Binary Classifier seems to bias 100% one class with droped duplicates
 - Reminder for me. When pushing git lfs obejcts on windows, first log in to ssh-agent with start-ssh-agent.cmd
+- model really running on gpu? what does cuda:0 n_gpu:1 mean?
 
 ### To-Do
 - [x] Rename PeptideBERTClasses Folder to smth else
@@ -11,25 +12,29 @@
 - [x] Move all parameters to fine_tune_config.yaml and change load_training_args function
 - [x] Implement Path to avoid annoying path problems
   - [ ] Research pathlib. can i do some more cool and convenient stuff?
+- [ ] Reseach python package how to. Do i really need to make a setup.py?? Script still not easily runnable on cluster
 
 #### Data
 - [x] Think of better DataFolder Structure
   - [ ] is it good?
 
 #### Preprocessing
-- [ ] Make data_preprocessing Jupyter Notebook more beautiful
+- [x] Make data_preprocessing Jupyter Notebook more beautiful
+  - [ ] Flesh out get_overall_stats function with more graphs and stats. *binary task* [low prio]
 - [ ] Train_Data_viewer.py -> make sense of statistics 
   - [ ] Add data to Train Dataset
+    - [x] Added Data to Masked LM. We now have roundabout ~4 Million non bioactive peptides and 40k Bioactive ones
+    - [ ] Add more Bioactive Peptides for binary classification
 - [x] Need datafile with and without filtered ambiguous sequences * Function now accepts bool
 - [x] Check for data leakage in Train Data
-- [ ] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
+- [x] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
 
 #### Training
 - [X] Implement ReduceLROnPlateau
 - [x] Implement MLM training
 - [ ] Train StarPep MLMBert 
-  - [ ] Get more Peptide Data for Training
-  - [ ] Does it make sense to successively increase masked tokens while training?
+  - [x] Get more Peptide Data for Training
+  - [x] Does it make sense to successively increase masked tokens while training?
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [x] Refactor src Folder
 - [x] Look after max_length parameter
@@ -37,7 +42,7 @@
 - [ ] is there a way to collected leaked data and put them into train data?
 
 #### Evaluation
-- [ ] Think of Evaluation Pipeline, do i really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
+- [ ] Think of Evaluation Pipeline, do I really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
 - [ ] Change Polars usage in hemo_clustering to pandas
 - [ ] Add Evaluation Jupyter Notebook
 
