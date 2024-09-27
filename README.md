@@ -29,6 +29,8 @@
 - [x] Check for data leakage in Train Data
 - [x] Change signature of get_overall_stats so that dfs are given as argument so i can use it in notebook
 - [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
+- [ ] Think of removing Peptides that scores too similar with scoring tools for Peptide Sequences
+  - [ ] Research Scoring Tools for Peptides. Rn i don't recall the name 
 
 #### Training
 - [X] Implement ReduceLROnPlateau
