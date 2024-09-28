@@ -56,12 +56,12 @@ training_arguments:
     lro_min_lr: 0.0000001
     lro_mode: 'min'
     metric_for_best_model : 'loss'
-    train_file: '../../data/train_data/train_test_data.csv'
+    train_file: '../../data/train_data/mlm_train_data.csv'
     model_path: 'Rostlab/prot_bert_bfd'
     model_save_path: '../mlm_BERT'
     plot_path: '../../plots'
     drop_duplicates: true
-    ignore_leakage: true
+    ignore_leakage: false
     mlm_probability: 0.15
     max_length: 36
     fast_debug_mode: false
