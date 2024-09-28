@@ -5,6 +5,16 @@
 - model really running on gpu? what does cuda:0 n_gpu:1 mean?
 - Could ReduceLROnPlateau be the reason for the nan values in the loss? I may initialize it wrong, it seems to always be at the min value
 
+### Model to Train
+
+- [ ] PeptideBert with data leaked training data
+- [ ] PeptideBert without leaked data
+- [ ] Fine Tune protBERT to peptide Sequences
+  - [ ] Try different trainData sizes [400k, 1kk, 2kk]
+  - [ ] Compare ReduceLROnPlateau and OneCycleLR
+  - [ ] Compare with Curriculum Trained model
+
+
 ### To-Do
 - [ ] Think of cool Project Name
 - [x] Implement Path to avoid annoying path problems
