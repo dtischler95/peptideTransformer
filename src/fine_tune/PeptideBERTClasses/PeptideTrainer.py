@@ -70,9 +70,16 @@ class PeptideTrainer(Trainer):
         if self.lr_scheduler is None:
             # Metric to watch for schedulers is available through training_args.
             # If metric does not start with eval_ it will be automatically appended by the scheduler from the Trainer class
-            self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
-                                                  mode=self.args.lro_mode,
-                                                  factor=self.args.lro_factor,
-                                                  patience=self.args.lro_patience,
-                                                  min_lr=self.args.lro_min_lr)
+            if self.args.scheduler_type == 'ReduceLROnPlateau':
+                self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
+                                                      mode=self.args.lro_mode,
+                                                      factor=self.args.lro_factor,
+                                                      patience=self.args.lro_patience,
+                                                      min_lr=self.args.lro_min_lr)
+            elif self.args.scheduler_type == 'OneCycleLR':
+                # TODO Implement OneCycleLR
+                pass
+            else:
+                raise ValueError(f"Scheduler type {self.args.scheduler_type} not supported. Please choose either "
+                                 f"'ReduceLROnPlateau' or 'OneCycleLR'.")
             self._created_lr_scheduler = True
