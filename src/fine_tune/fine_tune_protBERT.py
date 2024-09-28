@@ -75,7 +75,10 @@ def fine_tune(binary_or_mlm: str,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
                                                                            max_length=training_args.max_length,
-                                                                           logger=logger)
+                                                                           logger=logger,
+                                                                           cut_df_for_faster_debug=training_args.fast_debug_mode,
+                                                                           validation_data_size=training_args.validation_data_size,
+                                                                           test_data_size=training_args.test_data_size)
 
     # --------------------- Prepare model and trainer ---------------------
 
