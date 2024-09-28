@@ -71,6 +71,41 @@ class LearningCurveCallback(TrainerCallback):
         plt.savefig(os.path.join(self.plot_dir, f"{self.task_name}_{self.mode}_learning_curves.png"))
         plt.close()
 
+class EarlyStoppingCallback(TrainerCallback):
+    def __init__(self, patience: int, metric_name: str = "eval_loss", mode: str = "min"):
+        """
+        Callback Class for early stopping based on a given metric. Choose min for loss and max for accuracy.
+        """
+        self.patience = patience
+        self.metric_name = metric_name
+        self.mode = mode
+        self.best_metric = None
+        self.num_bad_epochs = 0
+
+    def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
+        """
+        Needs to be on_evaluate since there will be the calculations of those metrics.
+
+
+        """
+        logs = kwargs.get("metrics", {})
+        current_metric = logs.get(self.metric_name)
+
+        if current_metric is None:
+            return
+
+        if self.best_metric is None or \
+           (self.mode == "min" and current_metric < self.best_metric) or \
+           (self.mode == "max" and current_metric > self.best_metric):
+            self.best_metric = current_metric
+            self.num_bad_epochs = 0
+        else:
+            self.num_bad_epochs += 1
+
+        if self.num_bad_epochs >= self.patience:
+            control.should_training_stop = True
+            print(f"Early stopping triggered. No improvement in {self.metric_name} for {self.patience} evaluations.")
+
 
 class CurriculumLearningCallback(TrainerCallback):
     """

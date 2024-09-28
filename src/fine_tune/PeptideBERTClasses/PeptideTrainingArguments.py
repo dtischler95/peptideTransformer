@@ -23,7 +23,36 @@ class PeptideTrainingArguments(TrainingArguments):
                  ignore_leakage: bool=False,
                  mlm_probability:float=0.15,
                  max_length:int=36,
+                 fast_debug_mode:bool=False,
+                 validation_data_size:float=0.2,
+                 test_data_size:float=0.2,
+                 early_stopping_patience:int=30,
+                 early_stop_metric:str='eval_loss',
+                 early_stop_mode:Literal['min', 'max']='min',
                  **kwargs):
+        """
+        Custom Init for the Training Arguments to adjust behavior to our needs.
+        Added some Parameters convenient for tracking here and also added ReduceLROnPlateau Callback parameters, which
+        is implemented inside our Custom PeptideTrainer class.
+
+        :param lro_factor: Factor to reduce the learning rate on plateau
+        :param lro_patience: Number of epochs with no improvement after which learning rate will be reduced
+        :param lro_min_lr: A scalar or a list of scalars. A lower bound on the learning rate of all param groups or each group respectively
+        :param lro_mode: One of min, max. In min mode, lr will be reduced when the quantity monitored has stopped decreasing; in max mode it will be reduced when the quantity monitored has stopped increasing
+        :param train_file: Path to the training file
+        :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
+        :param model_save_path: Path to save the model to
+        :param plot_path: Path to save the plots to
+        :param drop_duplicates: Drop duplicates in the training data
+        :param ignore_leakage: Ignore leakage in the training data
+        :param mlm_probability: Probability of masking tokens in the input (only used for MLM)
+        :param max_length: Maximum length of the input sequence
+        :param fast_debug_mode: Cut the dataset to 500 samples for faster debugging (development only)
+        :param validation_data_size: Fraction of the data to be used for validation
+        :param test_data_size: Fraction of the data to be used for testing (this will take a faction of the validation data)
+        :param early_stopping_patience: Number of epochs with no improvement after which training will be stopped
+        :param kwargs: Additional arguments
+        """
         super().__init__(*args, **kwargs)
         self.lro_factor = lro_factor
         self.lro_patience = lro_patience
@@ -32,8 +61,8 @@ class PeptideTrainingArguments(TrainingArguments):
         self.train_file = train_file
         if self.train_file is None:
             # TODO may raise an error here and make a different inference function
-            sys.stderr(
-                "[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.")
+            print(
+                f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")
         self.model_path = model_path
         self.model_save_path = model_save_path
         self.plot_path = plot_path
@@ -44,5 +73,13 @@ class PeptideTrainingArguments(TrainingArguments):
         self.ignore_leakage = ignore_leakage
         self.mlm_probability = mlm_probability
         self.max_length = max_length
+        self.fast_debug_mode = fast_debug_mode
+        if self.fast_debug_mode:
+            print(f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
+        self.validation_data_size = validation_data_size
+        self.test_data_size = test_data_size
+        self.early_stopping_patience = early_stopping_patience
+        self.early_stop_metric = early_stop_metric
+        self.early_stop_mode = early_stop_mode
 
 

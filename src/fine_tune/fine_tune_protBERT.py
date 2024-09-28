@@ -13,7 +13,7 @@ import logging
 from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
 from src.fine_tune.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments
-from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback
+from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -64,8 +64,6 @@ def fine_tune(binary_or_mlm: str,
         + f"distributed training: {training_args.parallel_mode.value == 'distributed'}"
     )
 
-
-
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
@@ -75,7 +73,10 @@ def fine_tune(binary_or_mlm: str,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
                                                                            max_length=training_args.max_length,
-                                                                           logger=logger)
+                                                                           logger=logger,
+                                                                           cut_df_for_faster_debug=training_args.fast_debug_mode,
+                                                                           validation_data_size=training_args.validation_data_size,
+                                                                           test_data_size=training_args.test_data_size)
 
     # --------------------- Prepare model and trainer ---------------------
 
@@ -110,7 +111,13 @@ def fine_tune(binary_or_mlm: str,
         # calculate metrics based on the task
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
-        callbacks=[LearningCurveCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm)]
+        callbacks=[
+            # Custom Classback Class for plotting learning curves. STILL IN WORK
+            LearningCurveCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm),
+            # Custom Callback Class for early stopping.
+            EarlyStoppingCallback(patience=training_args.early_stopping_patience,
+                                  metric_name=training_args.early_stop_metric,
+                                  mode=training_args.early_stop_mode)]
     )
 
     # --------------------- Train, evaluate and predict ---------------------

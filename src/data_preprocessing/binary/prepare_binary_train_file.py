@@ -360,7 +360,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
         filter_and_evaluate_ambiguous_sequences(labeled_df=result_df)
     else:
         # If you dont want to filter ambiguous sequences, just save the data
-        print("Skipping filtering of ambiguous sequences.")
+        print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
         result_df.to_csv(out_path_train_file, sep=';', index=False)
 
 

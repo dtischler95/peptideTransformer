@@ -3,6 +3,7 @@
 - NOTE! PeptideBERT seems to overfit due to data leakage. Binary Classifier seems to bias 100% one class with droped duplicates
 - Reminder for me. When pushing git lfs obejcts on windows, first log in to ssh-agent with start-ssh-agent.cmd
 - model really running on gpu? what does cuda:0 n_gpu:1 mean?
+- Could ReduceLROnPlateau be the reason for the nan values in the loss? I may initialize it wrong, it seems to always be at the min value
 
 ### To-Do
 - [ ] Think of cool Project Name
@@ -38,6 +39,7 @@
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [ ] Add Jupyter Notebook for Training
 - [ ] is there a way to collected leaked data and put them into train data?
+- [ ] Training Args dict is not getting printed to log?? `/fine_tune/fine_tune_utils.py load_training_arguments()`
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline, do I really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
