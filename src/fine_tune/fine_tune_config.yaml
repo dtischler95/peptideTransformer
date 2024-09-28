@@ -64,7 +64,7 @@ training_arguments:
     ignore_leakage: true
     mlm_probability: 0.15
     max_length: 36
-    fast_debug_mode: true
+    fast_debug_mode: false
     validation_data_size: 0.2
     test_data_size: 0.5
     use_cpu: false
