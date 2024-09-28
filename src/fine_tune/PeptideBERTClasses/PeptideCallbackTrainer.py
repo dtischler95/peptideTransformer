@@ -1,4 +1,4 @@
-from transformers import TrainerCallback, TrainerState, TrainerControl
+from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 import os
 
@@ -17,7 +17,6 @@ class LearningCurveCallback(TrainerCallback):
         self.loss_metrics = []
         os.makedirs(self.plot_dir, exist_ok=True)
 
-
     def on_train_end(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Set the mode to 'eval' when evaluating the model so the learning curves are plotted for the evaluation phase
@@ -33,9 +32,15 @@ class LearningCurveCallback(TrainerCallback):
         Log the metrics and plot the learning curves on every logging step
         """
 
+        logs = kwargs.get("metrics", {})
+        current_loss = logs.get("eval_loss")
+        current_accuracy = logs.get("eval_accuracy")['accuracy']
 
-        self.accuracy_metrics.append(kwargs['metrics']['eval_accuracy']['accuracy'])
-        self.loss_metrics.append(kwargs['metrics']['eval_loss'])
+        if current_accuracy is None or current_loss is None:
+            return
+
+        self.accuracy_metrics.append(current_accuracy)
+        self.loss_metrics.append(current_loss)
 
         if state.epoch % self.interval == 0 and len(self.accuracy_metrics) > 1:
             if len(self.accuracy_metrics) != len(self.loss_metrics):
