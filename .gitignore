@@ -71,3 +71,6 @@ peptideBERT/
 */mlm_bert/*
 */binary_bert/*
 
+# Large Files
+data/data_from_database/APD_Hs_all.fasta
+
