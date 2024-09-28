@@ -26,6 +26,9 @@ class PeptideTrainingArguments(TrainingArguments):
                  fast_debug_mode:bool=False,
                  validation_data_size:float=0.2,
                  test_data_size:float=0.2,
+                 early_stopping_patience:int=30,
+                 early_stop_metric:str='eval_loss',
+                 early_stop_mode:Literal['min', 'max']='min',
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -47,6 +50,7 @@ class PeptideTrainingArguments(TrainingArguments):
         :param fast_debug_mode: Cut the dataset to 500 samples for faster debugging (development only)
         :param validation_data_size: Fraction of the data to be used for validation
         :param test_data_size: Fraction of the data to be used for testing (this will take a faction of the validation data)
+        :param early_stopping_patience: Number of epochs with no improvement after which training will be stopped
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -71,8 +75,11 @@ class PeptideTrainingArguments(TrainingArguments):
         self.max_length = max_length
         self.fast_debug_mode = fast_debug_mode
         if self.fast_debug_mode:
-            print(f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 500 samples. Set only to True if you want to test functions!\033[0m")
+            print(f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
         self.validation_data_size = validation_data_size
         self.test_data_size = test_data_size
+        self.early_stopping_patience = early_stopping_patience
+        self.early_stop_metric = early_stop_metric
+        self.early_stop_mode = early_stop_mode
 
 
