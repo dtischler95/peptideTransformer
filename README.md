@@ -39,6 +39,7 @@
     - [ ] RESEARCH CURRICULUM LEARNING !!
 - [ ] Add Jupyter Notebook for Training
 - [ ] is there a way to collected leaked data and put them into train data?
+- [ ] Training Args dict is not getting printed to log?? `/fine_tune/fine_tune_utils.py load_training_arguments()`
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline, do I really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
