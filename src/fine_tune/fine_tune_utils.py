@@ -46,7 +46,7 @@ def prepare_datasets(binary_or_mlm: str,
     df = df.drop_duplicates(subset=['sequence']) if drop_duplicates else df
 
     # Cut the dataframe for faster debugging if enabled
-    df = df[:500] if cut_df_for_faster_debug else df
+    df = df[:100] if cut_df_for_faster_debug else df
 
     # Split the data into training, validation and test sets
     df_train, df_val_handler = train_test_split(df, test_size=validation_data_size)
