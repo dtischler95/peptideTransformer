@@ -68,6 +68,8 @@ class PeptideTrainer(Trainer):
             self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate)
 
         if self.lr_scheduler is None:
+            # Metric to watch for schedulers is available through training_args.
+            # If metric does not start with eval_ it will be automatically appended by the scheduler from the Trainer class
             self.lr_scheduler = ReduceLROnPlateau(self.optimizer,
                                                   mode=self.args.lro_mode,
                                                   factor=self.args.lro_factor,
