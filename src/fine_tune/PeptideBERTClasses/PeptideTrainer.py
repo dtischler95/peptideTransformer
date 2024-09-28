@@ -73,3 +73,4 @@ class PeptideTrainer(Trainer):
                                                   factor=self.args.lro_factor,
                                                   patience=self.args.lro_patience,
                                                   min_lr=self.args.lro_min_lr)
+            self._created_lr_scheduler = True
