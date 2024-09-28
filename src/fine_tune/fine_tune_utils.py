@@ -13,7 +13,10 @@ def prepare_datasets(binary_or_mlm: str,
                      train_file: str,
                      logger: logging.Logger,
                      ignore_leakage: bool = False,
-                     max_length:int=36) -> tuple[
+                     max_length:int=36,
+                     cut_df_for_faster_debug: bool = False,
+                     validation_data_size: float = 0.2,
+                     test_data_size:float = 0.5) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
     Creates the datasets for training, validation and testing. for the given transformers Dataset class
@@ -29,16 +32,25 @@ def prepare_datasets(binary_or_mlm: str,
     :param logger: logger for logging
     :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
     :param max_length: Maximum length for padding/truncation.
+    :param cut_df_for_faster_debug: If the dataframe should be cut for faster debugging. Default is False.
+    :param validation_data_size: Size of the validation data. Default is 0.2.
+    :param test_data_size: Size of the test data. Default is 0.5.
 
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
+
+
     # Drop duplicates only if you explicitly want to
     df = df.drop_duplicates(subset=['sequence']) if drop_duplicates else df
+
+    # Cut the dataframe for faster debugging if enabled
+    df = df[:500] if cut_df_for_faster_debug else df
+
     # Split the data into training, validation and test sets
-    df_train, df_val_handler = train_test_split(df, test_size=0.2)
-    df_val, df_test = train_test_split(df_val_handler, test_size=0.5)
+    df_train, df_val_handler = train_test_split(df, test_size=validation_data_size)
+    df_val, df_test = train_test_split(df_val_handler, test_size=test_data_size)
 
     sequence_data_train = df_train['sequence'].values
     sequence_data_val = df_val['sequence'].values

@@ -28,6 +28,9 @@ training_arguments:
     drop_duplicates: true
     ignore_leakage: true
     max_length: 36
+    validation_data_size: 0.2
+    test_data_size: 0.5
+    use_cpu: false
   mlm:
     do_train: true
     do_eval: true
@@ -58,3 +61,7 @@ training_arguments:
     ignore_leakage: true
     mlm_probability: 0.15
     max_length: 36
+    fast_debug_mode: true
+    validation_data_size: 0.2
+    test_data_size: 0.5
+    use_cpu: false
