@@ -5,7 +5,7 @@ from torch import nn
 from transformers import Trainer, PreTrainedModel
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
 class PeptideTrainer(Trainer):

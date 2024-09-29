@@ -57,10 +57,10 @@ checkpoints/
 output/
 
 # Project Files
-src/fine_tune/try_out_zone.py
-src/fine_tune/wandb/
-src/fine_tune/results/
-src/fine_tune/logs/
+src/bert_model/try_out_zone.py
+src/bert_model/wandb/
+src/bert_model/results/
+src/bert_model/logs/
 
 data/out/
 
