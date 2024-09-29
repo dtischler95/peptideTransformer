@@ -264,21 +264,10 @@ def _process_units(final, verbose: bool = False):
     return final
 
 
-def give_label_by_threshold(x):
-    # TODO Rewrite as lambda function, this is too simple for a function definition
-    """
-    Set the Label via threshold for a given sequences.
-    Used as a DataFrame.apply() function.
-
-    :param x: The relation between hemo_percent and hemo_concentration
-    """
-    if x >= 0.8:
-        return 1
-    else:
-        return 0
-
-
-def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_sequences: bool = False):
+def parse_and_label_hemolytic_data(*data_paths: str,
+                                   out_path: str,
+                                   filter_sequences: bool = False,
+                                   label_threshold: float = 0.8):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
     This function is specific for our data and should be refactored if new data is added.
@@ -287,6 +276,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param filter_sequences: Flag to filter ambiguous sequences based on the majority label.
+    :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
 
     out_path_train_file = out_path + 'train_data/our_hemo_labeled.csv'
@@ -347,8 +337,7 @@ def parse_and_label_hemolytic_data(*data_paths: str, out_path: str, filter_seque
     df_raw_hemo['relation'] = df_raw_hemo['hemo_percent'] / df_raw_hemo['hemo_concentration']
 
     # Label the data based on a threshold on the relation. ADJUST THIS THRESHOLD IF NEEDED INSIDE THE FUNCTION.
-    # TODO IS THERE A WAY TO SET THIS PARAMETER VIA THE APPLY FUNCTION?
-    df_raw_hemo['label'] = df_raw_hemo['relation'].apply(give_label_by_threshold)
+    df_raw_hemo['label'] = df_raw_hemo['relation'].apply(lambda x: 1 if x >= label_threshold else 0)
 
     # result_df should contain cleaned data useable for training and further analysis
     result_df = df_raw_hemo[['sequence', 'label']]
@@ -375,4 +364,5 @@ if __name__ == '__main__':
 
     parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
                                    out_path='../../../data/',
-                                   filter_sequences=False)
+                                   filter_sequences=False,
+                                   label_threshold=0.8)
