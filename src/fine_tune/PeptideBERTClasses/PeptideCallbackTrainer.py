@@ -12,20 +12,35 @@ class LearningCurveCallback(TrainerCallback):
         self.plot_dir = plot_dir
         self.interval = interval
         self.task_name = task_name
-        self.mode = 'train'
-        self.accuracy_metrics = []
-        self.loss_metrics = []
+        self.isTrain = True
+        self.eval_accuracy_metrics = []
+        self.eval_loss_metric = []
+        self.train_loss_metric = []
         os.makedirs(self.plot_dir, exist_ok=True)
 
     def on_train_end(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Set the mode to 'eval' when evaluating the model so the learning curves are plotted for the evaluation phase
         """
-        self.mode = 'eval'
+        self.isTrain = False
 
-        # Reset the metrics for the evaluation phase
-        self.accuracy_metrics = []
-        self.loss_metrics = []
+
+    def on_log(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        """
+        Logging metrics here only works because we set 'epoch' for logging_steps in the TrainingArguments.
+        If we want to log steps we would need to adjust this logging behavior in Callbacks.
+        Is there a way to get the metrics for Learning Curves at a more robust step in Training?
+        """
+
+        logs = kwargs.get("logs", {})
+        current_loss = logs.get("loss")
+        if current_loss is None:
+            return
+
+        self.train_loss_metric.append(current_loss)
+
+        # TODO any way to capture train accuracy? Or can we calculate it here?-
+
 
     def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         """
@@ -39,11 +54,11 @@ class LearningCurveCallback(TrainerCallback):
         if current_accuracy is None or current_loss is None:
             return
 
-        self.accuracy_metrics.append(current_accuracy)
-        self.loss_metrics.append(current_loss)
+        self.eval_accuracy_metrics.append(current_accuracy)
+        self.eval_loss_metric.append(current_loss)
 
-        if state.epoch % self.interval == 0 and len(self.accuracy_metrics) > 1:
-            if len(self.accuracy_metrics) != len(self.loss_metrics):
+        if state.epoch % self.interval == 0 and len(self.eval_accuracy_metrics) > 1 and self.isTrain:
+            if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):
                 # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
                 raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
             self.plot_learning_curves()
@@ -52,28 +67,29 @@ class LearningCurveCallback(TrainerCallback):
         """
         Plots a learning curve for the accuracy and loss metrics on every logging step
         """
-        epochs = range(1, len(self.accuracy_metrics) + 1)
+        epochs = range(1, len(self.eval_accuracy_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
         # Plot accuracy on the primary y-axis
-        plt.plot(epochs, self.accuracy_metrics, label='Accuracy', color='blue')
+        plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
         # Create a second y-axis for loss
         ax2 = plt.gca().twinx()  # Get the current axes and create a twin y-axis
-        ax2.plot(epochs, self.loss_metrics, label='Loss', color='red')
+        ax2.plot(epochs, self.eval_loss_metric, label='Loss', color='red')
+        ax2.plot(epochs, self.train_loss_metric, label='Train Loss', color='green')
         ax2.set_ylabel('Loss', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
         # Set the title and legend
-        plt.title(f'Learning Curves for {self.mode}_{self.task_name} task')
-        plt.legend(loc='upper left')  # Place legend for accuracy on the left
-        ax2.legend(loc='upper right')  # Place legend for loss on the right # TODO why is it not working?
+        plt.title(f'Learning Curves for {self.task_name} task')
+        plt.legend()
+        ax2.legend()
 
         # Save the figure
-        plt.savefig(os.path.join(self.plot_dir, f"{self.task_name}_{self.mode}_learning_curves.png"))
+        plt.savefig(os.path.join(self.plot_dir, f"{self.task_name}_learning_curves.png"))
         plt.close()
 
 class EarlyStoppingCallback(TrainerCallback):
