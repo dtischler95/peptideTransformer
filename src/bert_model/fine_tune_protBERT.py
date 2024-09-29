@@ -10,17 +10,17 @@ from transformers.utils.logging import enable_default_handler, enable_explicit_f
 import torch  # pytorch in requirements.txt
 import logging
 
-from src.fine_tune.transformer_metrics import binary_metrics, mlm_metrics
-from src.fine_tune.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
-from src.fine_tune.fine_tune_utils import prepare_datasets, load_training_arguments
-from src.fine_tune.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
+from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
+from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
+from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments
+from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
 
 # this line should be included in the TrainingArguments
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
-def fine_tune(binary_or_mlm: str,
+def fine_tune(model_class: str,
               config_path: str,
               show_encoding: bool = False
               ):
@@ -36,7 +36,7 @@ def fine_tune(binary_or_mlm: str,
     on PeptideBERTs train algorithm, and it seems like the model is affected by data leakage]
 
 
-    :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
+    :param model_class: if the model should be fine-tuned for binary classification or masked language modeling
                       Can be set to 'binary' or 'mlm'
     :param config_path: path to the config file
     :param show_encoding: if the encoding of the vocabulary should be shown
@@ -52,7 +52,7 @@ def fine_tune(binary_or_mlm: str,
 
     # load training params into PeptideTrainingArguments class. Adjust if we need other params
     training_args = load_training_arguments(config_file=config_path,
-                                            training_type=binary_or_mlm,
+                                            training_type=model_class,
                                             logger=logger)
 
     # logging logging logging
@@ -70,7 +70,7 @@ def fine_tune(binary_or_mlm: str,
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
-    tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=binary_or_mlm,
+    tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=model_class,
                                                                            drop_duplicates=training_args.drop_duplicates,
                                                                            show_encoding=show_encoding,
                                                                            train_file=training_args.train_file,
@@ -82,16 +82,11 @@ def fine_tune(binary_or_mlm: str,
                                                                            test_data_size=training_args.test_data_size)
 
     # --------------------- Prepare model and trainer ---------------------
-    # TODO can i make this more dynamic? I can think of having multiple configs for different models
-    # TODO this would create more config files, but could simplify the fine tune logic.
-    # TODO maybe give model and/or collator as arguments to the fine tune function and create our logic in the __main__
-    # TODO this could enable a more generalized use of this function while also preserving our work process in the __main__
-    # TODO as a call param. ALSO: Think of implement argparse for gods sake!
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
-    if binary_or_mlm == 'binary':
+    if model_class == 'binary':
         model = BertForSequenceClassification.from_pretrained(training_args.model_path, num_labels=2)
         data_collator = DefaultDataCollator()
 
@@ -99,12 +94,14 @@ def fine_tune(binary_or_mlm: str,
     # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
     # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
     # first.
-    elif binary_or_mlm == 'mlm':
+    elif model_class == 'mlm':
         model = BertForMaskedLM.from_pretrained(training_args.model_path)
         data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
                                                         mlm_probability=training_args.mlm_probability)
+    elif model_class == 'custom':
+        raise NotImplementedError("Custom task not implemented yet")
     else:
-        raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{binary_or_mlm}'")
+        raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{model_class}'")
 
     # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
     # configured PeptideTrainingArguments class is provided
@@ -114,13 +111,13 @@ def fine_tune(binary_or_mlm: str,
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=binary_metrics if binary_or_mlm == 'binary' else mlm_metrics,
+        compute_metrics=binary_metrics if model_class == 'binary' else mlm_metrics,
         # calculate metrics based on the task
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
         callbacks=[
             # Custom Callback Class for plotting learning curves. STILL IN WORK
-            LearningCurveCallback(args=training_args, task_name=binary_or_mlm),
+            LearningCurveCallback(args=training_args, task_name=model_class),
             # Custom Callback Class for early stopping.
             EarlyStoppingCallback()]
     )
@@ -146,7 +143,7 @@ def fine_tune(binary_or_mlm: str,
 
 
 if __name__ == '__main__':
-    fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
-              config_path='fine_tune_config.yaml',  # Path to the config file
+    fine_tune(model_class='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+              config_path='peptideBERT_configs/debug_mlmBERT_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )

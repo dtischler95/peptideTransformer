@@ -1,2 +1,52 @@
-# TODO DEFINE MAIN LOGIC HERE
-# TODO i think of using argparse to parse command line arguments for explicitely calling different steps (data_preprocessing, model_training, model_evaluation)
+import argparse
+from src.bert_model.fine_tune_protBERT import fine_tune
+# Import your data_preprocess and data_analysis functions here
+
+def reproduce_our_work_steps():
+    # Call your reproduce function here
+    pass
+
+def main():
+    parser = argparse.ArgumentParser(description='Peptide Transformers CLI')
+    subparsers = parser.add_subparsers(dest='command')
+
+    # Subparser for bert_model
+    fine_tune_parser = subparsers.add_parser('bert_model', help='Fine-tune the model')
+    fine_tune_parser.add_argument('--model_class', type=str, required=True, choices=['binary', 'mlm'], help='Task type')
+    fine_tune_parser.add_argument('--config_path', type=str, required=True, help='Path to the config file')
+    fine_tune_parser.add_argument('--show_encoding', action='store_true', help='Show encoding of the vocabulary')
+
+    # Subparser for data_preprocess
+    data_preprocess_parser = subparsers.add_parser('data_preprocess', help='Preprocess the data')
+    # Add arguments for data_preprocess here
+
+    # Subparser for data_analysis
+    data_analysis_parser = subparsers.add_parser('data_analysis', help='Analyze the data')
+    # Add arguments for data_analysis here
+
+
+    # Subparser for reproduce
+    reproduce_parser = subparsers.add_parser('reproduce', help='Reproduce our results')
+    # Add arguments for reproduce here
+
+    args = parser.parse_args()
+
+    if args.command == 'bert_model':
+        fine_tune(
+            model_class=args.model_class,
+            config_path=args.config_path,
+            show_encoding=args.show_encoding
+        )
+    elif args.command == 'data_preprocess':
+        # Call your data_preprocess function here
+        pass
+    elif args.command == 'data_analysis':
+        # Call your data_analysis function here
+        pass
+    elif args.command == 'reproduce':
+        reproduce_our_work_steps()
+    else:
+        parser.print_help()
+
+if __name__ == '__main__':
+    main()

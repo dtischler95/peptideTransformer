@@ -3,8 +3,8 @@ from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
 import yaml
 import logging
-from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.fine_tune.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 
 
 def prepare_datasets(binary_or_mlm: str,
@@ -217,7 +217,7 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
-    training_args_dict = config['training_arguments'][training_type]
+    training_args_dict = config#['training_arguments'][training_type]
 
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
