@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 def fine_tune(binary_or_mlm: str,
-              show_encoding: bool = False):
+              config_path: str,
+              show_encoding: bool = False
+              ):
     """
     Fine-tunes the model on the hemo dataset, should contain basic functionality for fine-tuning
 
@@ -36,6 +38,7 @@ def fine_tune(binary_or_mlm: str,
 
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
                       Can be set to 'binary' or 'mlm'
+    :param config_path: path to the config file
     :param show_encoding: if the encoding of the vocabulary should be shown
     """
 
@@ -48,7 +51,7 @@ def fine_tune(binary_or_mlm: str,
     )
 
     # load training params into PeptideTrainingArguments class. Adjust if we need other params
-    training_args = load_training_arguments(config_file='fine_tune_config.yaml',
+    training_args = load_training_arguments(config_file=config_path,
                                             training_type=binary_or_mlm,
                                             logger=logger)
 
@@ -140,5 +143,6 @@ def fine_tune(binary_or_mlm: str,
 
 if __name__ == '__main__':
     fine_tune(binary_or_mlm='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+              config_path='fine_tune_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )
