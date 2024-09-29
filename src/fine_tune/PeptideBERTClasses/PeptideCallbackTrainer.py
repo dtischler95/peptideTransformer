@@ -1,6 +1,8 @@
-from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
+from transformers import TrainerCallback, TrainerState, TrainerControl
 import matplotlib.pyplot as plt
 import os
+
+from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -8,24 +10,24 @@ class LearningCurveCallback(TrainerCallback):
     Custom Callback class for pretty logging and creating learning curves for accuracy and loss metrics during training and evaluation.
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
-    def __init__(self, plot_dir='plot', interval=1, task_name='no_task_name_provided'):
-        self.plot_dir = plot_dir
+
+    def __init__(self, args: PeptideTrainingArguments, interval=1, task_name='no_task_name_provided'):
         self.interval = interval
         self.task_name = task_name
         self.isTrain = True
         self.eval_accuracy_metrics = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
-        os.makedirs(self.plot_dir, exist_ok=True)
+        # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
+        os.makedirs(args.plot_path, exist_ok=True)
 
-    def on_train_end(self, args, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_train_end(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Set the mode to 'eval' when evaluating the model so the learning curves are plotted for the evaluation phase
         """
         self.isTrain = False
 
-
-    def on_log(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_log(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Logging metrics here only works because we set 'epoch' for logging_steps in the TrainingArguments.
         If we want to log steps we would need to adjust this logging behavior in Callbacks.
@@ -41,8 +43,7 @@ class LearningCurveCallback(TrainerCallback):
 
         # TODO any way to capture train accuracy? Or can we calculate it here?-
 
-
-    def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
         """
@@ -61,9 +62,9 @@ class LearningCurveCallback(TrainerCallback):
             if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):
                 # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
                 raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
-            self.plot_learning_curves()
+            self.plot_learning_curves(plot_path=args.plot_path)
 
-    def plot_learning_curves(self):
+    def plot_learning_curves(self, plot_path: str):
         """
         Plots a learning curve for the accuracy and loss metrics on every logging step
         """
@@ -89,43 +90,45 @@ class LearningCurveCallback(TrainerCallback):
         ax2.legend()
 
         # Save the figure
-        plt.savefig(os.path.join(self.plot_dir, f"{self.task_name}_learning_curves.png"))
+        plt.savefig(os.path.join(plot_path, f"{self.task_name}_learning_curves.png"))
         plt.close()
 
+
 class EarlyStoppingCallback(TrainerCallback):
-    def __init__(self, patience: int, metric_name: str = "eval_loss", mode: str = "min"):
+    def __init__(self):
         """
         Callback Class for early stopping based on a given metric. Choose min for loss and max for accuracy.
         """
-        self.patience = patience
-        self.metric_name = metric_name
-        self.mode = mode
         self.best_metric = None
         self.num_bad_epochs = 0
 
-    def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Needs to be on_evaluate since there will be the calculations of those metrics.
-
-
         """
+
+        # TODO add warmup
+        if state.epoch < args.early_stop_warm_up:
+            return
+
         logs = kwargs.get("metrics", {})
-        current_metric = logs.get(self.metric_name)
+        current_metric = logs.get(args.early_stop_metric)
 
         if current_metric is None:
             return
 
         if self.best_metric is None or \
-           (self.mode == "min" and current_metric < self.best_metric) or \
-           (self.mode == "max" and current_metric > self.best_metric):
+                (args.early_stop_mode == "min" and current_metric < self.best_metric) or \
+                (args.early_stop_mode == "max" and current_metric > self.best_metric):
             self.best_metric = current_metric
             self.num_bad_epochs = 0
         else:
             self.num_bad_epochs += 1
 
-        if self.num_bad_epochs >= self.patience:
+        if self.num_bad_epochs >= args.early_stopping_patience:
             control.should_training_stop = True
-            print(f"Early stopping triggered. No improvement in {self.metric_name} for {self.patience} evaluations.")
+            print(
+                f"Early stopping triggered. No improvement in {args.early_stop_metric} for {args.early_stopping_patience} evaluations.")
 
 
 class CurriculumLearningCallback(TrainerCallback):

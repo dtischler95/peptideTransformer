@@ -10,25 +10,27 @@ class PeptideTrainingArguments(TrainingArguments):
     Class for adjusting TrainingArguments for PeptideBERT to our needs and collecting all necessary arguments in one place.
     I tried to stick to commonly used values for the parameters, but feel free to adjust them to your needs.
     """
+
     def __init__(self, *args,
-                 lro_factor:float=0.1,
-                 lro_patience:int=4,
-                 lro_min_lr:float=0.000001,
-                 lro_mode:Literal['min', 'max']='min',
+                 lro_factor: float = 0.1,
+                 lro_patience: int = 4,
+                 lro_min_lr: float = 0.000001,
+                 lro_mode: Literal['min', 'max'] = 'min',
                  train_file=None,
-                 model_path:str='Rostlab/prot_bert_bfd',
-                 model_save_path:str='../default_path_BERT',
-                 plot_path:str= '../../plots',
-                 drop_duplicates: bool=True,
-                 ignore_leakage: bool=False,
-                 mlm_probability:float=0.15,
-                 max_length:int=36,
-                 fast_debug_mode:bool=False,
-                 validation_data_size:float=0.2,
-                 test_data_size:float=0.2,
-                 early_stopping_patience:int=30,
-                 early_stop_metric:str='eval_loss',
-                 early_stop_mode:Literal['min', 'max']='min',
+                 model_path: str = 'Rostlab/prot_bert_bfd',
+                 model_save_path: str = '../default_path_BERT',
+                 plot_path: str = '../../plots',
+                 drop_duplicates: bool = True,
+                 ignore_leakage: bool = False,
+                 mlm_probability: float = 0.15,
+                 max_length: int = 36,
+                 fast_debug_mode: bool = False,
+                 validation_data_size: float = 0.2,
+                 test_data_size: float = 0.2,
+                 early_stopping_patience: int = 30,
+                 early_stop_metric: str = 'eval_loss',
+                 early_stop_mode: Literal['min', 'max'] = 'min',
+                 early_stop_warm_up: int = 0,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -51,6 +53,9 @@ class PeptideTrainingArguments(TrainingArguments):
         :param validation_data_size: Fraction of the data to be used for validation
         :param test_data_size: Fraction of the data to be used for testing (this will take a faction of the validation data)
         :param early_stopping_patience: Number of epochs with no improvement after which training will be stopped
+        :param early_stop_metric: Metric to watch for early stopping
+        :param early_stop_mode: One of min, max. In min mode, training will be stopped when the metric stops decreasing; in max mode it will be stopped when the metric stops increasing
+        :param early_stop_warm_up: Number of epochs to wait before starting to watch for early stopping
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -75,11 +80,11 @@ class PeptideTrainingArguments(TrainingArguments):
         self.max_length = max_length
         self.fast_debug_mode = fast_debug_mode
         if self.fast_debug_mode:
-            print(f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
+            print(
+                f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
         self.validation_data_size = validation_data_size
         self.test_data_size = test_data_size
         self.early_stopping_patience = early_stopping_patience
         self.early_stop_metric = early_stop_metric
         self.early_stop_mode = early_stop_mode
-
-
+        self.early_stop_warm_up = early_stop_warm_up
