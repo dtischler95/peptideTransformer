@@ -265,6 +265,7 @@ def _process_units(final, verbose: bool = False):
 
 
 def give_label_by_threshold(x):
+    # TODO Rewrite as lambda function, this is too simple for a function definition
     """
     Set the Label via threshold for a given sequences.
     Used as a DataFrame.apply() function.

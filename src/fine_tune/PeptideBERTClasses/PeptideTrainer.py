@@ -1,5 +1,6 @@
-from typing import Union, Optional
+from typing import Union, Optional, Dict, Any
 
+import torch
 from torch import nn
 from transformers import Trainer, PreTrainedModel
 from torch.optim import AdamW
@@ -76,3 +77,30 @@ class PeptideTrainer(Trainer):
                                                   patience=self.args.lro_patience,
                                                   min_lr=self.args.lro_min_lr)
             self._created_lr_scheduler = True
+
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+        """
+        Perform a training step on a batch of inputs.
+
+        Subclass and override to inject custom behavior.
+
+        Args:
+            model (`nn.Module`):
+                The model to train.
+            inputs (`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs and targets of the model.
+
+                The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
+                argument `labels`. Check your model's documentation for all accepted arguments.
+
+        Return:
+            `torch.Tensor`: The tensor with training loss on this batch.
+        """
+        loss = super().training_step(model, inputs)
+
+
+        # Apply gradient norm clipping in case of exploding gradients.
+        # Observed while training mlm with large train data points.
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+        return loss
