@@ -82,7 +82,11 @@ def fine_tune(binary_or_mlm: str,
                                                                            test_data_size=training_args.test_data_size)
 
     # --------------------- Prepare model and trainer ---------------------
-
+    # TODO can i make this more dynamic? I can think of having multiple configs for different models
+    # TODO this would create more config files, but could simplify the fine tune logic.
+    # TODO maybe give model and/or collator as arguments to the fine tune function and create our logic in the __main__
+    # TODO this could enable a more generalized use of this function while also preserving our work process in the __main__
+    # TODO as a call param. ALSO: Think of implement argparse for gods sake!
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
