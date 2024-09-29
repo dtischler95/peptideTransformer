@@ -46,7 +46,7 @@ def prepare_datasets(binary_or_mlm: str,
     df = df.drop_duplicates(subset=['sequence']) if drop_duplicates else df
 
     # Cut the dataframe for faster debugging if enabled
-    df = df[:100] if cut_df_for_faster_debug else df
+    df = df[:500] if cut_df_for_faster_debug else df
 
     # Split the data into training, validation and test sets
     df_train, df_val_handler = train_test_split(df, test_size=validation_data_size)
@@ -219,10 +219,11 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
 
     training_args_dict = config['training_arguments'][training_type]
 
+    logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
-    logger.info("Set Parameters for this training run:")
+    print("Set Parameters for this training run:")
     for k, v in training_args_dict.items():
-        logger.info(f"  {k}: {v}")
+        print(f"  {k}: {v}")
 
     return PeptideTrainingArguments(**training_args_dict)
 
