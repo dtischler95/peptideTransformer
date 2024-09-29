@@ -112,12 +112,10 @@ def fine_tune(binary_or_mlm: str,
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
         callbacks=[
-            # Custom Classback Class for plotting learning curves. STILL IN WORK
-            LearningCurveCallback(plot_dir=training_args.plot_path, task_name=binary_or_mlm),
+            # Custom Callback Class for plotting learning curves. STILL IN WORK
+            LearningCurveCallback(args=training_args, task_name=binary_or_mlm),
             # Custom Callback Class for early stopping.
-            EarlyStoppingCallback(patience=training_args.early_stopping_patience,
-                                  metric_name=training_args.early_stop_metric,
-                                  mode=training_args.early_stop_mode)]
+            EarlyStoppingCallback()]
     )
 
     # --------------------- Train, evaluate and predict ---------------------
