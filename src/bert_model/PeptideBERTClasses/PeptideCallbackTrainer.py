@@ -2,7 +2,7 @@ from transformers import TrainerCallback, TrainerState, TrainerControl
 import matplotlib.pyplot as plt
 import os
 
-from src.fine_tune.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
 class LearningCurveCallback(TrainerCallback):
