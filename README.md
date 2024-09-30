@@ -6,6 +6,7 @@
 - Could ReduceLROnPlateau be the reason for the nan values in the loss? I may initialize it wrong, it seems to always be at the min value
 
 - [ ] URGENT i screwed up save paths in binary files. Rn im not sure what i saved into what. YAY !!! Clean up this mess so i can to benchmark runs... im suchn tard
+- [ ] URGEND no 2. y.y  Fkn accuracy metric wont get calculated right in binary training. what did i screwed up there? why does it calculate for mlm task???
 
 ### Model to Train
 
