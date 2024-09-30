@@ -51,6 +51,7 @@
 - [ ] is there a way to collected leaked data and put them into train data?
 - [ ] Training Args dict is not getting printed to log?? `/fine_tune/fine_tune_utils.py load_training_arguments()`
 - [ ] Check if path is given for config, otherwise use default config path. I think of this as a handy function for auto generating configs later on
+- [ ] Think of implementing lamb optimizer algorithm for higher batch sizes and therefore faster training
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline, do I really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
