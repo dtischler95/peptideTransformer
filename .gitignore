@@ -73,4 +73,5 @@ peptideBERT/
 
 # Large Files
 data/data_from_database/APD_Hs_all.fasta
+src/peptideTransformer.egg-info
 
