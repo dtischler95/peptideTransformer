@@ -66,7 +66,7 @@ class PeptideTrainer(Trainer):
 
         # TODO make this dynamically to switch to default by invoking super() method if i want to change stuff later example adam with weight decay
         if self.optimizer is None:
-            self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate)
+            self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
 
         if self.lr_scheduler is None:
             # Metric to watch for schedulers is available through training_args.
