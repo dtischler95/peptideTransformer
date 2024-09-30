@@ -5,6 +5,8 @@
 - model really running on gpu? what does cuda:0 n_gpu:1 mean?
 - Could ReduceLROnPlateau be the reason for the nan values in the loss? I may initialize it wrong, it seems to always be at the min value
 
+- [ ] URGENT i screwed up save paths in binary files. Rn im not sure what i saved into what. YAY !!! Clean up this mess so i can to benchmark runs... im suchn tard
+
 ### Model to Train
 
 - [ ] PeptideBert with data leaked training data
