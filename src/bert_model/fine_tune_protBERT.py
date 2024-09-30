@@ -71,7 +71,6 @@ def fine_tune(model_class: str,
 
     # Prepare tokenizer and datasets
     tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=model_class,
-                                                                           drop_duplicates=training_args.drop_duplicates,
                                                                            show_encoding=show_encoding,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
@@ -144,7 +143,7 @@ def fine_tune(model_class: str,
 
 
 if __name__ == '__main__':
-    fine_tune(model_class='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+    fine_tune(model_class='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
               config_path='peptideBERT_configs/debug_mlmBERT_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )

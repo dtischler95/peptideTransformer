@@ -16,7 +16,6 @@ class PeptideTrainingArguments(TrainingArguments):
                  model_path: str = 'Rostlab/prot_bert_bfd',
                  model_save_path: str = '../default_path_BERT',
                  plot_path: str = '../../plots',
-                 drop_duplicates: bool = True,
                  ignore_leakage: bool = False,
                  mlm_probability: float = 0.15,
                  max_length: int = 36,
@@ -37,7 +36,6 @@ class PeptideTrainingArguments(TrainingArguments):
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
         :param plot_path: Path to save the plots to
-        :param drop_duplicates: Drop duplicates in the training data
         :param ignore_leakage: Ignore leakage in the training data
         :param mlm_probability: Probability of masking tokens in the input (only used for MLM)
         :param max_length: Maximum length of the input sequence
@@ -62,7 +60,6 @@ class PeptideTrainingArguments(TrainingArguments):
         # Create the model and plot save path if it does not exist
         Path(self.model_save_path).mkdir(parents=True, exist_ok=True)
         Path(self.plot_path).mkdir(parents=True, exist_ok=True)
-        self.drop_duplicates = drop_duplicates
         self.ignore_leakage = ignore_leakage
         self.mlm_probability = mlm_probability
         self.max_length = max_length

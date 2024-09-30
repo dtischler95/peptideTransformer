@@ -19,7 +19,6 @@ train_file: './data/train_data/whitelab_hemo_data.csv' # Path to the training da
 model_path: 'Rostlab/prot_bert_bfd' # Path to the model
 model_save_path: './binary_BERT' # Path to save the model
 plot_path: './plots' # Path to save the plots
-drop_duplicates: true # Drop duplicates in the train dataset. Check back to make sure that no data leakage can happen TODO: extract duplicates and put all into train dataset
 ignore_leakage: false # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 max_length: 36 # Maximum length of the input sequence
 validation_data_size: 0.2 # Size of the validation dataset
