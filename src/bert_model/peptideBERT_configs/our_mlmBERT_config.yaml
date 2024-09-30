@@ -14,10 +14,6 @@ seed: 42 # Seed for reproducibility
 dataloader_drop_last: false # Drop last batch if it is smaller than the batch size
 dataloader_num_workers: 1 # Number of workers for the dataloader. Higher than 1 seems to lead into performance issues
 learning_rate: 0.00005 # Learning rate for the optimizer
-lro_patience: 10 # Patience for the learning rate scheduler
-lro_factor: 0.1 # Factor for the learning rate scheduler
-lro_min_lr: 0.0000001 # Minimum learning rate for the learning rate scheduler
-lro_mode: 'min' # Mode for the learning rate scheduler. ['min', 'max'] for adjusting the learning rate depending on loss or accuracy
 metric_for_best_model : 'loss' # Metric for the best model. ['loss', 'accuracy'] for selecting the best model
 train_file: './data/train_data/mlm_train_data.csv' # Path to the training data
 model_path: 'Rostlab/prot_bert_bfd' # Path to the model
@@ -35,3 +31,4 @@ early_stopping_patience: 20 # Patience for the early stopping
 early_stop_metric: 'eval_loss' # Metric for the early stopping
 early_stop_mode: 'min' # Mode for the early stopping
 early_stop_warm_up: 50 # Need to find a senseful value
+lr_scheduler_type: 'reduce_lr_on_plateau' # Type of the learning rate scheduler
