@@ -8,7 +8,6 @@ from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 
 
 def prepare_datasets(binary_or_mlm: str,
-                     drop_duplicates: bool,
                      show_encoding: bool,
                      train_file: str,
                      logger: logging.Logger,
@@ -41,31 +40,32 @@ def prepare_datasets(binary_or_mlm: str,
     # Load the data
     df = pd.read_csv(train_file, sep=';')
 
+    # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
+    unique_sequences = df['sequence'].unique()
 
-    # Drop duplicates only if you explicitly want to
-    df = df.drop_duplicates(subset=['sequence']) if drop_duplicates else df
 
     # Cut the dataframe for faster debugging if enabled
     df = df[:500] if cut_df_for_faster_debug else df
 
     # Split the data into training, validation and test sets
-    df_train, df_val_handler = train_test_split(df, test_size=validation_data_size)
-    df_val, df_test = train_test_split(df_val_handler, test_size=test_data_size)
+    train_sequences, df_val_handler = train_test_split(unique_sequences, test_size=validation_data_size)
+    val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size)
 
-    sequence_data_train = df_train['sequence'].values
-    sequence_data_val = df_val['sequence'].values
-    sequence_data_test = df_test['sequence'].values
+    # Assigning the given train/val/test task to a given sequence id ensuring theres no Leakage
+    sequence_data_train = df[df['sequence'].isin(train_sequences)]
+    sequence_data_val = df[df['sequence'].isin(val_sequences)]
+    sequence_data_test = df[df['sequence'].isin(test_sequences)]
 
-    label_data_train = df_train['label'].values if binary_or_mlm == 'binary' else None
-    label_data_val = df_val['label'].values if binary_or_mlm == 'binary' else None
-    label_data_test = df_test['label'].values if binary_or_mlm == 'binary' else None
+    label_data_train = sequence_data_train['label'].values if binary_or_mlm == 'binary' else None
+    label_data_val = sequence_data_val['label'].values if binary_or_mlm == 'binary' else None
+    label_data_test = sequence_data_test['label'].values if binary_or_mlm == 'binary' else None
 
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
-    train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
-    val_dataset = PeptideDataset(peptides=sequence_data_val, tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
-    test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
+    train_dataset = PeptideDataset(peptides=sequence_data_train['sequence'], tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
+    val_dataset = PeptideDataset(peptides=sequence_data_val['sequence'], tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
+    test_dataset = PeptideDataset(peptides=sequence_data_test['sequence'], tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
