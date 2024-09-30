@@ -4,7 +4,6 @@ setup(
     name='peptideTransformer',
     version='0.1.1',
     packages=find_packages(),
-    package_dir={'': 'src'},
     install_requires=[
         'torch',
         'transformers',
