@@ -13,7 +13,7 @@
 - [ ] PeptideBert with data leaked training data
 - [ ] PeptideBert without leaked data
 - [ ] Fine Tune protBERT to peptide Sequences
-  - [ ] Try different trainData sizes [400k, 1kk, 2kk]
+  - [x] only use starpep data
   - [ ] Compare ReduceLROnPlateau and OneCycleLR
   - [ ] Compare with Curriculum Trained model
 
