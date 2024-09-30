@@ -12,10 +12,6 @@ class PeptideTrainingArguments(TrainingArguments):
     """
 
     def __init__(self, *args,
-                 lro_factor: float = 0.1,
-                 lro_patience: int = 4,
-                 lro_min_lr: float = 0.000001,
-                 lro_mode: Literal['min', 'max'] = 'min',
                  train_file=None,
                  model_path: str = 'Rostlab/prot_bert_bfd',
                  model_save_path: str = '../default_path_BERT',
@@ -37,10 +33,6 @@ class PeptideTrainingArguments(TrainingArguments):
         Added some Parameters convenient for tracking here and also added ReduceLROnPlateau Callback parameters, which
         is implemented inside our Custom PeptideTrainer class.
 
-        :param lro_factor: Factor to reduce the learning rate on plateau
-        :param lro_patience: Number of epochs with no improvement after which learning rate will be reduced
-        :param lro_min_lr: A scalar or a list of scalars. A lower bound on the learning rate of all param groups or each group respectively
-        :param lro_mode: One of min, max. In min mode, lr will be reduced when the quantity monitored has stopped decreasing; in max mode it will be reduced when the quantity monitored has stopped increasing
         :param train_file: Path to the training file
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
@@ -59,10 +51,6 @@ class PeptideTrainingArguments(TrainingArguments):
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
-        self.lro_factor = lro_factor
-        self.lro_patience = lro_patience
-        self.lro_min_lr = lro_min_lr
-        self.lro_mode = lro_mode
         self.train_file = train_file
         if self.train_file is None:
             # TODO may raise an error here and make a different inference function
