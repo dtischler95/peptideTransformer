@@ -15,14 +15,14 @@ dataloader_drop_last: false # Drop last batch if it is smaller than the batch si
 dataloader_num_workers: 1 # Number of workers for the dataloader. Higher than 1 seems to lead into performance issues
 learning_rate: 0.00005 # Learning rate for the optimizer
 metric_for_best_model : 'loss' # Metric for the best model. ['loss', 'accuracy'] for selecting the best model
-train_file: '../../data/train_data/our_hemo_labeled_filtered.csv' # Path to the training data
+train_file: '../../data/train_data/whitelab_hemo_data.csv' # Path to the training data
 model_path: 'Rostlab/prot_bert_bfd' # Path to the model
 model_save_path: '../test_BERT' # Path to save the model
 plot_path: '../../plots' # Path to save the plots
 ignore_leakage: false # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 mlm_probability: 0.15 # Probability for the masked language model to mask tokens
 max_length: 36 # Maximum length of the input sequence
-fast_debug_mode: True # Fast debug mode for testing the pipeline. [Developer Mode]
+fast_debug_mode: false # Fast debug mode for testing the pipeline. [Developer Mode]
 validation_data_size: 0.2 # Size of the validation dataset
 test_data_size: 0.5 # Size of the test dataset
 use_cpu: false # Use CPU for training

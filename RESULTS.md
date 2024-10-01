@@ -15,3 +15,11 @@
   - [ ] **Step 4.1:** Initial Accuracy of mlm task train should be accuracy of protBERT for our peptide Task
 -[ ] **Step 5:** Retrain binary PeptideBERT on our new MLMBERT
   - [ ] **Step 5.1:** TODO Cluster with model
+
+## Proof of Concept
+### Step 4 Proof of Concept: MLMPeptideBERT
+
+![MLMPeptideBERT](./pictures/poc_mlm_result.png)
+![MLMLEARNING CURVE](./pictures/poc_mlm_lc.png)
+
+### Step 5 Proof of Concept: Binary PeptideBERT
