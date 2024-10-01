@@ -32,6 +32,11 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'bert_model':
+
+        # If we have configs in our config dir we can just pass the config name.
+        if '/' not in args.config_path:
+            args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
+
         fine_tune(
             model_class=args.model_class,
             config_path=args.config_path,

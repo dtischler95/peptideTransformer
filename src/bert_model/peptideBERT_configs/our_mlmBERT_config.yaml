@@ -15,7 +15,7 @@ dataloader_drop_last: false # Drop last batch if it is smaller than the batch si
 dataloader_num_workers: 1 # Number of workers for the dataloader. Higher than 1 seems to lead into performance issues
 learning_rate: 0.00005 # Learning rate for the optimizer
 metric_for_best_model : 'loss' # Metric for the best model. ['loss', 'accuracy'] for selecting the best model
-train_file: './data/train_data/mlm_train_data.csv' # Path to the training data
+train_file: './data/train_data/mlm_starpep_data.csv' # Path to the training data
 model_path: 'Rostlab/prot_bert_bfd' # Path to the model
 model_save_path: './first_mlm_BERT' # Path to save the model
 plot_path: './plots' # Path to save the plots
