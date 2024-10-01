@@ -1,10 +1,11 @@
 from typing import Union, Optional, Dict, Any
-
+from datasets import Dataset
 import torch
 from torch import nn
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from transformers.utils.import_utils import  is_datasets_available
+from transformers.trainer_utils import seed_worker
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
@@ -86,3 +87,49 @@ class PeptideTrainer(Trainer):
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         return loss
+
+    def get_train_dataloader(self) -> DataLoader:
+        """
+        Returns the training [`~torch.utils.data.DataLoader`].
+
+        Will use no sampler if `train_dataset` does not implement `__len__`, a random sampler (adapted to distributed
+        training if necessary) otherwise.
+
+        Subclass and override this method if you want to inject some custom behavior.
+        """
+        if self.train_dataset is None:
+            raise ValueError("Trainer: training requires a train_dataset.")
+
+        train_dataset = self.train_dataset
+        data_collator = self.data_collator
+        if is_datasets_available() and isinstance(train_dataset, Dataset):
+            train_dataset = self._remove_unused_columns(train_dataset, description="training")
+        else:
+            data_collator = self._get_collator_with_removed_columns(data_collator, description="training")
+
+        weights = self.get_weighted_labels(train_dataset)
+
+        # Create a weighted sampler
+        sampler = WeightedRandomSampler(weights, len(weights))
+
+        dataloader_params = {
+            "batch_size": self._train_batch_size,
+            "collate_fn": data_collator,
+            "num_workers": self.args.dataloader_num_workers,
+            "pin_memory": self.args.dataloader_pin_memory,
+            "persistent_workers": self.args.dataloader_persistent_workers,
+            "sampler": sampler,
+            "drop_last": self.args.dataloader_drop_last,
+            "worker_init_fn": seed_worker,
+            "prefetch_factor": self.args.dataloader_prefetch_factor,
+        }
+        return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
+
+    @staticmethod
+    def get_weighted_labels(train_dataset):
+        # Calculate class weights
+        labels = torch.tensor(train_dataset.labels)
+        class_counts = torch.bincount(labels)
+        class_weights = 1.0 / class_counts.float()
+        weights = class_weights[labels]
+        return weights

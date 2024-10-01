@@ -44,14 +44,14 @@ def prepare_datasets(binary_or_mlm: str,
     unique_sequences = df['sequence'].unique()
 
 
-    # Cut the dataframe for faster debugging if enabled
-    df = df[:500] if cut_df_for_faster_debug else df
+    # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
+    df = df.sample(frac=1)[:1000] if cut_df_for_faster_debug else df
 
     # Split the data into training, validation and test sets
-    train_sequences, df_val_handler = train_test_split(unique_sequences, test_size=validation_data_size)
-    val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size)
+    train_sequences, df_val_handler = train_test_split(unique_sequences, test_size=validation_data_size, shuffle=True)
+    val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
 
-    # Assigning the given train/val/test task to a given sequence id ensuring theres no Leakage
+    # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
     sequence_data_train = df[df['sequence'].isin(train_sequences)]
     sequence_data_val = df[df['sequence'].isin(val_sequences)]
     sequence_data_test = df[df['sequence'].isin(test_sequences)]

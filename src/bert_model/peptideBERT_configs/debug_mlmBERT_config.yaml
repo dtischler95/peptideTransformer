@@ -22,7 +22,7 @@ plot_path: '../../plots' # Path to save the plots
 ignore_leakage: false # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 mlm_probability: 0.15 # Probability for the masked language model to mask tokens
 max_length: 36 # Maximum length of the input sequence
-fast_debug_mode: true # Fast debug mode for testing the pipeline. [Developer Mode]
+fast_debug_mode: false # Fast debug mode for testing the pipeline. [Developer Mode]
 validation_data_size: 0.2 # Size of the validation dataset
 test_data_size: 0.5 # Size of the test dataset
 use_cpu: false # Use CPU for training
