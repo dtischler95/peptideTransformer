@@ -58,11 +58,12 @@ def check_data_type(data, sep=';') -> pd.DataFrame:
     return df
 
 
-def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str = '../data/train_data/our_hemo_filtered_labeled.csv'):
+def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str):
     """
     Filter ambiguous sequences and sort them into positive or negative based on the majority label.
 
     :param labeled_df: DataFrame containing labeled sequences.
+    :param out_path: Path to save the filtered data.
     """
 
     result_df = pd.DataFrame()

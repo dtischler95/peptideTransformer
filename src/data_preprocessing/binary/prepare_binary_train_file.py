@@ -266,6 +266,7 @@ def _process_units(final, verbose: bool = False):
 
 def parse_and_label_hemolytic_data(*data_paths: str,
                                    out_path: str,
+                                   dataset_tag: str,
                                    filter_sequences: bool = False,
                                    label_threshold: float = 0.8):
     """
@@ -275,12 +276,13 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
+    :param dataset_tag: Tag for the dataset. Used for naming the output files.
     :param filter_sequences: Flag to filter ambiguous sequences based on the majority label.
     :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
 
-    out_path_train_file = out_path + 'train_data/our_hemo_labeled.csv'
-    out_path_splitted_file = out_path + 'data_for_data_viewer/'
+    out_path_train_file = f"{out_path}train_data/{dataset_tag}"
+    out_path_splitted_file = f"{out_path}data_for_data_viewer/"
 
     data_df_list = []
     for file_path in data_paths:
@@ -346,12 +348,14 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
 
     if filter_sequences:
+        new_file_name = f"{out_path_train_file}_filtered.csv"
         # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
-        filter_and_evaluate_ambiguous_sequences(labeled_df=result_df)
+        filter_and_evaluate_ambiguous_sequences(labeled_df=result_df,
+                                                out_path=new_file_name)
     else:
         # If you dont want to filter ambiguous sequences, just save the data
         print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
-        result_df.to_csv(out_path_train_file, sep=';', index=False)
+        result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
 
 
 if __name__ == '__main__':
@@ -364,5 +368,6 @@ if __name__ == '__main__':
 
     parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
                                    out_path='../../../data/',
-                                   filter_sequences=False,
+                                   dataset_tag='our_hemo_labeled',
+                                   filter_sequences=True,
                                    label_threshold=0.8)
