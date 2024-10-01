@@ -13,19 +13,19 @@ def binary_metrics(eval_preds) -> dict:
     """
 
     accuracy = evaluate.load("accuracy")
-    recall = evaluate.load("recall")
-    f1 = evaluate.load("f1")
-    roc_auc = evaluate.load("roc_auc")
+    # recall = evaluate.load("recall")
+    # f1 = evaluate.load("f1")
+    # roc_auc = evaluate.load("roc_auc")
 
     predictions, labels = eval_preds
-    predictions = np.argmax(predictions, axis=1)
+    predictions = np.argmax(predictions, axis=-1)
     print(f"Acuracy Save Print: {accuracy.compute(predictions=predictions, references=labels)}")
 
     return {
-        "accuracy": accuracy.compute(predictions=predictions, references=labels),
-        "recall": recall.compute(predictions=predictions, references=labels),
-        "f1": f1.compute(predictions=predictions, references=labels),
-        "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
+        "accuracy": accuracy.compute(predictions=predictions, references=labels)#,
+        # "recall": recall.compute(predictions=predictions, references=labels),
+        # "f1": f1.compute(predictions=predictions, references=labels),
+        # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
     }
 
 

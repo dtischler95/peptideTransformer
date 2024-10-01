@@ -105,6 +105,7 @@ class EarlyStoppingCallback(TrainerCallback):
     def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Needs to be on_evaluate since there will be the calculations of those metrics.
+        BUG -> It seems that early_stop_warmup affects updates of eval_metrics somehow.... Idk
         """
 
         # TODO add warmup
