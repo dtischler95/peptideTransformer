@@ -19,6 +19,10 @@ def binary_metrics(eval_preds) -> dict:
 
     predictions, labels = eval_preds
     predictions = np.argmax(predictions, axis=-1)
+
+    # ----- Added for debugging purposes -----
+    # Save check for Prediction Bias towards one label
+
     print(f"Acuracy Save Print: {accuracy.compute(predictions=predictions, references=labels)}")
 
     return {
