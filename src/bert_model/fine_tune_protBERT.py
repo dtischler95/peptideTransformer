@@ -128,6 +128,7 @@ def fine_tune(model_class: str,
         # TODO MCC !!!
 
         trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
         # TODO save tokenizer
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
