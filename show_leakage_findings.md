@@ -1,6 +1,5 @@
 ## This Notebook is used to show the effect of the leakage of the datasets on the performance of the model
 
-- [ ] URGENT URGENT URGENT CHECK PREDICTION TENSOR!!!
 
 ### Train run for PeptideBERT on original Algorithm but with my data_leakage_viewer
 - This Function searches for leaked data in the train, val and test datasets
