@@ -25,7 +25,11 @@
 ## Proof of Concept
 ### Step 4 Proof of Concept: MLMPeptideBERT
 
-- [ ] Currently calculating
+- mlm task looks good so far. Naive Implementation of MLM Task with PeptideBERT provides stable results so far.
+
+![MLM Task](./pictures/first_mlm.png)
+
+- Plotted is eval_accuracy
 
 ### Step 5 Proof of Concept: Binary PeptideBERT
 

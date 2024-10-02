@@ -1,6 +1,7 @@
 from transformers import TrainerCallback, TrainerState, TrainerControl
 import matplotlib.pyplot as plt
 import os
+from sklearn.metrics import accuracy_score
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
@@ -18,6 +19,7 @@ class LearningCurveCallback(TrainerCallback):
         self.eval_accuracy_metrics = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
+        self.train_accuracy_metric = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
         os.makedirs(args.plot_path, exist_ok=True)
 
@@ -40,6 +42,18 @@ class LearningCurveCallback(TrainerCallback):
             return
 
         self.train_loss_metric.append(current_loss)
+
+        # Calculate and store train accuracy
+        if state.log_history:
+            last_log = state.log_history[-1]
+            if 'train_accuracy' in last_log:
+                self.train_accuracy_metric.append(last_log['train_accuracy'])
+            else:
+                predictions = state.predictions
+                labels = state.label_ids
+                if predictions is not None and labels is not None:
+                    train_accuracy = accuracy_score(labels, predictions.argmax(-1))
+                    self.train_accuracy_metric.append(train_accuracy)
 
         # TODO any way to capture train accuracy? Or can we calculate it here?-
 
@@ -74,12 +88,12 @@ class LearningCurveCallback(TrainerCallback):
         # Plot accuracy on the primary y-axis
         plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
         plt.xlabel('Epochs')
-        plt.ylabel('Accuracy', color='blue')
+        plt.ylabel('Eval Accuracy', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
         # Create a second y-axis for loss
         ax2 = plt.gca().twinx()  # Get the current axes and create a twin y-axis
-        ax2.plot(epochs, self.eval_loss_metric, label='Loss', color='red')
+        ax2.plot(epochs, self.eval_loss_metric, label='Eval Loss', color='red')
         ax2.plot(epochs, self.train_loss_metric, label='Train Loss', color='green')
         ax2.set_ylabel('Loss', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
