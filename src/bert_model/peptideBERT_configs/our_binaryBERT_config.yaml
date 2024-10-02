@@ -29,4 +29,5 @@ early_stop_metric: 'eval_loss' # Metric for the early stopping
 early_stop_mode: 'min' # Mode for the early stopping
 early_stop_warm_up: 5 # Need to find a senseful value
 lr_scheduler_type: 'reduce_lr_on_plateau' # Type of the learning rate scheduler
+classification_weighted_labels: true # Use weighted labels for the classification
 

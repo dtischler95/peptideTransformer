@@ -46,8 +46,8 @@ def _debug_label_printer(predictions):
             label_1_counter += 1
         else:
             print(f"Invalid Prediction: {pred}")
-    print(f"Label 0 Counter: {label_0_counter}")
-    print(f"Label 1 Counter: {label_1_counter}")
+    print(f"\nLabel 0 Counter: {label_0_counter}")
+    print(f"Label 1 Counter: {label_1_counter}\n")
 
 
 def mlm_metrics(eval_preds) -> dict:

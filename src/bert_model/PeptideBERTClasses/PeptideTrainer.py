@@ -14,7 +14,9 @@ class PeptideTrainer(Trainer):
     Custom Trainer class with overridden methods.
     """
 
-    def __init__(self, model: Union[PreTrainedModel, nn.Module] = None, args: PeptideTrainingArguments = None,
+    def __init__(self,
+                 model: Union[PreTrainedModel, nn.Module] = None,
+                 args: PeptideTrainingArguments = None,
                  **kwargs):
         """
         Needed so we don't get type hint Errors from the Trainer Class not recognizing the PeptideTrainingArguments class
@@ -97,33 +99,38 @@ class PeptideTrainer(Trainer):
 
         Subclass and override this method if you want to inject some custom behavior.
         """
-        if self.train_dataset is None:
-            raise ValueError("Trainer: training requires a train_dataset.")
 
-        train_dataset = self.train_dataset
-        data_collator = self.data_collator
-        if is_datasets_available() and isinstance(train_dataset, Dataset):
-            train_dataset = self._remove_unused_columns(train_dataset, description="training")
+        if self.args.classification_weighted_labels:
+
+            if self.train_dataset is None:
+                raise ValueError("Trainer: training requires a train_dataset.")
+
+            train_dataset = self.train_dataset
+            data_collator = self.data_collator
+            if is_datasets_available() and isinstance(train_dataset, Dataset):
+                train_dataset = self._remove_unused_columns(train_dataset, description="training")
+            else:
+                data_collator = self._get_collator_with_removed_columns(data_collator, description="training")
+
+            weights = self.get_weighted_labels(train_dataset)
+
+            # Create a weighted sampler
+            sampler = WeightedRandomSampler(weights, len(weights))
+
+            dataloader_params = {
+                "batch_size": self._train_batch_size,
+                "collate_fn": data_collator,
+                "num_workers": self.args.dataloader_num_workers,
+                "pin_memory": self.args.dataloader_pin_memory,
+                "persistent_workers": self.args.dataloader_persistent_workers,
+                "sampler": sampler,
+                "drop_last": self.args.dataloader_drop_last,
+                "worker_init_fn": seed_worker,
+                "prefetch_factor": self.args.dataloader_prefetch_factor,
+            }
+            return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
         else:
-            data_collator = self._get_collator_with_removed_columns(data_collator, description="training")
-
-        weights = self.get_weighted_labels(train_dataset)
-
-        # Create a weighted sampler
-        sampler = WeightedRandomSampler(weights, len(weights))
-
-        dataloader_params = {
-            "batch_size": self._train_batch_size,
-            "collate_fn": data_collator,
-            "num_workers": self.args.dataloader_num_workers,
-            "pin_memory": self.args.dataloader_pin_memory,
-            "persistent_workers": self.args.dataloader_persistent_workers,
-            "sampler": sampler,
-            "drop_last": self.args.dataloader_drop_last,
-            "worker_init_fn": seed_worker,
-            "prefetch_factor": self.args.dataloader_prefetch_factor,
-        }
-        return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
+            return super().get_train_dataloader()
 
     @staticmethod
     def get_weighted_labels(train_dataset):
