@@ -10,56 +10,36 @@
 
 ### Model to Train
 
-- [ ] PeptideBert with data leaked training data
-- [ ] PeptideBert without leaked data
-- [ ] Fine Tune protBERT to peptide Sequences
-  - [x] only use starpep data
-  - [ ] Compare ReduceLROnPlateau and OneCycleLR
-  - [ ] Compare with Curriculum Trained model
+- Class labels for binary classification are imbalanced. The metrics are jumping wildly
+  - I implemented a weighted loss function to counteract this. But it looks still weird. 
+  - 
 
 
 ### To-Do
 - [ ] Think of cool Project Name
 - [x] Implement Path to avoid annoying path problems
-  - [ ] Research pathlib. can i do some more cool and convenient stuff?
-- [ ] Reseach python package how to. Do i really need to make a setup.py?? Script still not easily runnable on cluster
-- [ ] Found nan in mlm train log on some loss metrics. do i calculate loss the right way?
-  - [ ] Whats protBERTs stats on mlm accuracy?? Is protBERT rly that good?
+  - [ ] Research pathlib. can I do some more cool and convenient stuff?
 - [ ] Think of using more GPUs
 
-#### Data
-- [x] Think of better DataFolder Structure
-  - [ ] is it good?
 
 #### Preprocessing
-- [x] Make data_preprocessing Jupyter Notebook more beautiful
-  - [ ] Flesh out get_overall_stats function with more graphs and stats. *binary task* [low prio]
+- [ ] Flesh out get_overall_stats function with more graphs and stats. *binary task* [low prio]
 - [ ] Train_Data_viewer.py -> make sense of statistics 
   - [ ] Add data to Train Dataset
-    - [x] Added Data to Masked LM. We now have roundabout ~4 Million non bioactive peptides and 40k Bioactive ones
-    - [ ] Add more Bioactive Peptides for binary classification
+    - [ ] Add more Bioactive Peptides for binary classification and mlm task
 - [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
 - [ ] Think of removing Peptides that scores too similar with scoring tools for Peptide Sequences
-  - [ ] Research Scoring Tools for Peptides. Rn i don't recall the name 
+  - [ ] Research Scoring Tools for Peptides. Rn I don't recall the name 
 
 #### Training
-- [X] Implement ReduceLROnPlateau
-  - [ ] Does it really work?
-- [x] Implement MLM training
-- [ ] Train StarPep MLMBert 
-  - [x] Get more Peptide Data for Training
-  - [x] Does it make sense to successively increase masked tokens while training?
-    - [ ] RESEARCH CURRICULUM LEARNING !!
-- [ ] Add Jupyter Notebook for Training
-- [ ] is there a way to collected leaked data and put them into train data?
-- [ ] Training Args dict is not getting printed to log?? `/fine_tune/fine_tune_utils.py load_training_arguments()`
-- [ ] Check if path is given for config, otherwise use default config path. I think of this as a handy function for auto generating configs later on
+- [ ] Train StarPep MLMBert
+  - [ ] RESEARCH CURRICULUM LEARNING !!
 - [ ] Think of implementing lamb optimizer algorithm for higher batch sizes and therefore faster training
 
 #### Evaluation
 - [ ] Think of Evaluation Pipeline, do I really need more metrics? Some more graphs, yes... but clustering graphs should be enough maybe token position prediction confidence
 - [ ] Change Polars usage in hemo_clustering to pandas
-- [ ] Add Evaluation Jupyter Notebook
+
 
 
 ### Content

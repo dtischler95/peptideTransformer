@@ -26,6 +26,7 @@ class PeptideTrainingArguments(TrainingArguments):
                  early_stop_metric: str = 'eval_loss',
                  early_stop_mode: Literal['min', 'max'] = 'min',
                  early_stop_warm_up: int = 0,
+                 classification_weighted_labels: bool = False,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -46,6 +47,7 @@ class PeptideTrainingArguments(TrainingArguments):
         :param early_stop_metric: Metric to watch for early stopping
         :param early_stop_mode: One of min, max. In min mode, training will be stopped when the metric stops decreasing; in max mode it will be stopped when the metric stops increasing
         :param early_stop_warm_up: Number of epochs to wait before starting to watch for early stopping
+        :param classification_weighted_labels: Use weighted labels for classification tasks
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -73,3 +75,4 @@ class PeptideTrainingArguments(TrainingArguments):
         self.early_stop_metric = early_stop_metric
         self.early_stop_mode = early_stop_mode
         self.early_stop_warm_up = early_stop_warm_up
+        self.classification_weighted_labels = classification_weighted_labels
