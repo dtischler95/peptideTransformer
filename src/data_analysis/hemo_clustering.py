@@ -313,38 +313,26 @@ def perform_culstering(data, labels):
 
 
 
-def read_apd3(apd_path, min_len=10, max_len=50):
-    apd3 = (
-        pl.read_csv(
-            apd_path,
-            separator=";",
-            has_header=True,
-        )
-    )
-
-
-    # helix = helix.filter(~pl.col("sequence").is_in(beta.get_column("sequence")))
 
 
 
+def encode_peptides(sequence_file: str,
+                    tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
+                    batch_size: int = 32) -> [np.ndarray, list]:
 
 
-    # Write Seqs once
+    if tokenizer_and_model is None:
+        # Load the pre-trained model and tokenizer
+        tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False)
+        model = BertModel.from_pretrained("Rostlab/prot_bert")
+    else:
+        tokenizer, model = tokenizer_and_model
 
-    return apd3
-
-
-
-def encode_peptides(peptides, batch_size: int = 32):
-    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
-    print(f"[Device] Transformer is using device: {device}")
-
-    # Load the pre-trained model and tokenizer
-    tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-    model = BertModel.from_pretrained("../../peptideBERT")
     model.eval()
+
+    df = pd.read_csv(sequence_file, sep=';')
     # Prepare peptides
-    peptides_prepared = [' '.join(pep) for pep in peptides]
+    peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
     # Generate embeddings in batches
     progress = 0
@@ -367,17 +355,14 @@ def encode_peptides(peptides, batch_size: int = 32):
     np.savez_compressed("../../data/out/embeddings.npz", embeddings)
 
 
-    return embeddings
+    return embeddings, df['label'].to_list()
 
 
 # TODO later include 2rd class?
 def main(file_path: str, batch_size: int):
-    df = read_apd3(file_path)
 
-    labels = df.get_column("label").to_list()
-    seqs = df.get_column("sequence").to_list()
 
-    embedded_seqs = encode_peptides(seqs, batch_size=batch_size)
+    embedded_seqs, labels = encode_peptides(sequence_file=file_path, batch_size=batch_size)
     perform_culstering(embedded_seqs, labels)
 
 
