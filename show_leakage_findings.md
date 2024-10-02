@@ -43,3 +43,13 @@
 - it's the same when filtering out leaked data
 
 ![epoch no leakage](./pictures/problem_with_out_leaked.png)
+
+- I Tried a RandomWeightedSampler by applying label weights
+
+![first binary](./pictures/weighted_first.png)
+
+- and a second run with higher early stop params
+
+![second binary](./pictures/weighted_second.png)
+
+- The data always seems to fall to a fixed distribution of labels. This indicates that the model is learning a distribution not a pattern in the sequence
