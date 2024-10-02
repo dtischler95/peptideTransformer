@@ -118,7 +118,7 @@ def tmp_main(as_npz: bool = False):
                                             to_file_path="../../data/out")
 
 
-    tsne_results, kmeans_labels = perform_tsne_clustering(embedding, labels)
+    tsne_results, kmeans_labels = perform_tsne_clustering(embedding, labels, plot_path="../../plots")
 
 
 # Example usage
