@@ -19,7 +19,6 @@
 ## Proof of Concept
 ### Step 4 Proof of Concept: MLMPeptideBERT
 
-![MLMPeptideBERT](./pictures/poc_mlm_result.png)
-![MLMLEARNING CURVE](./pictures/poc_mlm_lc.png)
+
 
 ### Step 5 Proof of Concept: Binary PeptideBERT
