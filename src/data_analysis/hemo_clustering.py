@@ -297,8 +297,13 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
+    try:
+        pca, pca_fit = run_pca(embedded_sequences)
+    except Exception as e:
+        print(f"PCA failed: {e}")
+        pca = None
+        pca_fit = None
 
-    pca, pca_fit = run_pca(embedded_sequences)
     tsne_fit = run_tsne(embedded_sequences)
     umap_fit = run_umap(embedded_sequences)
 

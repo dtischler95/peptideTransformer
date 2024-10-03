@@ -29,7 +29,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
             "accuracy": accuracy.compute(predictions=predictions, references=labels),
             "recall": recall.compute(predictions=predictions, references=labels),
             "f1": f1.compute(predictions=predictions, references=labels),
-            "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
+            #"roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }

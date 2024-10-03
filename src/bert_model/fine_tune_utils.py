@@ -1,4 +1,5 @@
 import pandas as pd
+from matplotlib import pyplot as plt
 from transformers import BertTokenizer
 from sklearn.model_selection import train_test_split
 import yaml
@@ -38,39 +39,42 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-
+    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
-    unique_sequences = df['sequence'].unique()
+    if ignore_leakage:
+        df_to_split = df
+    else:
+        df_to_split = df['sequence'].unique()
 
 
     # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
-    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
+
 
     # Split the data into training, validation and test sets
-    train_sequences, df_val_handler = train_test_split(unique_sequences, test_size=validation_data_size, shuffle=True)
+    train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
     val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
 
-    # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
-    sequence_data_train = df[df['sequence'].isin(train_sequences)]
-    sequence_data_val = df[df['sequence'].isin(val_sequences)]
-    sequence_data_test = df[df['sequence'].isin(test_sequences)]
+    if not ignore_leakage:
+        # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
+        train_sequences = df[df['sequence'].isin(train_sequences)]
+        val_sequences = df[df['sequence'].isin(val_sequences)]
+        test_sequences = df[df['sequence'].isin(test_sequences)]
 
-    label_data_train = sequence_data_train['label'].values if binary_or_mlm == 'binary' else None
-    label_data_val = sequence_data_val['label'].values if binary_or_mlm == 'binary' else None
-    label_data_test = sequence_data_test['label'].values if binary_or_mlm == 'binary' else None
+    label_data_train = train_sequences['label'].values if binary_or_mlm == 'binary' else None
+    label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
+    label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
 
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
-    train_dataset = PeptideDataset(peptides=sequence_data_train['sequence'], tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
-    val_dataset = PeptideDataset(peptides=sequence_data_val['sequence'], tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
-    test_dataset = PeptideDataset(peptides=sequence_data_test['sequence'], tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
 
     # Important Data Leakage Check
-    # TODO I may collect leaked datapoints an return them to the training data for more train data
     check_data_loader_for_leakage(train_data_loader=train_dataset,
                                   val_data_loader=val_dataset,
                                   test_data_loader=test_dataset,
@@ -225,6 +229,48 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
         print(f"  {k}: {v}")
 
     return PeptideTrainingArguments(**training_args_dict)
+
+
+def test_binary_label_bias(tokenizer, trainer, training_args):
+
+    # TODO make separate file for only 0 label
+    only_0_label_df = pd.read_csv("../../data/train_data/mlm_train_data.csv", sep=';')
+    only_1_label_df = pd.read_csv("../../data/train_data/our_hemo_labeled_filtered.csv", sep=';')
+    only_0_label_df = only_0_label_df[~only_0_label_df["sequence"].isin(only_1_label_df['sequence'])][:100] # [:100] for debuggin. remove for full run
+    only_1_label_df = only_1_label_df[only_1_label_df["label"] == 1][:100]
+    only_0_label_dataset = PeptideDataset(peptides=only_0_label_df['sequence'],
+                                          tokenizer=tokenizer,
+                                          labels=[0] * len(only_0_label_df),
+                                          max_length=training_args.max_length)
+    only_1_label_dataset = PeptideDataset(peptides=only_1_label_df['sequence'].values,
+                                          tokenizer=tokenizer,
+                                          labels=only_1_label_df['label'].values,
+                                          max_length=training_args.max_length)
+    only_0_label_predictions = trainer.predict(only_0_label_dataset)
+    only_1_label_predictions = trainer.predict(only_1_label_dataset)
+    # Extract predictions
+    only_0_label_predictions_list = only_0_label_predictions.predictions
+    only_1_label_predictions_list = only_1_label_predictions.predictions
+    print(only_0_label_predictions_list)
+    print(only_1_label_predictions_list)
+
+    # Create a box plot
+    # Create a box plot for only_0_label_predictions_list
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(only_0_label_predictions_list, labels=['Only 0 Label Predictions'])
+    plt.title('Box Plot of Only 0 Label Predictions')
+    plt.ylabel('Prediction Values')
+    plt.xlabel('Label Type')
+    plt.show()
+
+    # Create a separate box plot for only_1_label_predictions_list
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(only_1_label_predictions_list, labels=['Only 1 Label Predictions'])
+    plt.title('Box Plot of Only 1 Label Predictions')
+    plt.ylabel('Prediction Values')
+    plt.xlabel('Label Type')
+    plt.show()
+    # TODO Box plots for label on dataset
 
 
 if __name__ == '__main__':
