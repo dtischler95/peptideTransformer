@@ -1,3 +1,4 @@
+import numpy as np
 from transformers import TrainerCallback, TrainerState, TrainerControl
 import matplotlib.pyplot as plt
 import os
@@ -20,6 +21,8 @@ class LearningCurveCallback(TrainerCallback):
         self.eval_loss_metric = []
         self.train_loss_metric = []
         self.train_accuracy_metric = []
+        self.label_0_counter = []
+        self.label_1_counter = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
         os.makedirs(args.plot_path, exist_ok=True)
 
@@ -43,19 +46,7 @@ class LearningCurveCallback(TrainerCallback):
 
         self.train_loss_metric.append(current_loss)
 
-        # Calculate and store train accuracy
-        if state.log_history:
-            last_log = state.log_history[-1]
-            if 'train_accuracy' in last_log:
-                self.train_accuracy_metric.append(last_log['train_accuracy'])
-            else:
-                predictions = state.predictions
-                labels = state.label_ids
-                if predictions is not None and labels is not None:
-                    train_accuracy = accuracy_score(labels, predictions.argmax(-1))
-                    self.train_accuracy_metric.append(train_accuracy)
 
-        # TODO any way to capture train accuracy? Or can we calculate it here?-
 
     def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
@@ -65,18 +56,53 @@ class LearningCurveCallback(TrainerCallback):
         logs = kwargs.get("metrics", {})
         current_loss = logs.get("eval_loss")
         current_accuracy = logs.get("eval_accuracy")['accuracy']
+        label_0_count = logs.get("eval_label_0_count_on_epoch_end")
+        label_1_count = logs.get("eval_label_1_count_on_epoch_end")
 
         if current_accuracy is None or current_loss is None:
             return
 
         self.eval_accuracy_metrics.append(current_accuracy)
         self.eval_loss_metric.append(current_loss)
+        self.label_0_counter.append((label_0_count / (label_0_count + label_1_count)) * 100)
+        self.label_1_counter.append((label_1_count / (label_0_count + label_1_count)) * 100)
 
         if state.epoch % self.interval == 0 and len(self.eval_accuracy_metrics) > 1 and self.isTrain:
             if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):
                 # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
                 raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
             self.plot_learning_curves(plot_path=args.plot_path)
+
+            if len(self.label_0_counter) > 1:
+                self.plot_label_abundance(plot_path=args.plot_path)
+
+    def plot_label_abundance(self, plot_path: str):
+        """
+        Plot the abundance of label classes in the predictions per Epoch.
+
+        """
+
+        max_labels = self.label_0_counter[0] + self.label_1_counter[0]
+
+        epochs = range(1, len(self.label_0_counter) + 1)
+        plt.figure(figsize=(10, 5))
+
+
+        plt.plot(epochs, self.label_0_counter, label='Label 0', color='blue')
+        plt.xlabel('Epochs')
+        plt.ylabel('Label 0 [%]', color='green')
+        plt.tick_params(axis='y', labelcolor='green')
+        plt.ylim(0, max_labels)
+        plt.xticks(epochs)
+        plt.xlim(1, len(self.label_0_counter))
+        label_0_counter_np = np.array(self.label_0_counter)
+        plt.fill_between(epochs, self.label_0_counter, max_labels, where=(label_0_counter_np <= max_labels),
+                         color='red', alpha=0.3)
+
+        plt.fill_between(epochs, self.label_0_counter, 0, where=(label_0_counter_np >= 0), color='green', alpha=0.3)
+
+        plt.savefig(f"{plot_path}/{self.task_name}_label_abundance.png")
+
 
     def plot_learning_curves(self, plot_path: str):
         """

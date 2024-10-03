@@ -25,7 +25,6 @@ def prepare_datasets(binary_or_mlm: str,
 
     :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
                           Is used for your task, update this flag if you want to use a different model or a different task
-    :param drop_duplicates: if duplicated sequences should be dropped
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param train_file: path to the training data
     :param logger: logger for logging
@@ -45,7 +44,7 @@ def prepare_datasets(binary_or_mlm: str,
 
 
     # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
-    df = df.sample(frac=1)[:1000] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
 
     # Split the data into training, validation and test sets
     train_sequences, df_val_handler = train_test_split(unique_sequences, test_size=validation_data_size, shuffle=True)

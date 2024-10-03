@@ -1,3 +1,4 @@
+import torch
 import umap
 import numpy as np
 import seaborn as sns
@@ -330,6 +331,7 @@ def perform_clustering(embedded_sequences,
 
 
 def encode_peptides(sequence_file: str,
+                    device,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
                     batch_size: int = 32) -> [np.ndarray, list]:
 
@@ -338,11 +340,12 @@ def encode_peptides(sequence_file: str,
         # Load the pre-trained model and tokenizer
         tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False, clean_up_tokenization_spaces=True)
         model = BertModel.from_pretrained("Rostlab/prot_bert")
-        model.eval()
+
+
     else:
         tokenizer, model = tokenizer_and_model
 
-
+    model.eval()
 
     df = pd.read_csv(sequence_file, sep=';')
     # Shuffle the data to ensure labels are mixed
@@ -357,9 +360,14 @@ def encode_peptides(sequence_file: str,
     for i in range(0, len(peptides_prepared), batch_size):
         batch_peptides = peptides_prepared[i:i + batch_size]
         enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36)
-        outputs = model(**enc)
-        batch_embeddings = outputs.pooler_output.detach().numpy()
-        embeddings.append(batch_embeddings)
+
+        enc = {key: value.to(device) for key, value in enc.items()}
+
+        outputs = model(**enc, output_hidden_states=True)
+
+        cls_embeddings = outputs.hidden_states[-1][:, 0, :].cpu()
+
+        embeddings.append(cls_embeddings.detach().numpy())
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
 
@@ -372,7 +380,9 @@ def encode_peptides(sequence_file: str,
 # TODO later include 2rd class?
 def cluster_model_embedding(file_path: str,
                             batch_size: int,
-                            plot_path:str):
+                            plot_path:str,
+                            device,
+                            tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
     """
     Standalone Wrapper for clustering analysis if you run this file directly.
     Thought for if you already have a model, and you want to further analyze the data.
@@ -381,14 +391,20 @@ def cluster_model_embedding(file_path: str,
     :param file_path: Path to the csv file containing the sequences and labels
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
+    :param device: Device to run the model on
+    :param tokenizer_and_model: Tuple containing the tokenizer and model
     """
 
     # Generating a tag for output files to be unique
     data_tag = file_path.split("/")[-1].split(".")[0]
+    if device is None:
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 
     embedding, labels = encode_peptides(sequence_file=file_path,
-                                        batch_size=batch_size)
+                                        batch_size=batch_size,
+                                        tokenizer_and_model=tokenizer_and_model,
+                                        device=device)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
                        tag=data_tag,
@@ -400,6 +416,8 @@ if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
     cluster_model_embedding(file_path="../../data/train_data/whitelab_hemo_data.csv",
                             batch_size=64,
-                            plot_path="../../plots")
+                            plot_path="../../plots",
+                            tokenizer_and_model=None,
+                            device=None)
 
 

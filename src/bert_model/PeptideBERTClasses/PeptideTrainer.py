@@ -132,6 +132,74 @@ class PeptideTrainer(Trainer):
         else:
             return super().get_train_dataloader()
 
+    def get_eval_dataloader(self, eval_dataset: Optional[Union[str, Dataset]] = None) -> DataLoader:
+        """
+        Returns the evaluation [`~torch.utils.data.DataLoader`].
+
+        Subclass and override this method if you want to inject some custom behavior.
+
+        Args:
+            eval_dataset (`str` or `torch.utils.data.Dataset`, *optional*):
+                If a `str`, will use `self.eval_dataset[eval_dataset]` as the evaluation dataset. If a `Dataset`, will override `self.eval_dataset` and must implement `__len__`. If it is a [`~datasets.Dataset`], columns not accepted by the `model.forward()` method are automatically removed.
+        """
+        if self.args.classification_weighted_labels:
+
+            if eval_dataset is None and self.eval_dataset is None:
+                raise ValueError("Trainer: evaluation requires an eval_dataset.")
+
+            # If we have persistent workers, don't do a fork bomb especially as eval datasets
+            # don't change during training
+            dataloader_key = eval_dataset if isinstance(eval_dataset, str) else "eval"
+            if (
+                hasattr(self, "_eval_dataloaders")
+                and dataloader_key in self._eval_dataloaders
+                and self.args.dataloader_persistent_workers
+            ):
+                return self.accelerator.prepare(self._eval_dataloaders[dataloader_key])
+
+            eval_dataset = (
+                self.eval_dataset[eval_dataset]
+                if isinstance(eval_dataset, str)
+                else eval_dataset
+                if eval_dataset is not None
+                else self.eval_dataset
+            )
+            data_collator = self.data_collator
+
+            if is_datasets_available() and isinstance(eval_dataset, Dataset):
+                eval_dataset = self._remove_unused_columns(eval_dataset, description="evaluation")
+            else:
+                data_collator = self._get_collator_with_removed_columns(data_collator, description="evaluation")
+
+            weights = self.get_weighted_labels(eval_dataset)
+
+            # Create a weighted sampler
+            sampler = WeightedRandomSampler(weights, len(weights))
+
+            dataloader_params = {
+                "batch_size": self.args.eval_batch_size,
+                "collate_fn": data_collator,
+                "sampler": sampler,
+                "num_workers": self.args.dataloader_num_workers,
+                "pin_memory": self.args.dataloader_pin_memory,
+                "persistent_workers": self.args.dataloader_persistent_workers,
+                "drop_last": self.args.dataloader_drop_last,
+                "prefetch_factor": self.args.dataloader_prefetch_factor,
+            }
+
+            # accelerator.free_memory() will destroy the references, so
+            # we need to store the non-prepared version
+            eval_dataloader = DataLoader(eval_dataset, **dataloader_params)
+            if self.args.dataloader_persistent_workers:
+                if hasattr(self, "_eval_dataloaders"):
+                    self._eval_dataloaders[dataloader_key] = eval_dataloader
+                else:
+                    self._eval_dataloaders = {dataloader_key: eval_dataloader}
+
+            return self.accelerator.prepare(eval_dataloader)
+        else:
+            return super().get_eval_dataloader()
+
     @staticmethod
     def get_weighted_labels(train_dataset):
         # Calculate class weights
