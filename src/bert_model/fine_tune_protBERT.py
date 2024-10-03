@@ -70,7 +70,7 @@ def fine_tune(model_class: str,
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
-    tokenizer, test_dataset, train_dataset, val_dataset = prepare_datasets(binary_or_mlm=model_class,
+    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=model_class,
                                                                            show_encoding=show_encoding,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
