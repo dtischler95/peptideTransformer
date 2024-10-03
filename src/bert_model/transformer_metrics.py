@@ -24,9 +24,17 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     # ----- Added for debugging purposes -----
     # Save check for Prediction Bias towards one label
     if debug_print:
-        _debug_label_printer(predictions)
+        label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
+        return {
+            "accuracy": accuracy.compute(predictions=predictions, references=labels),
+            "recall": recall.compute(predictions=predictions, references=labels),
+            "f1": f1.compute(predictions=predictions, references=labels),
+            "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
+            "label_0_count_on_epoch_end": label_0_counter,
+            "label_1_count_on_epoch_end": label_1_counter
+        }
 
-    print(f"Acuracy Save Print: {accuracy.compute(predictions=predictions, references=labels)}")
+
 
     return {
         "accuracy": accuracy.compute(predictions=predictions, references=labels),
@@ -36,7 +44,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     }
 
 
-def _debug_label_printer(predictions):
+def _debug_predicted_labels(predictions):
     label_0_counter = 0
     label_1_counter = 0
     for pred in predictions:
@@ -46,8 +54,9 @@ def _debug_label_printer(predictions):
             label_1_counter += 1
         else:
             print(f"Invalid Prediction: {pred}")
-    print(f"\nLabel 0 Counter: {label_0_counter}")
-    print(f"Label 1 Counter: {label_1_counter}\n")
+
+
+    return label_0_counter, label_1_counter
 
 
 def mlm_metrics(eval_preds) -> dict:

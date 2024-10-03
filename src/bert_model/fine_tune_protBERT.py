@@ -16,7 +16,7 @@ from src.bert_model.fine_tune_utils import prepare_datasets, load_training_argum
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
 
 # this line should be included in the TrainingArguments
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+#device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
@@ -129,12 +129,22 @@ def fine_tune(model_class: str,
 
         trainer.save_model(training_args.model_save_path)
         tokenizer.save_pretrained(training_args.model_save_path)
-        # TODO save tokenizer
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
         eval_result = trainer.evaluate()
         logger.info(eval_result)
+        if model_class == 'binary':
+            from src.data_analysis.hemo_clustering import cluster_model_embedding
+            # Custom Function for cluster the model embeddings with the whole dataset
+            # TODO may provide custom file arg for this. But rn we dont have the data sadly
+            # TODO Pass logger to the function
+            cluster_model_embedding(file_path=training_args.train_file,
+                                    batch_size=training_args.per_device_eval_batch_size,
+                                    plot_path=training_args.plot_path,
+                                    tokenizer_and_model=(tokenizer, trainer.model),
+                                    device=training_args.device)
+
 
     if training_args.do_predict:
         predictions = trainer.predict(test_dataset)
