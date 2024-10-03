@@ -1,5 +1,3 @@
-import polars as pl
-import torch
 import umap
 import numpy as np
 import seaborn as sns
@@ -9,57 +7,17 @@ from sklearn.decomposition import PCA
 from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
 from warnings import filterwarnings
-from collections import Counter
 from transformers import BertTokenizer, BertModel
 
-
-
-def amino_acid_frequency_comparison(
-    sequences_0, sequences_1, plot_path=""
-):
-    def _tokenize(sequences) -> dict:
-        counts = Counter()
-        for seq in sequences:
-            counts += Counter(seq)
-        return counts
-
-    counts_0 = _tokenize(sequences_0)
-    counts_1 = _tokenize(sequences_1)
-
-    tick_labels = sorted(set(counts_0.keys())) #| set(counts_1.keys()))
-    vec_0 = np.array([counts_0[k] for k in tick_labels])
-    vec_0 = vec_0 / vec_0.sum()
-
-    vec_1 = np.array([counts_1[k] for k in tick_labels])
-    vec_1 = vec_1 / vec_1.sum()
-
-    x = np.arange(len(tick_labels))
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle("Amino acid frequency comparison", fontsize=12)
-    ax1.bar(x - 0.2, vec_0, 0.4, label="Negativ")
-    ax1.bar(x + 0.2, vec_1, 0.4, label="Positiv")
-    plt.xticks(x, tick_labels)
-    ax1.set_ylabel("AA Frequency")
-    ax1.legend()
-    ax1.set_xticks(x, tick_labels)
-    ax1.set_xlabel("Amino Acids")
-
-    # Train - gen
-    ax2.bar(x, vec_0 - vec_1, alpha=0.75)
-    ax2.set_ylabel("Difference in Relative Frequency")
-    ax2.set_xticks(x, tick_labels)
-    ax2.set_xlabel("Amino Acids")
-    ax2.set_title("Negativ - Positiv")
-
-    if plot_path != "":
-        plt.savefig(f"{plot_path}.pdf")
-        plt.clf()
-    else:
-        plt.show()
-
-
 def plot_density(x, y, labels, ax):
+    """
+    Plot density of the data points in the scatter plot using seaborn kdeplot function.
+
+    :param x: x-axis data
+    :param y: y-axis data
+    :param labels: labels of the data points
+    :param ax: axis to plot on
+    """
     return sns.kdeplot(
         x=x,
         y=y,
@@ -73,6 +31,12 @@ def plot_density(x, y, labels, ax):
 
 # Positive 0 = helix, Negative 1 = beta
 def seperate_points(data, labels):
+    """
+    Seperate the data points based on their labels.
+
+    :param data: data points
+    :param labels: labels of the data points
+    """
     positive, negative = [], []
     for label in range(len(labels)):
         if labels[label] == 1:
@@ -83,6 +47,14 @@ def seperate_points(data, labels):
 
 
 def plot_pca(pca, pca_fit, labels, plot_path=""):
+    """
+    Plot PCA analysis of the data points.
+
+    :param pca: PCA object
+    :param pca_fit: PCA transformed data
+    :param labels: labels of the data points
+    :param plot_path: path to save the plot
+    """
     pos, neg = seperate_points(pca_fit, labels)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
     ax1.scatter(
@@ -136,6 +108,13 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
 
 
 def plot_tsne(tsne_fit, labels, plot_path=""):
+    """
+    Plot TSNE analysis of the data points.
+
+    :param tsne_fit: TSNE transformed data
+    :param labels: labels of the data points
+    :param plot_path: path to save the plot
+    """
     pos, neg = seperate_points(tsne_fit, labels)
     figr, ax = plt.subplots(1, 1)
 
@@ -177,6 +156,13 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
 
 
 def plot_umap(data, labels, plot_path=""):
+    """
+    Plot UMAP analysis of the data points.
+
+    :param data: data points
+    :param labels: labels of the data points
+    :param plot_path: path to save the plot
+    """
     reducer = umap.UMAP(n_components=2, n_neighbors=15, random_state=42)
     umapped = reducer.fit_transform(data)
     pos, neg = seperate_points(umapped, labels)
@@ -220,14 +206,34 @@ def plot_umap(data, labels, plot_path=""):
     return umapped
 
 
-def perform_culstering(data, labels):
-    def cluster_metrics(data, labels, cluster_labels, tag="", show=False):
+def perform_clustering(embedded_sequences,
+                       sequence_labels,
+                       plot_path: str,
+                       tag: str= ""):
+    """
+    Perform clustering analysis on the data points.
+    Wrapper for the basic clustering analysis.
+
+    :param embedded_sequences: data points
+    :param sequence_labels: labels of the data points. Needs to be index paired with the data points
+    :param plot_path: path to sav{plot_path
+    :param tag: tag for the output files
+    """
+    def cluster_metrics(data, labels, cluster_labels, cluster_tag=""):
+        """
+        Print and return clustering metrics.
+
+        :param data: data points
+        :param labels: true labels
+        :param cluster_labels: predicted labels
+        :param cluster_tag: tag for prints
+        """
         print(
             f"[Clustering]: Positive class: {list(cluster_labels).count(1)} Negative class: {list(cluster_labels).count(0)}"
         )
         unique_labels = set(cluster_labels)
         if len(unique_labels) < 2:
-            print(f"Skipping silhouette score calculation for {tag} clustering due to insufficient unique labels.")
+            print(f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
             print(f"Unique labels: {unique_labels}")
             silhouette_score = None
         else:
@@ -243,24 +249,24 @@ def perform_culstering(data, labels):
             "shil": silhouette_score,
             "mifs": metrics.mutual_info_score(labels, cluster_labels),
         }
-        if show:
-            print("----------------------------------------------------")
-            print(f"\t Metrics Report for {tag} Clustering")
-            print("----------------------------------------------------")
-            print(f"Homogeneity:\t\t{res['hom']:4f}")
-            print(f"Completness:\t\t{res['comp']:4f}")
-            print(f"V-measure:\t\t{res['v_score']:4f}")
-            print(f"Adjusted Rand-Index:\t\t{res['adj_rand_idx']:4f}")
-            if silhouette_score is not None:
-                print(f"Silhouette Score:\t\t{res['shil']:4f}")
-            print(f"Mutual Information Score: {res['mifs']:4f}")
-            print("----------------------------------------------------")
-        return pl.from_dict(res)
 
-    def run_pca(data, comps=30):
+        print("----------------------------------------------------")
+        print(f"\t Metrics Report for {cluster_tag} Clustering")
+        print("----------------------------------------------------")
+        print(f"Homogeneity:\t\t{res['hom']:4f}")
+        print(f"Completness:\t\t{res['comp']:4f}")
+        print(f"V-measure:\t\t{res['v_score']:4f}")
+        print(f"Adjusted Rand-Index:\t\t{res['adj_rand_idx']:4f}")
+        if silhouette_score is not None:
+            print(f"Silhouette Score:\t\t{res['shil']:4f}")
+        print(f"Mutual Information Score: {res['mifs']:4f}")
+        print("----------------------------------------------------")
+
+
+    def run_pca(data, comps=12):
         print("[Clustering] Running PCA")
-        pca = PCA(n_components=comps, random_state=42)
-        return pca, pca.fit(data).transform(data)
+        _pca = PCA(n_components=comps, random_state=42)
+        return _pca, _pca.fit(data).transform(data)
 
     def run_tsne(data):
         print("[Clustering] Running TSNE")
@@ -286,33 +292,40 @@ def perform_culstering(data, labels):
         kmeans = KMeans(n_clusters=2, max_iter=100, n_init=5, random_state=42)
         kmeans.fit(data)
 
-        scores = cluster_metrics(data, labels, kmeans.labels_, tag="KMeans", show=True)
+        cluster_metrics(data, labels, kmeans.labels_, cluster_tag="KMeans")
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
 
-    pca, pca_fit = run_pca(data)
-    # tsne_fit = run_tsne(data)
-    # umap_fit = run_umap(data)
+    pca, pca_fit = run_pca(embedded_sequences)
+    tsne_fit = run_tsne(embedded_sequences)
+    umap_fit = run_umap(embedded_sequences)
 
     print("[Clustering] Running KMeans for PCA")
-    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, labels)
-    # print("[Clustering] Running KMeans for TSNE")
-    # tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, labels)
-    # print("[Clustering] Running KMeans for UMAP")
-    # umap_kmeans, umap_kmeans_labels = clustering(umap_fit, labels)
+    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    print("[Clustering] Running KMeans for TSNE")
+    tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
+    print("[Clustering] Running KMeans for UMAP")
+    umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
     try:
         print("[Clustering] Plotting PCA")
-        plot_pca(pca, pca_fit, labels, plot_path="../data/out/pca_plot")
+        plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
     except Exception as e:
         print(f"PCA Plotting failed: {e}")
-    # print("[Clustering] Plotting TSNE")
-    # plot_tsne(tsne_fit, labels, plot_path="../data/out/tsne_plot")
-    # print("[Clustering] Plotting UMAP")
-    # plot_umap(umap_fit, labels, plot_path="../data/out/umap_plot")
+    print("[Clustering] Plotting TSNE")
+    plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
+    print("[Clustering] Plotting UMAP")
+    plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_umap_plot")
 
-
-
+    try:
+        print("[Clustering] Plotting PCA")
+        plot_pca(pca, pca_fit, pca_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_pca_plot")
+    except Exception as e:
+        print(f"PCA Plotting failed: {e}")
+    print("[Clustering] Plotting TSNE")
+    plot_tsne(tsne_fit, tnse_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_tsne_plot")
+    print("[Clustering] Plotting UMAP")
+    plot_umap(umap_fit, umap_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_umap_plot")
 
 
 
@@ -323,14 +336,18 @@ def encode_peptides(sequence_file: str,
 
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
-        tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False)
+        tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False, clean_up_tokenization_spaces=True)
         model = BertModel.from_pretrained("Rostlab/prot_bert")
+        model.eval()
     else:
         tokenizer, model = tokenizer_and_model
 
-    model.eval()
+
 
     df = pd.read_csv(sequence_file, sep=';')
+    # Shuffle the data to ensure labels are mixed
+    df = df.sample(frac=1).reset_index(drop=True)
+    df = df[:100]
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -346,35 +363,43 @@ def encode_peptides(sequence_file: str,
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
 
-
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
-
-    # save embeddings to npz file
-
-    np.savez_compressed("../../data/out/embeddings.npz", embeddings)
-
 
     return embeddings, df['label'].to_list()
 
 
 # TODO later include 2rd class?
-def main(file_path: str, batch_size: int):
+def cluster_model_embedding(file_path: str,
+                            batch_size: int,
+                            plot_path:str):
+    """
+    Standalone Wrapper for clustering analysis if you run this file directly.
+    Thought for if you already have a model, and you want to further analyze the data.
+    A basic clustering will be done in the fine tune script.
+
+    :param file_path: Path to the csv file containing the sequences and labels
+    :param batch_size: Batch size for encoding the sequences
+    :param plot_path: Path to save the plots
+    """
+
+    # Generating a tag for output files to be unique
+    data_tag = file_path.split("/")[-1].split(".")[0]
 
 
-    embedded_seqs, labels = encode_peptides(sequence_file=file_path, batch_size=batch_size)
-    perform_culstering(embedded_seqs, labels)
+    embedding, labels = encode_peptides(sequence_file=file_path,
+                                        batch_size=batch_size)
+    perform_clustering(embedded_sequences=embedding,
+                       sequence_labels=labels,
+                       tag=data_tag,
+                       plot_path=plot_path)
 
 
-
-def main_plot_amino(file_path: str):
-    df = pd.read_csv(file_path, sep=';')
-    neg_seqs = df[df['label'] == 1]['sequence'].to_list()
-    pos_seqs = df[df['label'] == 0]['sequence'].to_list()
-    amino_acid_frequency_comparison(neg_seqs, pos_seqs, plot_path="../data/hemo/amino_acid_freq_comparison")
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
-    main(file_path="../../data/train_data/whitelab_hemo_data.csv", batch_size=64)
-    # main_plot_amino(file_path="../data/hemo/splitted_hemo_labeled.csv")
+    cluster_model_embedding(file_path="../../data/train_data/whitelab_hemo_data.csv",
+                            batch_size=64,
+                            plot_path="../../plots")
+
 

@@ -1,5 +1,7 @@
 import argparse
+from warnings import filterwarnings
 from src.bert_model.fine_tune_protBERT import fine_tune
+from src.data_analysis.hemo_clustering import cluster_model_embedding
 # Import your data_preprocess and data_analysis functions here
 
 def reproduce_our_work_steps():
@@ -23,7 +25,9 @@ def main():
     # Subparser for data_analysis
     data_analysis_parser = subparsers.add_parser('data_analysis', help='Analyze the data')
     # Add arguments for data_analysis here
-
+    data_analysis_parser.add_argument('--cluster', action='store_true', required=True, help='Cluster with model')
+    data_analysis_parser.add_argument('--file_path', type=str, required=True, help='Path to the file')
+    data_analysis_parser.add_argument('--out_plot_path', type=str, required=True, help='Path to the Plots')
 
     # Subparser for reproduce
     reproduce_parser = subparsers.add_parser('reproduce', help='Reproduce our results')
@@ -47,7 +51,11 @@ def main():
         pass
     elif args.command == 'data_analysis':
         # Call your data_analysis function here
-        pass
+        if args.cluster:
+            filterwarnings("ignore", category=UserWarning)
+            cluster_model_embedding(file_path=args.file_path,
+                                    batch_size=64,
+                                    plot_path=args.out_plot_path)
     elif args.command == 'reproduce':
         reproduce_our_work_steps()
     else:
