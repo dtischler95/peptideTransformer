@@ -64,8 +64,10 @@ class LearningCurveCallback(TrainerCallback):
 
         self.eval_accuracy_metrics.append(current_accuracy)
         self.eval_loss_metric.append(current_loss)
-        self.label_0_counter.append((label_0_count / (label_0_count + label_1_count)) * 100)
-        self.label_1_counter.append((label_1_count / (label_0_count + label_1_count)) * 100)
+
+        if label_1_count is not None:
+            self.label_0_counter.append((label_0_count / (label_0_count + label_1_count)) * 100)
+            self.label_1_counter.append((label_1_count / (label_0_count + label_1_count)) * 100)
 
         if state.epoch % self.interval == 0 and len(self.eval_accuracy_metrics) > 1 and self.isTrain:
             if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):

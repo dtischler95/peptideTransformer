@@ -154,7 +154,7 @@ def fine_tune(model_class: str,
 
 
 if __name__ == '__main__':
-    fine_tune(model_class='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+    fine_tune(model_class='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
               config_path='peptideBERT_configs/debug_mlmBERT_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )
