@@ -1,22 +1,22 @@
 import sys
 import warnings
 
+
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 
-import torch  # pytorch in requirements.txt
 import logging
 
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
-from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments
+from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, test_binary_label_bias
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
 
 # this line should be included in the TrainingArguments
-#device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+# device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
@@ -145,16 +145,21 @@ def fine_tune(model_class: str,
                                     tokenizer_and_model=(tokenizer, trainer.model),
                                     device=training_args.device)
 
-
     if training_args.do_predict:
-        predictions = trainer.predict(test_dataset)
-        print(predictions[0])
+
+        # Test dataset not used so far. May remove it completely?
+
+        if model_class == 'binary':
+            test_binary_label_bias(tokenizer, trainer, training_args)
+
         # TODO Find a cool representation for the predictions
         # logger.info(predictions.predictions)
 
 
+
+
 if __name__ == '__main__':
-    fine_tune(model_class='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+    fine_tune(model_class='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
               config_path='peptideBERT_configs/debug_mlmBERT_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )
