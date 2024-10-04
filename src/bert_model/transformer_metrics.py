@@ -14,9 +14,9 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     """
 
     accuracy = evaluate.load("accuracy")
-    recall = evaluate.load("recall")
-    f1 = evaluate.load("f1")
-    roc_auc = evaluate.load("roc_auc")
+    # recall = evaluate.load("recall")
+    # f1 = evaluate.load("f1")
+    # roc_auc = evaluate.load("roc_auc")
 
     predictions, labels = eval_preds
     predictions = (predictions > 0.5).astype(int)  # Apply the threshold to convert probabilities to binary predictions
@@ -28,8 +28,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
             "accuracy": accuracy.compute(predictions=predictions, references=labels),
-            "recall": recall.compute(predictions=predictions, references=labels),
-            "f1": f1.compute(predictions=predictions, references=labels),
+            # "recall": recall.compute(predictions=predictions, references=labels),
+            # "f1": f1.compute(predictions=predictions, references=labels),
             #"roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
@@ -39,9 +39,9 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     return {
         "accuracy": accuracy.compute(predictions=predictions, references=labels),
-        "recall": recall.compute(predictions=predictions, references=labels),
-        "f1": f1.compute(predictions=predictions, references=labels),
-        "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
+        # "recall": recall.compute(predictions=predictions, references=labels),
+        # "f1": f1.compute(predictions=predictions, references=labels),
+        # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
     }
 
 
