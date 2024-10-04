@@ -50,28 +50,17 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             return_dict=return_dict,
         )
 
-        # Extract pooler_output (the CLS token after the pooling layer)
-        pooled_output = self.dropout(outputs.pooler_output)
-
-        # Pass the CLS token through the classifier
+        pooled_output = outputs[1]  # Use pooled output
+        pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
-        # Apply sigmoid for binary classification
+        # Apply sigmoid activation for binary classification
         logits = self.sigmoid(logits)
 
+        # If labels are provided, compute the loss
         loss = None
         if labels is not None:
-            loss_fct = nn.BCELoss()
+            loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
             loss = loss_fct(logits.view(-1), labels.view(-1).float())
 
-        if not return_dict:
-            output = (logits,) + outputs[2:]
-            return ((loss,) + output) if loss is not None else output
-
-        # Return outputs like in BertForSequenceClassification (including pooler_output)
-        return SequenceClassifierOutput(
-            loss=loss,
-            logits=logits,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
-        )
+        return (loss, logits) if loss is not None else logits
