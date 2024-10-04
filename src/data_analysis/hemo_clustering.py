@@ -276,7 +276,7 @@ def perform_clustering(embedded_sequences,
             perplexity=5.0,
             init="random",
             method="exact",
-            n_iter=1000,
+            max_iter=1000,
             random_state=42,
             verbose=0,
         )
@@ -348,7 +348,7 @@ def encode_peptides(sequence_file: str,
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
         tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False, clean_up_tokenization_spaces=True)
-        model = BertModel.from_pretrained("Rostlab/prot_bert")
+        model = BertModel.from_pretrained("Rostlab/prot_bert_bfd")
 
 
     else:
@@ -359,7 +359,6 @@ def encode_peptides(sequence_file: str,
     df = pd.read_csv(sequence_file, sep=';')
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
-    df = df[:100]
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -374,9 +373,8 @@ def encode_peptides(sequence_file: str,
 
         outputs = model(**enc, output_hidden_states=True)
 
-        cls_embeddings = outputs.hidden_states[-1][:, 0, :].cpu()
 
-        embeddings.append(cls_embeddings.detach().numpy())
+        embeddings.append(outputs.pooler_output.detach().numpy())
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
 
@@ -407,7 +405,7 @@ def cluster_model_embedding(file_path: str,
     # Generating a tag for output files to be unique
     data_tag = file_path.split("/")[-1].split(".")[0]
     if device is None:
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 
 
     embedding, labels = encode_peptides(sequence_file=file_path,
