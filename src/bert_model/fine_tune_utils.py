@@ -14,10 +14,10 @@ def prepare_datasets(binary_or_mlm: str,
                      train_file: str,
                      logger: logging.Logger,
                      ignore_leakage: bool = False,
-                     max_length:int=36,
+                     max_length: int = 36,
                      cut_df_for_faster_debug: bool = False,
                      validation_data_size: float = 0.2,
-                     test_data_size:float = 0.5) -> tuple[
+                     test_data_size: float = 0.5) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
     Creates the datasets for training, validation and testing. for the given transformers Dataset class
@@ -47,7 +47,6 @@ def prepare_datasets(binary_or_mlm: str,
     else:
         df_to_split = df['sequence'].unique()
 
-
     # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
     # TODO add stratified args for train_test_split
 
@@ -68,9 +67,12 @@ def prepare_datasets(binary_or_mlm: str,
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train, max_length=max_length)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], tokenizer=tokenizer, labels=label_data_val, max_length=max_length)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], tokenizer=tokenizer, labels=label_data_test, max_length=max_length)
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
+                                   max_length=max_length)
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], tokenizer=tokenizer, labels=label_data_val,
+                                 max_length=max_length)
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], tokenizer=tokenizer, labels=label_data_test,
+                                  max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
@@ -221,7 +223,6 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
-
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
     print("Set Parameters for this training run:")
@@ -236,8 +237,8 @@ def load_and_prepare_datasets(tokenizer, training_args):
     Load and prepare the negative and positive datasets for predictions.
     """
     # Load datasets
-    negative_df = pd.read_csv("../../data/train_data/mlm_train_data.csv", sep=';')
-    positive_df = pd.read_csv("../../data/train_data/our_hemo_labeled_filtered.csv", sep=';')
+    negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')
+    positive_df = pd.read_csv("./data/train_data/our_hemo_labeled_filtered.csv", sep=';')
 
     # Filter out sequences in positive_df from negative_df
     negative_df = negative_df[~negative_df["sequence"].isin(positive_df['sequence'])]
@@ -324,6 +325,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     plt.savefig("./plots/label_prediction_bias.png")
 
     # TODO: Box plots for label on dataset
+
 
 if __name__ == '__main__':
     data_leakage_wrapper()
