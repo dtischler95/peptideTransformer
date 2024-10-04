@@ -220,15 +220,14 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
-    training_args_dict = config#['training_arguments'][training_type]
 
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
     print("Set Parameters for this training run:")
-    for k, v in training_args_dict.items():
+    for k, v in config.items():
         print(f"  {k}: {v}")
 
-    return PeptideTrainingArguments(**training_args_dict)
+    return PeptideTrainingArguments(**config)
 
 
 def test_binary_label_bias(tokenizer, trainer, training_args):
