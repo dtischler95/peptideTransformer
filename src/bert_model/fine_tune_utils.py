@@ -48,7 +48,7 @@ def prepare_datasets(binary_or_mlm: str,
 
 
     # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
-
+    # TODO add stratified args for train_test_split
 
     # Split the data into training, validation and test sets
     train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
