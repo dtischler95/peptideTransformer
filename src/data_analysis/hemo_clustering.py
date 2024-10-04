@@ -306,9 +306,13 @@ def perform_clustering(embedded_sequences,
 
     tsne_fit = run_tsne(embedded_sequences)
     umap_fit = run_umap(embedded_sequences)
-
-    print("[Clustering] Running KMeans for PCA")
-    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    try:
+        print("[Clustering] Running KMeans for PCA")
+        pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    except Exception as e:
+        print(f"PCA KMeans failed: {e}")
+        pca_kmeans = None
+        pca_kmeans_labels = None
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")

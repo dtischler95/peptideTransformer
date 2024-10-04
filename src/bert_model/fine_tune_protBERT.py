@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
 from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
-    DefaultDataCollator
+    DefaultDataCollator, BertConfig
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 
 import logging
@@ -86,7 +86,14 @@ def fine_tune(model_class: str,
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
     if model_class == 'binary':
-        model = BertForSequenceClassification.from_pretrained(training_args.model_path, num_labels=2)
+        config = BertConfig.from_pretrained(training_args.model_path)
+        # TODO move to training args
+        config.hidden_size = 480
+        config.num_attention_heads = 12
+        config.num_hidden_layers = 12
+        config.classifier_dropout = 0.15
+        config.num_labels = 2
+        model = BertForSequenceClassification(config)
         data_collator = DefaultDataCollator()
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
