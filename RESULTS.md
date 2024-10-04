@@ -71,6 +71,7 @@
 
 - To avoid training with fewer data points I first tried a RandomWeightedSampler by applying label weights
 
+*****************************************************
 - The Random Sampler kindah seems to fix the predictions in the first epoch, but it jumps wildly
   - May that's due to the class imbalance in the dataset. We sampling train but presenting an imbalanced eval set
 
@@ -89,6 +90,7 @@
 - [ ] Apply RandomSampler also to Eval dataset!!!
 
 - [ ] See if clustering is at least possible with the model
+********
 
 ## Proof of Concept
 ### Step 4 Proof of Concept: MLMPeptideBERT
