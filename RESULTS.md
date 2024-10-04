@@ -103,6 +103,12 @@
 - No beatiful clusters here. I still don't know how Peptide Bert did their clustering. i tried a lot...
   - [ ] Wait for Email with response from PeptideBERT Authors
 
+### PeptideBert with my Data and optimizations
+![my_data](./pictures/my_data.png)
+- First look on algorithm with my pipeline and my data
+  - I could use some more datapoints. But first results looking good so far
+  - Accuracy does not look that good so far, but could be number of eval points
+  - BUT! The label prediction looks much healthier than with the original data
 
 ### Further analysis
 - [ ] Implement their fisher test
