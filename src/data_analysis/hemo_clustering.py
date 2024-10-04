@@ -372,13 +372,9 @@ def encode_peptides(sequence_file: str,
 
         enc = {key: value.to(device) for key, value in enc.items()}
 
-        outputs = model(**enc, output_hidden_states=True)
+        outputs = model(**enc, return_pooler_output=True)
 
-        hidden_states = outputs.hidden_states
-
-        cls_token = hidden_states[-1][:, 0, :].cpu()
-
-        embeddings.append(cls_token.detach().numpy())
+        embeddings.append(outputs.cpu().detach().numpy())
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
 
