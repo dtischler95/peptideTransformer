@@ -256,20 +256,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
 
     # Create a box plot
     # Create a box plot for only_0_label_predictions_list
-    plt.figure(figsize=(10, 6))
-    plt.boxplot(only_0_label_predictions_list, labels=['Only 0 Label Predictions'])
-    plt.title('Box Plot of Only 0 Label Predictions')
-    plt.ylabel('Prediction Values')
-    plt.xlabel('Label Type')
-    plt.show()
 
-    # Create a separate box plot for only_1_label_predictions_list
-    plt.figure(figsize=(10, 6))
-    plt.boxplot(only_1_label_predictions_list, labels=['Only 1 Label Predictions'])
-    plt.title('Box Plot of Only 1 Label Predictions')
-    plt.ylabel('Prediction Values')
-    plt.xlabel('Label Type')
-    plt.show()
     # TODO Box plots for label on dataset
 
 
