@@ -2,8 +2,8 @@ from typing import Optional, Union, Tuple
 import torch
 from transformers import BertForSequenceClassification, BertModel
 import torch.nn as nn
-from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
-from src.bert_model.PeptideBERTClasses.PeptideSequenceClassifierOutput import PeptideSequenceClassifierOutput
+from transformers.modeling_outputs import SequenceClassifierOutput
+
 
 
 class PeptideBertForBinaryClassification(BertForSequenceClassification):
@@ -34,7 +34,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-    ) -> Union[Tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
+    ) -> Union[Tuple[torch.Tensor], SequenceClassifierOutput]:
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -51,8 +51,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
         )
 
         # Extract pooler_output (the CLS token after the pooling layer)
-        pooler_output = outputs.pooler_output
-        pooled_output = self.dropout(pooler_output)
+        pooled_output = self.dropout(outputs.pooler_output)
 
         # Pass the CLS token through the classifier
         logits = self.classifier(pooled_output)
@@ -70,10 +69,9 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             return ((loss,) + output) if loss is not None else output
 
         # Return outputs like in BertForSequenceClassification (including pooler_output)
-        return BaseModelOutputWithPoolingAndCrossAttentions(
+        return SequenceClassifierOutput(
             loss=loss,
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            pooler_output=pooler_output
         )

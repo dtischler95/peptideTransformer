@@ -359,6 +359,7 @@ def encode_peptides(sequence_file: str,
     df = pd.read_csv(sequence_file, sep=';')
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
+    df = df[:100]
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -373,8 +374,11 @@ def encode_peptides(sequence_file: str,
 
         outputs = model(**enc, output_hidden_states=True)
 
+        hidden_states = outputs.hidden_states
 
-        embeddings.append(outputs.pooler_output.detach().numpy())
+        cls_token = hidden_states[-1][:, 0, :].cpu()
+
+        embeddings.append(cls_token.detach().numpy())
         progress += len(batch_peptides)
         print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
 
