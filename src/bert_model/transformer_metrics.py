@@ -46,6 +46,11 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
 
 def _debug_predicted_labels(predictions):
+    """
+    Helper function to print the amount of predicted labels
+    This is used to debug for label bias in binary classification
+    So far this covers only the eval dataset! TODO: Implement for training dataset
+    """
     label_0_counter = 0
     label_1_counter = 0
     for pred in predictions:
