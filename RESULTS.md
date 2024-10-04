@@ -116,9 +116,9 @@
 *****************************************************
 - to adress the distribution of labels in our train data I tried to implement a weighted sampler for the train data and eval data
 
-- i could also use a weighted loss function
+- I could also use a weighted loss function
 
-
+- [ ] Do I really need this????
 
 ********
 
