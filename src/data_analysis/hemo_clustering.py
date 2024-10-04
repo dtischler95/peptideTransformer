@@ -26,14 +26,14 @@ def plot_density(x, y, labels, ax):
         ax=ax,
         hue=labels,
         legend=False,
-        palette={1: "darkgrey", 0: "lawngreen"},
+        palette={0: "darkgrey", 1: "lawngreen"},
     )
 
 
 # Positive 0 = helix, Negative 1 = beta
 def seperate_points(data, labels):
     """
-    Seperate the data points based on their labels.
+    Separate the data points based on their labels.
 
     :param data: data points
     :param labels: labels of the data points
@@ -63,7 +63,7 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
         y=pos[:, 1],
         c="lawngreen",
         alpha=0.7,
-        label=f"Negativ: {labels.count(0)}",
+        label=f"Positive: {labels.count(1)}",
         s=10
     )
     ax1.scatter(
@@ -71,7 +71,7 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
         y=neg[:, 1],
         c="darkgrey",
         alpha=0.7,
-        label=f"Positiv: {labels.count(1)}",
+        label=f"Negative: {labels.count(0)}",
         s=10
     )
     """    plot_density(
@@ -90,7 +90,7 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
     ax2.set_ylabel("Explained variance ratio")
     ax2.set_xlabel("Principal components")
     plt.suptitle("PCA Plot analysis")
-    ax2.plot(np.arange(30) + 1, pca.explained_variance_ratio_, "o-", linewidth=2)
+    ax2.plot(np.arange(30) + 1, pca.explained_variance_ratio_, "o-", linewidth=2) # needs to be the same as pca comps TODO move to param
     """ax1.scatter(
         kmeans.cluster_centers_[:, 0],
         kmeans.cluster_centers_[:, 1],
@@ -124,7 +124,7 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
         y=pos[:, 1],
         c="lawngreen",
         alpha=0.7,
-        label=f"Negativ: {labels.count(0)}",
+        label=f"Positive: {labels.count(1)}",
         s=10
     )
     ax.scatter(
@@ -132,7 +132,7 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
         y=neg[:, 1],
         c="darkgrey",
         alpha=0.7,
-        label=f"Positiv: {labels.count(1)}",
+        label=f"Negative: {labels.count(0)}",
         s=10
     )
 
@@ -174,7 +174,7 @@ def plot_umap(data, labels, plot_path=""):
         y=pos[:, 1],
         c="lawngreen",
         alpha=0.7,
-        label=f"Negativ: {labels.count(0)}",
+        label=f"Positive: {labels.count(1)}",
         s=10
     )
     ax.scatter(
@@ -182,7 +182,7 @@ def plot_umap(data, labels, plot_path=""):
         y=neg[:, 1],
         c="darkgrey",
         alpha=0.7,
-        label=f"Positiv: {labels.count(1)}",
+        label=f"Negative: {labels.count(0)}",
         s=10
     )
 
@@ -264,7 +264,7 @@ def perform_clustering(embedded_sequences,
         print("----------------------------------------------------")
 
 
-    def run_pca(data, comps=12):
+    def run_pca(data, comps=30): #need to be the same as in line 93
         print("[Clustering] Running PCA")
         _pca = PCA(n_components=comps, random_state=42)
         return _pca, _pca.fit(data).transform(data)
@@ -297,22 +297,16 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    try:
-        pca, pca_fit = run_pca(embedded_sequences)
-    except Exception as e:
-        print(f"PCA failed: {e}")
-        pca = None
-        pca_fit = None
+
+    pca, pca_fit = run_pca(embedded_sequences)
+
 
     tsne_fit = run_tsne(embedded_sequences)
     umap_fit = run_umap(embedded_sequences)
-    try:
-        print("[Clustering] Running KMeans for PCA")
-        pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
-    except Exception as e:
-        print(f"PCA KMeans failed: {e}")
-        pca_kmeans = None
-        pca_kmeans_labels = None
+
+    print("[Clustering] Running KMeans for PCA")
+    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")

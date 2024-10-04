@@ -232,7 +232,7 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
     return PeptideTrainingArguments(**config)
 
 
-def load_and_prepare_datasets(tokenizer, training_args):
+def prepare_label_debug_datasets(tokenizer, training_args):
     """
     Load and prepare the negative and positive datasets for predictions.
     """
@@ -301,7 +301,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     Function to test the label bias in the predictions of the model.
     """
     # Load datasets
-    negative_dataset, positive_dataset = load_and_prepare_datasets(tokenizer, training_args)
+    negative_dataset, positive_dataset = prepare_label_debug_datasets(tokenizer, training_args)
 
     # Get predictions
     negative_predictions = get_predictions(trainer, negative_dataset)

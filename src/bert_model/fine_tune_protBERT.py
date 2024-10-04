@@ -159,8 +159,8 @@ def fine_tune(model_class: str,
         if model_class == 'binary':
             test_binary_label_bias(tokenizer, trainer, training_args)
 
-        # TODO Find a cool representation for the predictions
-        # logger.info(predictions.predictions)
+
+
 
 
 
