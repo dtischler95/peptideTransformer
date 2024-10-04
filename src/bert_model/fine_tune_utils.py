@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from transformers import BertTokenizer
@@ -230,34 +231,99 @@ def load_training_arguments(config_file: str, training_type: str, logger: loggin
     return PeptideTrainingArguments(**config)
 
 
+def load_and_prepare_datasets(tokenizer, training_args):
+    """
+    Load and prepare the negative and positive datasets for predictions.
+    """
+    # Load datasets
+    negative_df = pd.read_csv("../../data/train_data/mlm_train_data.csv", sep=';')
+    positive_df = pd.read_csv("../../data/train_data/our_hemo_labeled_filtered.csv", sep=';')
+
+    # Filter out sequences in positive_df from negative_df
+    negative_df = negative_df[~negative_df["sequence"].isin(positive_df['sequence'])]
+
+    # Prepare positive dataset
+    positive_df = positive_df[positive_df["label"] == 1]
+
+    # Create PeptideDataset instances
+    negative_dataset = PeptideDataset(
+        peptides=negative_df['sequence'],
+        tokenizer=tokenizer,
+        labels=[0] * len(negative_df),
+        max_length=training_args.max_length
+    )
+
+    positive_dataset = PeptideDataset(
+        peptides=positive_df['sequence'].values,
+        tokenizer=tokenizer,
+        labels=positive_df['label'].values,
+        max_length=training_args.max_length
+    )
+
+    return negative_dataset, positive_dataset
+
+
+def get_predictions(trainer, dataset):
+    """
+    Get predictions for a given dataset using the trainer.
+    """
+    predictions = trainer.predict(dataset)
+    return (predictions.predictions > 0.5).astype(int)
+
+
+def calculate_abundance(predictions):
+    """
+    Calculate the abundance of 0s and 1s in the predictions.
+    """
+    abundance = {
+        0: np.count_nonzero(predictions == 0),
+        1: np.count_nonzero(predictions == 1)
+    }
+    return abundance
+
+
+def plot_abundance(abundance_dict, title, ax):
+    """
+    Plot the abundance of predicted labels.
+    """
+    ax.bar(abundance_dict.keys(), abundance_dict.values(), color=['blue', 'orange'])
+    ax.set_title(title)
+    ax.set_xlabel('Value')
+    ax.set_ylabel('Abundance')
+    ax.set_xticks(list(abundance_dict.keys()))
+    ax.set_ylim(0, max(abundance_dict.values()) + 1)  # Add some space above the bars
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+
 def test_binary_label_bias(tokenizer, trainer, training_args):
+    """
+    Function to test the label bias in the predictions of the model.
+    """
+    # Load datasets
+    negative_dataset, positive_dataset = load_and_prepare_datasets(tokenizer, training_args)
 
-    # TODO make separate file for only 0 label
-    only_0_label_df = pd.read_csv("../../data/train_data/mlm_train_data.csv", sep=';')
-    only_1_label_df = pd.read_csv("../../data/train_data/our_hemo_labeled_filtered.csv", sep=';')
-    only_0_label_df = only_0_label_df[~only_0_label_df["sequence"].isin(only_1_label_df['sequence'])][:100] # [:100] for debuggin. remove for full run
-    only_1_label_df = only_1_label_df[only_1_label_df["label"] == 1][:100]
-    only_0_label_dataset = PeptideDataset(peptides=only_0_label_df['sequence'],
-                                          tokenizer=tokenizer,
-                                          labels=[0] * len(only_0_label_df),
-                                          max_length=training_args.max_length)
-    only_1_label_dataset = PeptideDataset(peptides=only_1_label_df['sequence'].values,
-                                          tokenizer=tokenizer,
-                                          labels=only_1_label_df['label'].values,
-                                          max_length=training_args.max_length)
-    only_0_label_predictions = trainer.predict(only_0_label_dataset)
-    only_1_label_predictions = trainer.predict(only_1_label_dataset)
-    # Extract predictions
-    only_0_label_predictions_list = only_0_label_predictions.predictions
-    only_1_label_predictions_list = only_1_label_predictions.predictions
-    print(only_0_label_predictions_list)
-    print(only_1_label_predictions_list)
+    # Get predictions
+    negative_predictions = get_predictions(trainer, negative_dataset)
+    positive_predictions = get_predictions(trainer, positive_dataset)
 
-    # Create a box plot
-    # Create a box plot for only_0_label_predictions_list
+    # Calculate abundances
+    abundance_negative = calculate_abundance(negative_predictions)
+    abundance_positive = calculate_abundance(positive_predictions)
 
-    # TODO Box plots for label on dataset
+    # Create a figure with two subplots
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
+    # Plot for negative dataset
+    plot_abundance(abundance_negative, 'Predicted Labels of Negative Dataset', axs[0])
+
+    # Plot for positive dataset
+    plot_abundance(abundance_positive, 'Predicted Labels of Positive Dataset', axs[1])
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.savefig("./plots/label_prediction_bias.png")
+
+    # TODO: Box plots for label on dataset
 
 if __name__ == '__main__':
     data_leakage_wrapper()

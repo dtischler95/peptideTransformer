@@ -359,7 +359,6 @@ def encode_peptides(sequence_file: str,
     df = pd.read_csv(sequence_file, sep=';')
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
-    df = df[:100]
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -368,7 +367,7 @@ def encode_peptides(sequence_file: str,
     embeddings = []
     for i in range(0, len(peptides_prepared), batch_size):
         batch_peptides = peptides_prepared[i:i + batch_size]
-        enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36)
+        enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36) # TODO move to training args max length
 
         enc = {key: value.to(device) for key, value in enc.items()}
 
