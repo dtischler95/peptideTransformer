@@ -1,10 +1,10 @@
 do_train: true # Set to true if you want to train the model
-do_eval: false # Set to true if you want to evaluate the model
+do_eval: true # Set to true if you want to evaluate the model
 do_predict: true # Set to true if you want to predict with the model
 output_dir: './results' # Path to checkpoints
-num_train_epochs: 1 # Number of epochs to train the model
+num_train_epochs: 50 # Number of epochs to train the model
 per_device_train_batch_size: 64 # Batch size for training
-per_device_eval_batch_size: 64 # Batch size for evaluation
+#per_device_eval_batch_size: 64 # Batch size for evaluation
 weight_decay: 0.01 # Weight decay for the optimizer
 logging_dir: './logs' # Path to logging directory
 logging_strategy: 'epoch' # Logging strategy | Need to be Epoch for my logic. logging in steps could lead into wierd behavior
@@ -22,15 +22,15 @@ plot_path: '../../plots' # Path to save the plots
 ignore_leakage: true # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 mlm_probability: 0.15 # Probability for the masked language model to mask tokens
 max_length: 36 # Maximum length of the input sequence
-fast_debug_mode: true # Fast debug mode for testing the pipeline. [Developer Mode]
+fast_debug_mode: false # Fast debug mode for testing the pipeline. [Developer Mode]
 validation_data_size: 0.2 # Size of the validation dataset
 test_data_size: 0.5 # Size of the test dataset
 use_cpu: false # Use CPU for training
-early_stopping_patience: 20 # Patience for the early stopping
+early_stopping_patience: 10 # Patience for the early stopping
 early_stop_metric: 'eval_loss' # Metric for the early stopping
 early_stop_mode: 'min' # Mode for the early stopping
-early_stop_warm_up: 50 # Need to find a senseful value
+early_stop_warm_up: 20 # Need to find a senseful value
 lr_scheduler_type: 'reduce_lr_on_plateau' # Type of the learning rate scheduler
-classification_weighted_labels: true # Use weighted labels for the classification
+classification_weighted_labels: false # Use weighted labels for the classification
 lr_scheduler_kwargs:
-  patience: 10 # Patience for the ReduceLROnPlateau scheduler
+  patience: 4 # Patience for the ReduceLROnPlateau scheduler

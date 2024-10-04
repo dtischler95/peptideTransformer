@@ -19,7 +19,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     roc_auc = evaluate.load("roc_auc")
 
     predictions, labels = eval_preds
-    predictions = np.argmax(predictions, axis=-1)
+    predictions = (predictions > 0.5).astype(int)  # Apply the threshold to convert probabilities to binary predictions
+
 
     # ----- Added for debugging purposes -----
     # Save check for Prediction Bias towards one label
