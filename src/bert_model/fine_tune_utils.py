@@ -340,8 +340,14 @@ def plot_label_abundance(label_0_counter,
                          task_name: str,
                          plot_path: str):
     """
-    Plot the abundance of label classes in the predictions per Epoch.
+    Plot the abundance of label classes in the predictions per Epoch or Batch wise
 
+    TODO Better looking graphs. Maybe make it more dynamic to given task name
+
+    :param label_0_counter: Counter for label 0
+    :param label_1_counter: Counter for label 1
+    :param task_name: Name of the task
+    :param plot_path: Path to save the plot
     """
 
     max_labels = label_0_counter[0] + label_1_counter[0]

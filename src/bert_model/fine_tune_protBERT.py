@@ -1,20 +1,16 @@
 import sys
 import warnings
-
-
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
-
-from transformers import BertForSequenceClassification, BertForMaskedLM, DataCollatorForLanguageModeling, \
+from transformers import BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator, BertConfig
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
-
 import logging
-
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, test_binary_label_bias
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+
 # this line should be included in the TrainingArguments
 # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
@@ -158,11 +154,6 @@ def fine_tune(model_class: str,
 
         if model_class == 'binary':
             test_binary_label_bias(tokenizer, trainer, training_args)
-
-
-
-
-
 
 
 if __name__ == '__main__':
