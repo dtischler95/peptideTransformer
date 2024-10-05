@@ -93,7 +93,7 @@ def fine_tune(model_class: str,
         config.num_attention_heads = 12
         config.num_hidden_layers = 12
         config.classifier_dropout = 0.15
-        model = PeptideBertForBinaryClassification(config)
+        model = PeptideBertForBinaryClassification(config, debug_label_plot_path=training_args.plot_path)
         data_collator = DefaultDataCollator()
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
