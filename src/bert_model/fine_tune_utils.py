@@ -246,6 +246,9 @@ def prepare_label_debug_datasets(tokenizer, training_args):
     # Prepare positive dataset
     positive_df = positive_df[positive_df["label"] == 1]
 
+    # df for containing non-hemolytic but bioactive peptides
+    positive_negative_df = positive_df[positive_df["label"] == 0]
+
     # Create PeptideDataset instances
     negative_dataset = PeptideDataset(
         peptides=negative_df['sequence'],
@@ -261,7 +264,14 @@ def prepare_label_debug_datasets(tokenizer, training_args):
         max_length=training_args.max_length
     )
 
-    return negative_dataset, positive_dataset
+    positive_negative_dataset = PeptideDataset(
+        peptides=positive_negative_df['sequence'].values,
+        tokenizer=tokenizer,
+        labels=positive_negative_df['label'].values,
+        max_length=training_args.max_length
+    )
+
+    return negative_dataset, positive_dataset, positive_negative_dataset
 
 
 def get_predictions(trainer, dataset):
@@ -307,26 +317,36 @@ def plot_abundance(abundance_dict, title, ax):
 def test_binary_label_bias(tokenizer, trainer, training_args):
     """
     Function to test the label bias in the predictions of the model.
+    This Function takes files from the data folder and prepares the datasets for the predictions.
+    The Datasets are chosen after these criteria:
+        - Negative Dataset: Contains only non-bioactive Peptides. Should Predict only 0 if model is "perfect"
+        - Positive Dataset: Contains only bioactive AND hemolytic peptides. Should Predict only 1 if model is "perfect"
+        - Positive Negative Dataset: Contains only bioactive AND NON-hemolytic peptides. Should Predict only 0 if model is "perfect"
     """
     # Load datasets
-    negative_dataset, positive_dataset = prepare_label_debug_datasets(tokenizer, training_args)
+    negative_dataset, positive_dataset, positive_negative_dataset = prepare_label_debug_datasets(tokenizer, training_args)
 
     # Get predictions
     negative_predictions = get_predictions(trainer, negative_dataset)
     positive_predictions = get_predictions(trainer, positive_dataset)
+    positive_negative_predictions = get_predictions(trainer, positive_negative_dataset)
 
     # Calculate abundances
     abundance_negative = calculate_abundance(negative_predictions)
     abundance_positive = calculate_abundance(positive_predictions)
+    abundance_positive_negative = calculate_abundance(positive_negative_predictions)
 
     # Create a figure with two subplots
-    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    fig, axs = plt.subplots(1, 3, figsize=(10, 5))
 
     # Plot for negative dataset
     plot_abundance(abundance_negative, 'Predicted Labels of Negative Dataset', axs[0])
 
     # Plot for positive dataset
     plot_abundance(abundance_positive, 'Predicted Labels of Positive Dataset', axs[1])
+
+    # Plot for positive negative dataset
+    plot_abundance(abundance_positive_negative, 'Predicted Labels of Positive Negative Dataset', axs[2])
 
     # Adjust layout
     plt.tight_layout()

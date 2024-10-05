@@ -12,7 +12,6 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
     This class is a reproduction of PeptideBERTs implementation for binary classification.
     It added a Sigmoid activation function to the output logits to convert the output to probabilities.
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
-
     """
 
     def __init__(self, config, debug_label_plot_path: str):
