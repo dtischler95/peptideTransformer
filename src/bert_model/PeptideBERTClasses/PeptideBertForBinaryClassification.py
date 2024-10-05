@@ -8,6 +8,13 @@ from src.bert_model.transformer_metrics import _debug_predicted_labels
 
 
 class PeptideBertForBinaryClassification(BertForSequenceClassification):
+    """
+    This class is a reproduction of PeptideBERTs implementation for binary classification.
+    It added a Sigmoid activation function to the output logits to convert the output to probabilities.
+    We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
+
+    """
+
     def __init__(self, config, debug_label_plot_path: str):
         super().__init__(config)
         self.num_labels = 1  # Set num_labels to 1 for binary classification output
@@ -42,8 +49,30 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
             return_pooler_output: Optional[bool] = False,  # New parameter
-            print_debug_graph: bool = True # Only for analysis purposes
+            print_debug_graph: bool = True  # Only for analysis purposes
     ) -> Union[Tuple[torch.Tensor], SequenceClassifierOutput]:
+        """
+        Forward to propagate the input through the model adjusted to the single logit output for binary classification.
+        We also added a return_pooler_output parameter to return the pooled output for visualization purposes.
+        Also added a print_debug_graph parameter to plot the label bias in the predictions for debugging purposes.
+
+        Function overwrote the forward function of the inherited class BertForSequenceClassification.
+        We kept the Signature of the original function, so IDEs won't complain about the function signature.
+        Many of them we don't handle, but you could implement them if needed.
+
+        :param input_ids: input ids for the model
+        :param attention_mask: attention mask for the model
+        :param token_type_ids: token type ids for the model
+        :param position_ids: position ids for the model
+        :param head_mask: head mask for the model
+        :param inputs_embeds: input embeddings for the model
+        :param labels: labels for the model
+        :param output_attentions: output attentions for the model
+        :param output_hidden_states: output hidden states for the model
+        :param return_dict: return dict for the model
+        :param return_pooler_output: return pooler output for the model
+        :param print_debug_graph: print debug graph for the model
+        """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.bert(
@@ -64,7 +93,10 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
 
         # Apply sigmoid activation for binary classification
         logits = self.sigmoid(logits)
-        # TODO plot logits
+        # -----------------------------------------------------------------------------------------------------------
+        # this part is only for debugging purposes
+        # I fear a label bias in the predictions for PeptideBERT and im not to sure how to handle this
+        # I plotted this for better visualization and inspection. This if scope could be removed if not needed anymore
         if print_debug_graph:
             preds = _format_logit_to_label(logits=logits.squeeze().cpu().detach().numpy())
             label_0_preds, label_1_preds = _debug_predicted_labels(preds)
@@ -80,7 +112,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
                                      label_0_counter=self.batch_wise_label_0_predictions,
                                      label_1_counter=self.batch_wise_label_1_predictions,
                                      task_name="train_batch_wise_label_prediction")
-
+        # -----------------------------------------------------------------------------------------------------------
 
         # If labels are provided, compute the loss
         loss = None
