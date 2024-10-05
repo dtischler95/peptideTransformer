@@ -19,18 +19,18 @@ train_file: '../../data/train_data/whitelab_hemo_data.csv' # Path to the trainin
 model_path: 'Rostlab/prot_bert_bfd' # Path to the model
 model_save_path: '../prot_BERT' # Path to save the model
 plot_path: '../../plots' # Path to save the plots
-ignore_leakage: true # Ignore leakage in the train dataset. Only do if you are sure what you are doing
+ignore_leakage: false # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 mlm_probability: 0.15 # Probability for the masked language model to mask tokens
 max_length: 36 # Maximum length of the input sequence
 fast_debug_mode: false # Fast debug mode for testing the pipeline. [Developer Mode]
-validation_data_size: 0.2 # Size of the validation dataset
-test_data_size: 0.5 # Size of the test dataset
+validation_data_size: 0.1 # Size of the validation dataset
+test_data_size: 0.1 # Size of the test dataset
 use_cpu: false # Use CPU for training
 early_stopping_patience: 10 # Patience for the early stopping
 early_stop_metric: 'eval_loss' # Metric for the early stopping
 early_stop_mode: 'min' # Mode for the early stopping
 early_stop_warm_up: 20 # Need to find a senseful value
 lr_scheduler_type: 'reduce_lr_on_plateau' # Type of the learning rate scheduler
-classification_weighted_labels: false # Use weighted labels for the classification
+classification_weighted_labels: true # Use weighted labels for the classification
 lr_scheduler_kwargs:
   patience: 4 # Patience for the ReduceLROnPlateau scheduler
