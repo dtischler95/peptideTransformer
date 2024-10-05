@@ -271,6 +271,7 @@ def get_predictions(trainer, dataset):
     predictions = trainer.predict(dataset)
     return (predictions.predictions > 0.5).astype(int)
 
+
 def _format_logit_to_label(logits):
     """
     Format the given logit tensor to a list of labels.
@@ -332,6 +333,42 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     plt.savefig("./plots/label_prediction_bias.png")
 
     # TODO: Box plots for label on dataset
+
+
+def plot_label_abundance(label_0_counter,
+                         label_1_counter,
+                         task_name: str,
+                         plot_path: str):
+    """
+    Plot the abundance of label classes in the predictions per Epoch.
+
+    """
+
+    max_labels = label_0_counter[0] + label_1_counter[0]
+
+    if task_name == "train_batch_wise_label_prediction":
+        x_label = "Batches"
+    else:
+        x_label = "Epochs"
+
+    epochs = range(1, len(label_0_counter) + 1)
+    plt.figure(figsize=(10, 5))
+
+    plt.plot(epochs, label_0_counter, label='Label 0', color='blue')
+    plt.xlabel(f"{x_label}")
+    plt.ylabel('Label 0 [%]', color='green')
+    plt.tick_params(axis='y', labelcolor='green')
+    plt.ylim(0, max_labels)
+    plt.xticks(epochs)
+    plt.xlim(1, len(label_0_counter))
+    label_0_counter_np = np.array(label_0_counter)
+    plt.fill_between(epochs, label_0_counter, max_labels, where=(label_0_counter_np <= max_labels),
+                     color='red', alpha=0.3)
+
+    plt.fill_between(epochs, label_0_counter, 0, where=(label_0_counter_np >= 0), color='green', alpha=0.3)
+
+    plt.savefig(f"{plot_path}/{task_name}_label_abundance.png")
+    plt.close()
 
 
 if __name__ == '__main__':

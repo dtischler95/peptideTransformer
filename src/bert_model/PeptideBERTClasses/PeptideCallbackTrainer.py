@@ -5,6 +5,7 @@ import os
 from sklearn.metrics import accuracy_score
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.bert_model.fine_tune_utils import plot_label_abundance
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -46,8 +47,6 @@ class LearningCurveCallback(TrainerCallback):
 
         self.train_loss_metric.append(current_loss)
 
-
-
     def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
@@ -76,35 +75,10 @@ class LearningCurveCallback(TrainerCallback):
             self.plot_learning_curves(plot_path=args.plot_path)
 
             if len(self.label_0_counter) > 1:
-                self.plot_label_abundance(plot_path=args.plot_path)
-
-    def plot_label_abundance(self, plot_path: str):
-        """
-        Plot the abundance of label classes in the predictions per Epoch.
-
-        """
-
-        max_labels = self.label_0_counter[0] + self.label_1_counter[0]
-
-        epochs = range(1, len(self.label_0_counter) + 1)
-        plt.figure(figsize=(10, 5))
-
-
-        plt.plot(epochs, self.label_0_counter, label='Label 0', color='blue')
-        plt.xlabel('Epochs')
-        plt.ylabel('Label 0 [%]', color='green')
-        plt.tick_params(axis='y', labelcolor='green')
-        plt.ylim(0, max_labels)
-        plt.xticks(epochs)
-        plt.xlim(1, len(self.label_0_counter))
-        label_0_counter_np = np.array(self.label_0_counter)
-        plt.fill_between(epochs, self.label_0_counter, max_labels, where=(label_0_counter_np <= max_labels),
-                         color='red', alpha=0.3)
-
-        plt.fill_between(epochs, self.label_0_counter, 0, where=(label_0_counter_np >= 0), color='green', alpha=0.3)
-
-        plt.savefig(f"{plot_path}/{self.task_name}_label_abundance.png")
-
+                plot_label_abundance(label_0_counter=self.label_0_counter,
+                                     label_1_counter=self.label_1_counter,
+                                     task_name=self.task_name,
+                                     plot_path=args.plot_path)
 
     def plot_learning_curves(self, plot_path: str):
         """
