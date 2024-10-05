@@ -108,7 +108,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             self.batch_wise_label_0_predictions.append(label_0_percentage)
             self.batch_wise_label_1_predictions.append(label_1_percentage)
             if len(self.batch_wise_label_0_predictions) > 1:
-                plot_label_abundance(plot_path="../../plots",
+                plot_label_abundance(plot_path=self.label_debug_plot_path,
                                      label_0_counter=self.batch_wise_label_0_predictions,
                                      label_1_counter=self.batch_wise_label_1_predictions,
                                      task_name="train_batch_wise_label_prediction")
