@@ -66,6 +66,8 @@ data/out/
 
 dangerzone/
 peptideBERT/
+peptideTransformer.egg-info/
+models/
 
 # Model save folders, since models should not be saved in git
 */mlm_bert/*
