@@ -271,6 +271,13 @@ def get_predictions(trainer, dataset):
     predictions = trainer.predict(dataset)
     return (predictions.predictions > 0.5).astype(int)
 
+def _format_logit_to_label(logits):
+    """
+    Format the given logit tensor to a list of labels.
+    0.5 is a typical threshold
+    """
+    return (logits > 0.5).astype(int)
+
 
 def calculate_abundance(predictions):
     """
