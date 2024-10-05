@@ -1,5 +1,6 @@
 import sys
 import warnings
+
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 from transformers import BertForMaskedLM, DataCollatorForLanguageModeling, \
     DefaultDataCollator, BertConfig
@@ -121,7 +122,8 @@ def fine_tune(model_class: str,
             # Custom Callback Class for plotting learning curves. STILL IN WORK
             LearningCurveCallback(args=training_args, task_name=model_class),
             # Custom Callback Class for early stopping.
-            EarlyStoppingCallback()]
+            EarlyStoppingCallback()
+        ]
     )
 
     # --------------------- Train, evaluate and predict ---------------------

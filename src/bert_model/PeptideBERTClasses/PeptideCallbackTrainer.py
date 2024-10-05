@@ -1,11 +1,10 @@
-import numpy as np
+import os
+import torch
+import evaluate
 from transformers import TrainerCallback, TrainerState, TrainerControl
 import matplotlib.pyplot as plt
-import os
-from sklearn.metrics import accuracy_score
-
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.fine_tune_utils import plot_label_abundance
+from src.bert_model.fine_tune_utils import plot_label_abundance, _format_logit_to_label
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -19,13 +18,48 @@ class LearningCurveCallback(TrainerCallback):
         self.task_name = task_name
         self.isTrain = True
         self.eval_accuracy_metrics = []
+        self.train_accuracy_metric = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
-        self.train_accuracy_metric = []
         self.label_0_counter = []
         self.label_1_counter = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
         os.makedirs(args.plot_path, exist_ok=True)
+
+    def on_epoch_end(self, args, state, control, **kwargs):
+        # Get the model and the training dataset
+        model = kwargs['model']
+        train_dataloader = kwargs['train_dataloader']
+
+        # Set the model to evaluation mode
+        model.eval()
+
+        # Initialize variables to track accuracy
+        predictions_handler = []
+        labels_handler = []
+        accuracy = evaluate.load("accuracy")
+
+        # Disable gradient calculation for evaluation
+        with torch.no_grad():
+            for batch in train_dataloader:
+                inputs = {k: v.to(args.device) for k, v in batch.items()}
+                outputs = model(**inputs)
+
+                predictions = _format_logit_to_label(logits=outputs[1].cpu().detach().numpy())
+
+                labels = inputs['labels'].cpu().detach().numpy()
+                predictions_handler.append(predictions)
+                labels_handler.append(labels)
+
+        # Compute accuracy
+        epoch_train_accuracy = accuracy.compute(predictions=[item for sublist in predictions_handler for item in sublist],
+                                                references=[item for sublist in labels_handler for item in sublist])
+        self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
+
+
+
+        # Set the model back to training mode
+        model.train()
 
     def on_train_end(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
@@ -89,6 +123,7 @@ class LearningCurveCallback(TrainerCallback):
 
         # Plot accuracy on the primary y-axis
         plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
+        plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
         plt.xlabel('Epochs')
         plt.ylabel('Eval Accuracy', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
