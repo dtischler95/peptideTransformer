@@ -237,8 +237,8 @@ def prepare_label_debug_datasets(tokenizer, training_args):
     Load and prepare the negative and positive datasets for predictions.
     """
     # Load datasets
-    negative_df = pd.read_csv("../../data/train_data/mlm_train_data.csv", sep=';')[:100]
-    bioactive_df = pd.read_csv("../../data/train_data/our_hemo_labeled_filtered.csv", sep=';')
+    negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')[:10000]
+    bioactive_df = pd.read_csv("./data/train_data/our_hemo_labeled_filtered.csv", sep=';')
 
     # Filter out sequences in positive_df from negative_df
     negative_df = negative_df[~negative_df["sequence"].isin(bioactive_df['sequence'])]
@@ -351,7 +351,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig("../../plots/label_prediction_bias.png")
+    plt.savefig("./plots/label_prediction_bias.png")
 
     # TODO: Box plots for label on dataset
 
