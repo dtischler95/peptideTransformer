@@ -126,29 +126,29 @@ def fine_tune(model_class: str,
         ]
     )
 
-    # # --------------------- Train, evaluate and predict ---------------------
-    # if training_args.do_train:
-    #     trainer.train()
-    #
-    #     # TODO MCC !!!
-    #
-    #     trainer.save_model(training_args.model_save_path)
-    #     tokenizer.save_pretrained(training_args.model_save_path)
-    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
-    #
-    # if training_args.do_eval:
-    #     eval_result = trainer.evaluate()
-    #     logger.info(eval_result)
-    #     if model_class == 'binary':
-    #         from src.data_analysis.hemo_clustering import cluster_model_embedding
-    #         # Custom Function for cluster the model embeddings with the whole dataset
-    #         # TODO may provide custom file arg for this. But rn we dont have the data sadly
-    #         # TODO Pass logger to the function
-    #         cluster_model_embedding(file_path=training_args.train_file,
-    #                                 batch_size=training_args.per_device_eval_batch_size,
-    #                                 plot_path=training_args.plot_path,
-    #                                 tokenizer_and_model=(tokenizer, trainer.model),
-    #                                 device=training_args.device)
+    # --------------------- Train, evaluate and predict ---------------------
+    if training_args.do_train:
+        trainer.train()
+
+        # TODO MCC !!!
+
+        trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+
+    if training_args.do_eval:
+        eval_result = trainer.evaluate()
+        logger.info(eval_result)
+        if model_class == 'binary':
+            from src.data_analysis.hemo_clustering import cluster_model_embedding
+            # Custom Function for cluster the model embeddings with the whole dataset
+            # TODO may provide custom file arg for this. But rn we dont have the data sadly
+            # TODO Pass logger to the function
+            cluster_model_embedding(file_path=training_args.train_file,
+                                    batch_size=training_args.per_device_eval_batch_size,
+                                    plot_path=training_args.plot_path,
+                                    tokenizer_and_model=(tokenizer, trainer.model),
+                                    device=training_args.device)
 
     if training_args.do_predict:
 
