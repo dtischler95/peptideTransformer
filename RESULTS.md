@@ -44,7 +44,7 @@
 ![leakage_results_filtered](./pictures/no_leakage_tmp_result.png)
 
 - I could repdroduce PeptideBERTs results with my Pipeline
-    - Only difference with my algorithm, I use grad_norm_clipping to avoid exploding gradients
+    - Only difference with my algorithm, I use grad_norm_clipping to avoid exploding gradients [arouse from mlm task development]
 
 ![reproduced](./pictures/reproduced.png)
 
