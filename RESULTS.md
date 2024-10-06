@@ -36,8 +36,17 @@
 
 - I could repdroduce PeptideBERTs results with my Pipeline
   - Only difference with my algorithm, I use grad_norm_clipping to avoid exploding gradients
-    
+  
 ![reproduced](./pictures/reproduced.png)
+
+#### Learning Curves generated through my algorithm
+
+- The Learning Curve for the leaked variant of PeptideBERT
+![leak_curve](./pictures/leak_curve.png)
+
+- The Learning Curve for the non leaked variant of PeptideBERT
+![non_leak_curve](./pictures/non_leak_curve.png)
+
 
 # Is this a Problem?
 
@@ -55,78 +64,51 @@
 
 - by predicting only 0 it will naturally achieve 80% accuracy since 80% of the data is labeled 0
 
-- Further in Training this will get pushed to the initial distribution of the labels of our data
+- I plotted the distribution of predicted labels for each batch in training and evaluation
+  - Area painted red representing the total of predicted 1 labels
+  - Area painted green representing the total of predicted 0 labels
+  
+### These are the results for the leakage variant of PeptideBERT
+    
+  
 
+  - Label Prediction for Epochs
+![epoch wise](./pictures/binary_label_abundance.png)
+  - Label Prediction for Train batches
+![batch wise](./pictures/train_batch_wise_label_prediction_label_abundance.png)
 
-![epoch problem](./pictures/epoch_big_problem.png)
+### These are the results for the non leakage variant of PeptideBERT
 
-- also seen in my algorithm
+  - Label Prediction for Epochs
+![nonleaked epoch wise](./pictures/non_leaked_label.png)
+  - Label Prediction for Train batches
+![nonleaked batch wise](./pictures/batch_wise_non_leaked.png)
 
-![reproduced_label](./pictures/reproduced_label.png)
-
-- it's the same when filtering out leaked data
-
-![epoch no leakage](./pictures/problem_with_out_leaked.png)
-
-- here a visualization of the distribution of predicted labels per epoch
-  - red is for label 1, positives
-  - green is for label 0, negatives
-
-![binary_label_abundance](./pictures/binary_label_abundance.png)
-
-- I first thought this is wierd, given the fact we have a binary classifier I would assume a 50/50ish initialization of the label prediction
-  - Dominik pointed out, The label distribution here is made on eval!
-    - [ ] Make the same plot for each batch in train!. Should be doable in forward method I overwrote
-    - [ ] I'm curious why the model predicts in the last epochs always the same relation of label 1 and 0
-
-
-- Anyway, the test I made look good.
+#### Testing this further
+- Anyway, the test I made looked good.
   - I used the Human Atlas Human Peptide Dataset for cleary non bioactive hemolytic Peptides
   - I used the hemolytic positiv data from our dataset for bioactive Peptides
     - The Idea, The human atlas data we should always see 0 since they are not hemolytic nor even bioactive, for our data we should see always 1 as prediction
 
 ![label_prediction_bias](./pictures/label_prediction_bias.png)
 
-- surprisingly the model predicts 0 for nearly every data in the negative data set. the few label 1 prediction could be due to general inaccuracy
-  - I expected 20% of the data to be predicted as label 1 if the model would've learned a distribution instead of a pattern in the sequences
-- For the Positiv Data the model predicts quite 50/50 correct with a trend to label 1
-  - I expected 20% of the data to be predicted as label 1 if the model would've learned a distribution instead of a pattern in the sequences
-
-
-- It looks like the models learns a Pattern in the sequence and can generalize the Task.
-  - [ ] Reassure with non leaked model!!! Since model knows much of the data already
-
 ### Cluster
 
-![tsne](./pictures/tsne.png)
+- [ ] Add cluster Graphs
 
-- No beatiful clusters here. I still don't know how Peptide Bert did their clustering. i tried a lot...
-  - [ ] Wait for Email with response from PeptideBERT Authors
+#### Leaked Variant
 
-### PeptideBert with my Data and optimizations
-![my_data](./pictures/my_data.png)
-- First look on algorithm with my pipeline and my data
-  - I could use some more datapoints. But first results looking good so far
-  - Accuracy does not look that good so far, but could be number of eval points
-  - BUT! The label prediction looks much healthier than with the original data
+- [ ] Add Plots
 
-### Further analysis
-- [ ] Implement their fisher test
-  
-*****************************************************
-- to adress the distribution of labels in our train data I tried to implement a weighted sampler for the train data and eval data
+#### Non Leaked 
 
-- I could also use a weighted loss function
-
-- [ ] Do I really need this????
-
-********
+- [ ] Add Plots
 
 ## Proof of Concept
 ### Step 4 Proof of Concept: MLMPeptideBERT
 
 - mlm task looks good so far. Naive Implementation of MLM Task with PeptideBERT provides stable results so far.
-- Plotted is eval_accuracy, i didnt manage to capture train_accuracy so far. It's on TODO
+- Plotted is eval_accuracy, I didn't manage to capture train_accuracy so far. It's on TODO
 
 ![MLM Task](./pictures/first_mlm.png)
 - Accuracy raise and loss decrease seems reasonable. 
@@ -142,3 +124,12 @@
 ### Step 5 Proof of Concept: Binary PeptideBERT
 
 - [ ] Still in Progress due to severe bug found in PeptideBERT train algorithm
+
+### Look into Label predictions
+
+#### With Data Leakage
+
+- Batch Wise
+![batch wise](./pictures/ourBERT_batchwise.png)
+- Epoch Wise
+![epoch wise](./pictures/ourBERT_epoch.png)
