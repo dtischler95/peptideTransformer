@@ -180,7 +180,7 @@
   ![epoch wise](./pictures/epoch_label_nonleak_our.png)
 
 - Label bias test
-- [ ] Still computing
+![label_prediction_bias](./pictures/our_label_bias_plot.png)  
 
 ### Cluster
 
