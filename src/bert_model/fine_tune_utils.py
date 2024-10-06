@@ -237,17 +237,17 @@ def prepare_label_debug_datasets(tokenizer, training_args):
     Load and prepare the negative and positive datasets for predictions.
     """
     # Load datasets
-    negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')[:30000]
-    positive_df = pd.read_csv("./data/train_data/our_hemo_labeled_filtered.csv", sep=';')
+    negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')[:10000]
+    bioactive_df = pd.read_csv("./data/train_data/our_hemo_labeled_filtered.csv", sep=';')
 
     # Filter out sequences in positive_df from negative_df
-    negative_df = negative_df[~negative_df["sequence"].isin(positive_df['sequence'])]
+    negative_df = negative_df[~negative_df["sequence"].isin(bioactive_df['sequence'])]
 
     # Prepare positive dataset
-    positive_df = positive_df[positive_df["label"] == 1]
+    positive_df = bioactive_df[bioactive_df["label"] == 1]
 
     # df for containing non-hemolytic but bioactive peptides
-    positive_negative_df = positive_df[positive_df["label"] == 0]
+    positive_negative_df = bioactive_df[bioactive_df["label"] == 0]
 
     # Create PeptideDataset instances
     negative_dataset = PeptideDataset(
@@ -324,7 +324,8 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
         - Positive Negative Dataset: Contains only bioactive AND NON-hemolytic peptides. Should Predict only 0 if model is "perfect"
     """
     # Load datasets
-    negative_dataset, positive_dataset, positive_negative_dataset = prepare_label_debug_datasets(tokenizer, training_args)
+    negative_dataset, positive_dataset, positive_negative_dataset = prepare_label_debug_datasets(tokenizer,
+                                                                                                 training_args)
 
     # Get predictions
     negative_predictions = get_predictions(trainer, negative_dataset)
@@ -340,13 +341,13 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     fig, axs = plt.subplots(1, 3, figsize=(10, 5))
 
     # Plot for negative dataset
-    plot_abundance(abundance_negative, 'Predicted Labels of Negative Dataset', axs[0])
+    plot_abundance(abundance_negative, 'Non-Bioactive Sequences', axs[0])
 
     # Plot for positive dataset
-    plot_abundance(abundance_positive, 'Predicted Labels of Positive Dataset', axs[1])
+    plot_abundance(abundance_positive, 'Bioactive label 1 sequences', axs[1])
 
     # Plot for positive negative dataset
-    plot_abundance(abundance_positive_negative, 'Predicted Labels of Positive Negative Dataset', axs[2])
+    plot_abundance(abundance_positive_negative, 'Bioactive label 0 sequences', axs[2])
 
     # Adjust layout
     plt.tight_layout()
