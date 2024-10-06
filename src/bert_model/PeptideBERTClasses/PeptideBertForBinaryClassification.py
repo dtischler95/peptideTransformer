@@ -48,7 +48,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
             return_pooler_output: Optional[bool] = False,  # New parameter
-            print_debug_graph: bool = True  # Only for analysis purposes
+            print_debug_graph: bool = False  # Only for analysis purposes
     ) -> Union[Tuple[torch.Tensor], SequenceClassifierOutput]:
         """
         Forward to propagate the input through the model adjusted to the single logit output for binary classification.
@@ -96,7 +96,7 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
         # this part is only for debugging purposes
         # I fear a label bias in the predictions for PeptideBERT and im not to sure how to handle this
         # I plotted this for better visualization and inspection. This if scope could be removed if not needed anymore
-        if print_debug_graph:
+        if print_debug_graph: # TODO BUG!! This could should not be executed when predicting... Only for training
             preds = _format_logit_to_label(logits=logits.squeeze().cpu().detach().numpy())
             label_0_preds, label_1_preds = _debug_predicted_labels(preds)
 

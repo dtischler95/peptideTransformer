@@ -129,9 +129,9 @@
 - Plotted is eval_accuracy, i didnt manage to capture train_accuracy so far. It's on TODO
 
 ![MLM Task](./pictures/first_mlm.png)
-- Accuracy raise and loss decrease seems reasonable. I should not train longer than 20 epochs
+- Accuracy raise and loss decrease seems reasonable. 
 - [ ] Also plot prediction distribution here. Could be interesting to see if the model is biased towards a certain amino acid
-- [ ] Compareable results with PeptideBert Pipeline?
+
 ### Step 4.1 
 - The accuracy for reconstructing masked bioactive sequences of protBERT should be the initial accuracy of our fine_tuning process
 
