@@ -351,7 +351,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig("./plots/label_prediction_bias.png")
+    plt.savefig(f"./{training_args.plot_path}/label_prediction_bias.png")
 
     # TODO: Box plots for label on dataset
 
