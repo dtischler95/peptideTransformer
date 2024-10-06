@@ -21,8 +21,8 @@ model_save_path: './peptide_binary_leakage_BERT' # Path to save the model
 plot_path: './leak_plots' # Path to save the plots
 ignore_leakage: true # Ignore leakage in the train dataset. Only do if you are sure what you are doing
 max_length: 36 # Maximum length of the input sequence 190 for the peptideBERT | REQUIRES MORE GPU MEMORY!!!!
-validation_data_size: 0.1 # Size of the validation dataset
-test_data_size: 0.05 # Size of the test dataset
+validation_data_size: 0.2 # Size of the validation dataset
+test_data_size: 0.5 # Size of the test dataset
 use_cpu: false # Use CPU for training
 early_stopping_patience: 10 # Patience for the early stopping
 early_stop_metric: 'eval_loss' # Metric for the early stopping
