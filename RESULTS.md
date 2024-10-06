@@ -98,9 +98,12 @@
         - The Idea, The human atlas data we should always see 0 since they are not hemolytic nor even bioactive, for our
           data we should see always 1 as prediction
 
-- This plots shows a test plot for the predicted labels of our model
-- [ ] Still in computing
+- This plots shows a test plot for the predicted labels for leaked variant of PeptideBERT
+    
+![label_prediction_bias](./pictures/leak_label_bias_plot.png)
 
+- This plots shows a test plot for the predicted labels for non leaked variant of PeptideBERT
+![label_prediction_bias](./pictures/non_leak_label_bias_plot.png)
 ### Cluster
 
 - Due to the data leakage problem I couldn't find the time to look deeper into the right params for the clustering
