@@ -16,7 +16,7 @@ dataloader_num_workers: 1 # Number of workers for the dataloader. Higher than 1 
 learning_rate: 0.00005 # Learning rate for the optimizer
 metric_for_best_model : 'loss' # Metric for the best model. ['loss', 'accuracy'] for selecting the best model
 train_file: '../../data/train_data/whitelab_hemo_data.csv' # Path to the training data
-model_path: 'Rostlab/prot_bert_bfd' # Path to the model
+model_path: '../../first_mlm_BERT' # Path to the model
 model_save_path: '../prot_BERT' # Path to save the model
 plot_path: '../../plots' # Path to save the plots
 ignore_leakage: false # Ignore leakage in the train dataset. Only do if you are sure what you are doing
@@ -31,6 +31,6 @@ early_stop_metric: 'eval_loss' # Metric for the early stopping
 early_stop_mode: 'min' # Mode for the early stopping
 early_stop_warm_up: 20 # Need to find a senseful value
 lr_scheduler_type: 'reduce_lr_on_plateau' # Type of the learning rate scheduler
-classification_weighted_labels: true # Use weighted labels for the classification
+classification_weighted_labels: false # Use weighted labels for the classification
 lr_scheduler_kwargs:
   patience: 4 # Patience for the ReduceLROnPlateau scheduler
