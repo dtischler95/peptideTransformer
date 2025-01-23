@@ -358,7 +358,6 @@ def encode_peptides(sequence_file: str,
     model.eval()
 
     df = pd.read_csv(sequence_file, sep=';')
-    # TODO MAYBE REMOVE DUPLICATES
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
 
@@ -440,7 +439,6 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
 
     :return: pd.DataFrame: The reduced DataFrame
     """
-    # TODO CHECK for less then 1000 datapoints
     if len(df.index) < 1000:
         return df
     # ensure the new df's are shuffled
