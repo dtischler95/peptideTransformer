@@ -8,7 +8,7 @@
 ### To-Do
 - [ ] Think of cool Project Name
 - [ ] Paths could be more dynamic...
-- [ ] Think of using more GPUs
+
 
 
 #### Preprocessing
