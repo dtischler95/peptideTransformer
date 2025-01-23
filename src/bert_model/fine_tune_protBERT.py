@@ -49,7 +49,6 @@ def fine_tune(model_class: str,
 
     # load training params into PeptideTrainingArguments class. Adjust if we need other params
     training_args = load_training_arguments(config_file=config_path,
-                                            training_type=model_class,
                                             logger=logger)
 
     # logging logging logging
@@ -67,29 +66,24 @@ def fine_tune(model_class: str,
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
-    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=model_class,
-                                                                           show_encoding=show_encoding,
-                                                                           train_file=training_args.train_file,
-                                                                           ignore_leakage=training_args.ignore_leakage,
-                                                                           max_length=training_args.max_length,
-                                                                           logger=logger,
-                                                                           cut_df_for_faster_debug=training_args.fast_debug_mode,
-                                                                           validation_data_size=training_args.validation_data_size,
-                                                                           test_data_size=training_args.test_data_size)
 
-    # --------------------- Prepare model and trainer ---------------------
+
+    #--------------------- Prepare
+    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=model_class,
+                                                                               show_encoding=show_encoding,
+                                                                               train_file=training_args.train_file,
+                                                                               ignore_leakage=training_args.ignore_leakage,
+                                                                               max_length=training_args.max_length,
+                                                                               logger=logger,
+                                                                               cut_df_for_faster_debug=training_args.fast_debug_mode,
+                                                                               validation_data_size=training_args.validation_data_size,
+                                                                               test_data_size=training_args.test_data_size)
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
     if model_class == 'binary':
         config = BertConfig.from_pretrained(training_args.model_path)
-
-        # TODO move to training args
-        config.hidden_size = 480
-        config.num_attention_heads = 12
-        config.num_hidden_layers = 12
-        config.classifier_dropout = 0.15
         model = PeptideBertForBinaryClassification(config, debug_label_plot_path=training_args.plot_path)
         data_collator = DefaultDataCollator()
 
