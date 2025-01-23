@@ -10,6 +10,13 @@ from sklearn.cluster import KMeans
 from warnings import filterwarnings
 from transformers import BertTokenizer, BertModel
 
+
+"""
+This code is an to my usecase adapted version of the code from Lukas Bayerle 
+of the workgroup i work in for Prof. Dr. Franz Cemic.
+"""
+
+
 def plot_density(x, y, labels, ax):
     """
     Plot density of the data points in the scatter plot using seaborn kdeplot function.
@@ -351,8 +358,15 @@ def encode_peptides(sequence_file: str,
     model.eval()
 
     df = pd.read_csv(sequence_file, sep=';')
+    # TODO MAYBE REMOVE DUPLICATES
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
+
+    # ------------
+    # Change number of datapoints used for clustering here.
+    df = reduce_data_points_for_clustering(df)
+    # ------------
+
     # Prepare peptides
     peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -377,7 +391,7 @@ def encode_peptides(sequence_file: str,
     return embeddings, df['label'].to_list()
 
 
-# TODO later include 2rd class?
+
 def cluster_model_embedding(file_path: str,
                             batch_size: int,
                             plot_path:str,
@@ -410,7 +424,32 @@ def cluster_model_embedding(file_path: str,
                        tag=data_tag,
                        plot_path=plot_path)
 
+def reduce_data_points_for_clustering(df: pd.DataFrame,
+                                      label_0_data: int = 500,
+                                      label_1_data: int = 500) -> pd.DataFrame:
+    """
+    This function is meant to reduce to points that should get clustered to reduce a way to cluttered plot
+    it should get roundabout egal 0 and 1 data points, but id would be good maybe to alter the ratio between them for
+    further analysis.
 
+    -> I should add an optional drop duplicate in case function is used outside of main logic
+
+    :param df: pd.DataFrame: The DataFrame that should get reduced
+    :param label_0_data: int: The amount of data points for label 0
+    :param label_1_data: int: The amount of data points for label 1
+
+    :return: pd.DataFrame: The reduced DataFrame
+    """
+    # TODO CHECK for less then 1000 datapoints
+    if len(df.index) < 1000:
+        return df
+    # ensure the new df's are shuffled
+    df_0 = df[df['label'] == 0].sample(frac=1)
+    df_1 = df[df['label'] == 1].sample(frac=1)
+
+    result_df = pd.concat([df_0[:label_0_data], df_1[:label_1_data]]).sample(frac=1)
+
+    return result_df
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
