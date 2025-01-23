@@ -16,14 +16,15 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
 
     def __init__(self, config, debug_label_plot_path: str):
         super().__init__(config)
-        self.num_labels = 1  # Set num_labels to 1 for binary classification output
+        config.hidden_size = 480
+        config.num_attention_heads = 12
+        config.num_hidden_layers = 12
+        config.classifier_dropout = 0.15
+        config.num_labels = 1  # Set num_labels to 1 for binary classification output
         self.bert = BertModel(config)
-        classifier_dropout = (
-            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
-        )
-        self.dropout = nn.Dropout(classifier_dropout)
+        self.dropout = nn.Dropout(self.bert.config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
-                                    self.num_labels)  # Output only one logit for binary classification
+                                    self.bert.config.num_labels)  # Output only one logit for binary classification
         self.sigmoid = nn.Sigmoid()  # Add sigmoid for binary classification
 
         # Initialize weights and apply final processing
