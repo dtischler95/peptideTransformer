@@ -33,6 +33,11 @@ def main():
     reproduce_parser = subparsers.add_parser('reproduce', help='Reproduce our results')
     # Add arguments for reproduce here
 
+    # Subparser for autogernerating a config file
+    generate_config_parser = subparsers.add_parser('generate_bert_model_config', help='Generate a default set bert config yaml file')
+    generate_config_parser.add_argument('--config_name', type=str, required=True, help='Name for the config file')
+    generate_config_parser.add_argument('--file_path', type=str, required=True, help='Path to the config file')
+
     args = parser.parse_args()
 
     if args.command == 'bert_model':
@@ -58,6 +63,11 @@ def main():
                                     plot_path=args.out_plot_path)
     elif args.command == 'reproduce':
         reproduce_our_work_steps()
+    elif args.command == 'generate_bert_model_config':
+        # Call your config generation function here
+        from src.bert_model.fine_tune_utils import generate_custom_yaml_file
+        generate_custom_yaml_file(config_name='',
+                                  file_path='')
     else:
         parser.print_help()
 
