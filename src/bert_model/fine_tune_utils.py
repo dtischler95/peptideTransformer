@@ -214,7 +214,7 @@ def data_leakage_wrapper():
                                   logger=logging.Logger(name="debug_logger"))
 
 
-def load_training_arguments(config_file: str, training_type: str, logger: logging.Logger) -> PeptideTrainingArguments:
+def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
     """
     Function to load the training arguments from a config file for the given training type.
     The training type is used to select the correct training arguments from the config file.
@@ -398,5 +398,81 @@ def plot_label_abundance(label_0_counter,
     plt.close()
 
 
+def generate_custom_yaml_file(config_name: str,
+                              file_path: str = './bert_model/peptideBERT_configs/'):
+    """
+    Generates a custom-formatted YAML file with grouped settings and comments.
+    This is for more easier configuration and readability of the YAML file for new runs.
+
+    Parameters:
+    - config_name (str): Name of the current setup for easier identification.
+    - file_path (str): The path where the YAML file will be saved. !Should be the peptideBERT_config folder.!
+    """
+
+
+    yaml_content = """
+# Training and Evaluation Settings 
+do_train: true                # Train the model
+do_eval: true                 # Evaluate the model
+do_predict: true              # Predict with the model
+num_train_epochs: 50          # Number of epochs to train the model
+per_device_train_batch_size: 256  # Batch size for training
+per_device_eval_batch_size: 64    # Batch size for evaluation
+early_stopping_patience: 7        # Patience for early stopping
+early_stop_metric: 'eval_loss'    # Metric for early stopping
+early_stop_mode: 'min'            # Mode for early stopping
+early_stop_warm_up: 30            # Warm-up period for early stopping
+dataloader_drop_last: false       # Drop last batch if smaller than batch size
+dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
+
+# Model and Optimizer Settings
+learning_rate: 0.00005            # Learning rate for optimizer
+weight_decay: 0.01                # Weight decay for optimizer
+lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
+lr_scheduler_kwargs:              # Additional scheduler arguments
+  patience: 4                     # Patience for ReduceLROnPlateau scheduler
+max_length: 36                    # Maximum input sequence length
+
+# Dataset and File Paths
+train_file: SET TRAIN DATA PATH HERE                   # Path to training data
+model_path: SET MODEL PATH HERE                        # Path to pretrained model
+model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
+plot_path: './plots'                                   # Path to save the plots
+
+# Validation and Test Settings
+validation_data_size: 0.2       # Validation dataset size (fraction)
+test_data_size: 0.5             # Test dataset size (fraction)
+metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
+
+# Logging Settings
+output_dir: './results'         # Path to checkpoints
+logging_dir: './logs'           # Path to logging directory
+logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
+log_level: 'info'               # Log level
+eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
+
+# Reproducibility
+seed: 42                        # Random seed for reproducibility
+
+# Hardware Settings
+use_cpu: false                  # Use CPU for training
+
+# Miscellaneous Settings
+classification_weighted_labels: false   # Use weighted labels for classification
+ignore_leakage: false                   # Ignore leakage in training data (only if certain)
+"""
+
+    try:
+        # Write the YAML content to a file
+        with open(file_path + config_name, 'w') as file:
+            file.write(yaml_content.strip())
+        print(f"YAML file successfully created at: {file_path + config_name}. "
+              f"Please set all needed data file Paths and review the settings of this file for proper usage."
+              f"Parameters provided here are just used as an example.")
+    except Exception as e:
+        print(f"Error while creating YAML file: {e}")
+
 if __name__ == '__main__':
-    data_leakage_wrapper()
+    #data_leakage_wrapper()
+    generate_custom_yaml_file(config_name="custom_config.yaml",
+                              file_path='peptideBERT_configs/')
