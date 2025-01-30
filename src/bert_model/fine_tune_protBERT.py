@@ -9,8 +9,9 @@ import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, test_binary_label_bias
-from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback
+from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, CurriculumLearningCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 
 # this line should be included in the TrainingArguments
 # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -93,8 +94,7 @@ def fine_tune(model_class: str,
     # first.
     elif model_class == 'mlm':
         model = BertForMaskedLM.from_pretrained(training_args.model_path)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
-                                                        mlm_probability=training_args.mlm_probability)
+        data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer)
     elif model_class == 'custom':
         raise NotImplementedError("Custom task not implemented yet")
     else:
@@ -116,7 +116,8 @@ def fine_tune(model_class: str,
             # Custom Callback Class for plotting learning curves. STILL IN WORK
             LearningCurveCallback(args=training_args, task_name=model_class),
             # Custom Callback Class for early stopping.
-            EarlyStoppingCallback()
+            EarlyStoppingCallback(),
+            CurriculumLearningCallback()
         ]
     )
 
@@ -153,7 +154,7 @@ def fine_tune(model_class: str,
 
 
 if __name__ == '__main__':
-    fine_tune(model_class='binary',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
+    fine_tune(model_class='mlm',  # Set to 'binary' for binary classification, 'mlm' for masked language modeling
               config_path='peptideBERT_configs/debug_mlmBERT_config.yaml',  # Path to the config file
               show_encoding=False,  # Set to True if you want to see the encoding of the vocabulary
               )

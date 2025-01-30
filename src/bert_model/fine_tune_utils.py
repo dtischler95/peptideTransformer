@@ -40,7 +40,7 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:15] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
         df_to_split = df
@@ -64,7 +64,7 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
     label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
 
-    # Load the tokenizer
+    # Load the tokenizer # TODO do i need to make my own tokenizer?
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
