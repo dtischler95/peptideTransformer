@@ -1,7 +1,7 @@
 import os
 import torch
 import evaluate
-from transformers import TrainerCallback, TrainerState, TrainerControl
+from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.fine_tune_utils import plot_label_abundance, _format_logit_to_label
@@ -52,9 +52,13 @@ class LearningCurveCallback(TrainerCallback):
                 labels_handler.append(labels)
 
         # Compute accuracy
-        epoch_train_accuracy = accuracy.compute(predictions=[item for sublist in predictions_handler for item in sublist],
-                                                references=[item for sublist in labels_handler for item in sublist])
-        self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
+        # TODO implement accuarcy for mlm task, since the caption method above only works out for binary. In General, i need to figure out how to capture those metrics properly. This way is a mess
+        try:
+            epoch_train_accuracy = accuracy.compute(predictions=[item for prediction in predictions_handler for item in prediction],
+                                                    references=[item for label in labels_handler for item in label])
+            self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
+        except:
+            self.train_accuracy_metric.append(0)
 
 
 
@@ -188,4 +192,6 @@ class CurriculumLearningCallback(TrainerCallback):
     Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
     A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
     """
-    ...
+    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        print(1)
+        kwargs['train_dataloader'].base_dataloader.collate_fn.data_collator.update_probability()

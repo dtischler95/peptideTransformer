@@ -2,7 +2,7 @@
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
-num_train_epochs: 1           # Number of epochs to train the model
+num_train_epochs: 3           # Number of epochs to train the model
 per_device_train_batch_size: 256  # Batch size for training
 per_device_eval_batch_size: 64    # Batch size for evaluation
 early_stopping_patience: 10       # Patience for early stopping
@@ -23,7 +23,7 @@ max_length: 36                    # Maximum input sequence length
 
 # Dataset and File Paths
 train_file: '../../data/train_data/whitelab_hemo_data.csv'  # Path to training data
-model_path: '../../first_mlm_BERT'                         # Path to pretrained model
+model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model
 model_save_path: '../prot_BERT'                            # Path to save the model
 plot_path: '../../plots'                                   # Path to save the plots
 
@@ -43,9 +43,9 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: false                  # Use CPU for training
+use_cpu: true                  # Use CPU for training
 
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
-ignore_leakage: false                 # Ignore leakage in training data (only if certain)
+ignore_leakage: true                 # Ignore leakage in training data (only if certain)
 fast_debug_mode: true                 # Developer mode for pipeline testing
