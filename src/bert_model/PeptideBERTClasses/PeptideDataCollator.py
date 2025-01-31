@@ -9,7 +9,7 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
     Strategy could be increasing the mlm probability if current epoch deviates from the mean loss of the last n epochs.
     This could be even used to decrease the mlm probability if the model is overfitting or suddenly loosing too much accuracy.
     """
-    def __init__(self, tokenizer, initial_prob=0.15, max_prob=0.50, increase_step=0.05):
+    def __init__(self, tokenizer, initial_prob=0.55, max_prob=0.90, increase_step=0.15):
         super().__init__(tokenizer=tokenizer, mlm=True, mlm_probability=initial_prob)
         self.current_prob = initial_prob
         self.max_prob = max_prob
@@ -35,17 +35,13 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
             masked_tokens_count = np.count_nonzero((masked_tokens == mask_token_id) & (original_tokens != pad_token_id), axis=1)  # Only maskable tokens
             masking_percentages = (masked_tokens_count / total_tokens) * 100  # Compute percentage
 
-            # Print results for the first sequence in the batch
-            print("\n[Original Input Tokens]:")
-            print(original_tokens[0])  # First sequence
 
-            print("\n[Masked Input Tokens]:")
-            print(masked_tokens[0])
 
-            print("\n[Labels]: (Only masked tokens are visible, others are -100)")
-            print(labels_tokens[0])
+            for perc in masking_percentages:
+                print(f"\nPercentage of Masked Tokens (Excluding Padding): {perc:.2f}%")
 
-            print(f"\n🔍 Percentage of Masked Tokens (Excluding Padding): {masking_percentages[0]:.2f}%")
+
+            print(f"Average Masking Percentage: {masking_percentages.mean():.2f}%")
 
             # Update batch with masked input & labels
             batch["input_ids"], batch["labels"] = inputs, labels

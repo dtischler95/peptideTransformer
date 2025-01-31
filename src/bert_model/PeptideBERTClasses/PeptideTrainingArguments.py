@@ -12,6 +12,7 @@ class PeptideTrainingArguments(TrainingArguments):
     """
 
     def __init__(self, *args,
+                 model_class: str,
                  train_file=None,
                  model_path: str = 'Rostlab/prot_bert_bfd',
                  model_save_path: str = '../default_path_BERT',
@@ -27,12 +28,16 @@ class PeptideTrainingArguments(TrainingArguments):
                  early_stop_mode: Literal['min', 'max'] = 'min',
                  early_stop_warm_up: int = 0,
                  classification_weighted_labels: bool = False,
+                 label_0_cluster_data: int = 500,
+                 label_1_cluster_data: int = 500,
+                 show_encoding: bool = False,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
         Added some Parameters convenient for tracking here and also added ReduceLROnPlateau Callback parameters, which
         is implemented inside our Custom PeptideTrainer class.
 
+        :param model_class: One of binary, mlm, custom.
         :param train_file: Path to the training file
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
@@ -48,9 +53,13 @@ class PeptideTrainingArguments(TrainingArguments):
         :param early_stop_mode: One of min, max. In min mode, training will be stopped when the metric stops decreasing; in max mode it will be stopped when the metric stops increasing
         :param early_stop_warm_up: Number of epochs to wait before starting to watch for early stopping
         :param classification_weighted_labels: Use weighted labels for classification tasks
+        :param label_0_cluster_data: Number of samples to cluster for label 0
+        :param label_1_cluster_data: Number of samples to cluster for label 1
+        :param show_encoding: Show encoding of the vocabulary
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
+        self.model_class = model_class
         self.train_file = train_file
         if self.train_file is None:
             # TODO may raise an error here and make a different inference function
@@ -76,3 +85,6 @@ class PeptideTrainingArguments(TrainingArguments):
         self.early_stop_mode = early_stop_mode
         self.early_stop_warm_up = early_stop_warm_up
         self.classification_weighted_labels = classification_weighted_labels
+        self.label_0_cluster_data = label_0_cluster_data
+        self.label_1_cluster_data = label_1_cluster_data
+        self.show_encoding = show_encoding
