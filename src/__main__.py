@@ -14,9 +14,7 @@ def main():
 
     # Subparser for bert_model
     fine_tune_parser = subparsers.add_parser('bert_model', help='Fine-tune the model')
-    fine_tune_parser.add_argument('--model_class', type=str, required=True, choices=['binary', 'mlm'], help='Task type')
     fine_tune_parser.add_argument('--config_path', type=str, required=True, help='Path to the config file')
-    fine_tune_parser.add_argument('--show_encoding', action='store_true', help='Show encoding of the vocabulary')
 
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_preprocess', help='Preprocess the data')
@@ -47,9 +45,7 @@ def main():
             args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
 
         fine_tune(
-            model_class=args.model_class,
-            config_path=args.config_path,
-            show_encoding=args.show_encoding
+            config_path=args.config_path
         )
     elif args.command == 'data_preprocess':
         # Call your data_preprocess function here

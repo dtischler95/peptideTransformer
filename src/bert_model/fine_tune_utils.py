@@ -318,6 +318,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     """
     Function to test the label bias in the predictions of the model.
     This Function takes files from the data folder and prepares the datasets for the predictions.
+    Only used for inspecting the impact of the label bias in the predictions with data leakage.
     The Datasets are chosen after these criteria:
         - Negative Dataset: Contains only non-bioactive Peptides. Should Predict only 0 if model is "perfect"
         - Positive Dataset: Contains only bioactive AND hemolytic peptides. Should Predict only 1 if model is "perfect"
@@ -411,7 +412,8 @@ def generate_custom_yaml_file(config_name: str,
 
 
     yaml_content = """
-# Training and Evaluation Settings 
+# Training and Evaluation Settings
+model_class: 'ENTER MODELTYPE HERE'         # Model class to use, either 'binary' or 'mlm' 
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
@@ -424,6 +426,9 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 30            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
+label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
+show_encoding: False              # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
 learning_rate: 0.00005            # Learning rate for optimizer

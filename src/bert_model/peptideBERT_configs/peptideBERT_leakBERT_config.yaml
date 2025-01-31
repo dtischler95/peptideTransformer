@@ -1,4 +1,5 @@
 # Training and Evaluation Settings
+model_class: 'binary'          # Model class to use, either 'binary' or 'mlm'
 do_train: true                 # Train the model
 do_eval: true                  # Evaluate the model
 do_predict: true               # Predict with the model
@@ -11,6 +12,9 @@ early_stop_mode: 'min'             # Mode for early stopping
 early_stop_warm_up: 30             # Warm-up period for early stopping
 dataloader_drop_last: false        # Drop last batch if smaller than batch size
 dataloader_num_workers: 2          # Number of dataloader workers (higher can affect performance)
+label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
+show_encoding: True               # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
 learning_rate: 0.00005             # Learning rate for optimizer
@@ -21,9 +25,9 @@ lr_scheduler_kwargs:               # Additional scheduler arguments
 max_length: 36                     # Maximum input sequence length
 
 # Dataset and File Paths
-train_file: './data/train_data/whitelab_hemo_data.csv'  # Path to training data
+train_file: '../../data/train_data/whitelab_hemo_data.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                    # Path to pretrained model
-model_save_path: './peptide_binary_leakage_BERT'       # Path to save the model
+model_save_path: '../../peptide_binary_leakage_BERT'       # Path to save the model
 plot_path: './leak_plots'                              # Path to save the plots
 
 # Validation and Test Settings
@@ -42,7 +46,7 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: false                  # Use CPU for training
+use_cpu: true                  # Use CPU for training
 
 # Miscellaneous Settings
 ignore_leakage: true                    # Ignore leakage in training data (only if certain)
