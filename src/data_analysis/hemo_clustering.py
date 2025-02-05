@@ -399,6 +399,7 @@ def cluster_model_embedding(file_path: str,
                             batch_size: int,
                             plot_path:str,
                             device,
+                            data_tag: str = "test_run",
                             label_0_cluster_data: int = 500,
                             label_1_cluster_data: int = 500,
                             tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
@@ -411,13 +412,14 @@ def cluster_model_embedding(file_path: str,
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
     :param device: Device to run the model on
+    :param data_tag: Tag for the output files
     :param label_0_cluster_data: Amount of data points for label 0
     :param label_1_cluster_data: Amount of data points for label 1
     :param tokenizer_and_model: Tuple containing the tokenizer and model
     """
 
     # Generating a tag for output files to be unique
-    data_tag = file_path.split("/")[-1].split(".")[0]
+
     if device is None:
         device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 
