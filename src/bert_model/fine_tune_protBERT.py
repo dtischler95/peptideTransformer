@@ -7,8 +7,9 @@ from transformers.utils.logging import enable_default_handler, enable_explicit_f
 import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
-from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments#, test_binary_label_bias
-from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, CurriculumLearningCallback
+from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments  # , test_binary_label_bias
+from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
+    CurriculumLearningCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 
@@ -61,17 +62,16 @@ def fine_tune(config_path: str):
 
     # Prepare tokenizer and datasets
 
-
-    #--------------------- Prepare
+    # --------------------- Prepare
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
-                                                                               show_encoding=training_args.show_encoding,
-                                                                               train_file=training_args.train_file,
-                                                                               ignore_leakage=training_args.ignore_leakage,
-                                                                               max_length=training_args.max_length,
-                                                                               logger=logger,
-                                                                               cut_df_for_faster_debug=training_args.fast_debug_mode,
-                                                                               validation_data_size=training_args.validation_data_size,
-                                                                               test_data_size=training_args.test_data_size)
+                                                                           show_encoding=training_args.show_encoding,
+                                                                           train_file=training_args.train_file,
+                                                                           ignore_leakage=training_args.ignore_leakage,
+                                                                           max_length=training_args.max_length,
+                                                                           logger=logger,
+                                                                           cut_df_for_faster_debug=training_args.fast_debug_mode,
+                                                                           validation_data_size=training_args.validation_data_size,
+                                                                           test_data_size=training_args.test_data_size)
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
@@ -95,8 +95,14 @@ def fine_tune(config_path: str):
     # first.
     elif training_args.model_class == 'mlm':
         model = BertForMaskedLM.from_pretrained(training_args.model_path)
-        data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer)
-        callback_list.append(CurriculumLearningCallback())
+        data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
+                                                      initial_prob=training_args.mlm_probability,
+                                                      increase_step=training_args.mlm_curriculum_increase_step,
+                                                      max_prob=training_args.mlm_curriculum_max_prob)
+
+        # Add Curriculum Learning Callback if enabled
+        # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
+        callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else None
     elif training_args.model_class == 'custom':
         raise NotImplementedError("Custom task not implemented yet")
     else:
@@ -130,12 +136,14 @@ def fine_tune(config_path: str):
     if training_args.do_eval:
         eval_result = trainer.evaluate()
         logger.info(eval_result)
+
         if training_args.model_class == 'binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
             # TODO may provide custom file arg for this. But rn we dont have the data sadly
             # TODO Pass logger to the function
             cluster_model_embedding(file_path=training_args.train_file,
+                                    data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
                                     plot_path=training_args.plot_path,
                                     tokenizer_and_model=(tokenizer, trainer.model),
@@ -144,6 +152,7 @@ def fine_tune(config_path: str):
                                     label_1_cluster_data=training_args.label_1_cluster_data
                                     )
 
+    # not really needed for my case I guess
     if training_args.do_predict:
         ...
         # Test dataset not used so far. May remove it completely?
@@ -155,4 +164,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/peptideBERT_leakBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_mlmBERT_config.yaml')  # Path to the config file
