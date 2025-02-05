@@ -40,7 +40,7 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-    df = df.sample(frac=1)[:15] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:100] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
         df_to_split = df
@@ -399,6 +399,8 @@ def plot_label_abundance(label_0_counter,
     plt.close()
 
 
+
+# TODO Update this function for all new parameters and formats
 def generate_custom_yaml_file(config_name: str,
                               file_path: str = './bert_model/peptideBERT_configs/'):
     """
@@ -426,8 +428,6 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 30            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
-label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
-label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 show_encoding: False              # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
@@ -437,6 +437,16 @@ lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
 lr_scheduler_kwargs:              # Additional scheduler arguments
   patience: 4                     # Patience for ReduceLROnPlateau scheduler
 max_length: 36                    # Maximum input sequence length
+
+# Binary Classification Settings
+label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
+
+# MLM Settings
+mlm_probability: 0.15                       # Masking probability for MLM
+mlm_curriculum_learning: false              # Enable curriculum learning for MLM
+mlm_curriculum_increase_step: 0.0000001     # Step size for curriculum learning
+mlm_curriculum_max_prob: 0.15               # Maximum masking probability for MLM
 
 # Dataset and File Paths
 train_file: SET TRAIN DATA PATH HERE                   # Path to training data
