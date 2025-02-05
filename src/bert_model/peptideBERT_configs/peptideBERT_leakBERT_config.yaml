@@ -12,8 +12,6 @@ early_stop_mode: 'min'             # Mode for early stopping
 early_stop_warm_up: 30             # Warm-up period for early stopping
 dataloader_drop_last: false        # Drop last batch if smaller than batch size
 dataloader_num_workers: 2          # Number of dataloader workers (higher can affect performance)
-label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
-label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 show_encoding: True               # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
@@ -23,6 +21,10 @@ lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
 lr_scheduler_kwargs:               # Additional scheduler arguments
   patience: 4                      # Patience for ReduceLROnPlateau scheduler
 max_length: 36                     # Maximum input sequence length
+
+# Binary Classification Settings
+label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 
 # Dataset and File Paths
 train_file: '../../data/train_data/whitelab_hemo_data.csv'  # Path to training data

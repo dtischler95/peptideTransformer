@@ -1,7 +1,5 @@
 from typing import Literal
-
 from transformers import TrainingArguments
-import sys
 from pathlib import Path
 
 
@@ -31,6 +29,9 @@ class PeptideTrainingArguments(TrainingArguments):
                  label_0_cluster_data: int = 500,
                  label_1_cluster_data: int = 500,
                  show_encoding: bool = False,
+                 mlm_curriculum_learning: bool = False,
+                 mlm_curriculum_increase_step: int = 0.1,
+                 mlm_curriculum_max_prob: float = 0.9,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -88,3 +89,6 @@ class PeptideTrainingArguments(TrainingArguments):
         self.label_0_cluster_data = label_0_cluster_data
         self.label_1_cluster_data = label_1_cluster_data
         self.show_encoding = show_encoding
+        self.mlm_curriculum_learning = mlm_curriculum_learning
+        self.mlm_curriculum_increase_step = mlm_curriculum_increase_step
+        self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
