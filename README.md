@@ -8,6 +8,7 @@
 ### To-Do
 - [ ] Do I need any special metric for rising the masking percentage of the data collator?
 - [ ] Figure out learning curve metrics!
+- [ ] FIX PATH IN MAIN. IT SHOULD ALWAYS SET WORKING PATH TO SRC PATH
 
 ### Brainstorming TODO
 - Binary
