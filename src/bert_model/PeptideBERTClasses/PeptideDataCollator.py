@@ -9,7 +9,7 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
     Strategy could be increasing the mlm probability if current epoch deviates from the mean loss of the last n epochs.
     This could be even used to decrease the mlm probability if the model is overfitting or suddenly loosing too much accuracy.
     """
-    def __init__(self, tokenizer, initial_prob=0.55, max_prob=0.90, increase_step=0.15):
+    def __init__(self, tokenizer, initial_prob=0.01, max_prob=0.90, increase_step=0.1):
         super().__init__(tokenizer=tokenizer, mlm=True, mlm_probability=initial_prob)
         self.current_prob = initial_prob
         self.max_prob = max_prob
@@ -37,8 +37,8 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
 
 
 
-            for perc in masking_percentages:
-                print(f"\nPercentage of Masked Tokens (Excluding Padding): {perc:.2f}%")
+            for index, perc in enumerate(masking_percentages):
+                print(f"\nPercentage for Datapoint {index} : {perc:.2f}% sequence_length: {total_tokens[index]}")
 
 
             print(f"Average Masking Percentage: {masking_percentages.mean():.2f}%")
