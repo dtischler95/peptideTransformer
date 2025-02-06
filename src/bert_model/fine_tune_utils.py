@@ -217,7 +217,7 @@ def data_leakage_wrapper():
 def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
     """
     Function to load the training arguments from a config file for the given training type.
-    The training type is used to select the correct training arguments from the config file.
+    You can implement more config checks here if needed.
     Training Configuration will be logged.
     """
     with open(config_file, 'r') as file:
@@ -225,9 +225,20 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
 
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
-    print("Set Parameters for this training run:")
-    for k, v in config.items():
-        print(f"  {k}: {v}")
+    if config['run_verbose']:
+        print("Set Parameters for this training run:")
+        for k, v in config.items():
+            print(f"  {k}: {v}")
+
+    if config['plot_path'] is None:
+        config.plot_path = './plots'
+        logger.info(f"Plot path not set. Using default path: {config.plot_path}")
+
+    import os
+    if not os.path.exists(config['plot_path']):
+        os.makedirs(config['plot_path'])
+        logger.info(f"Created directory: {config['plot_path']}")
+
 
     return PeptideTrainingArguments(**config)
 
