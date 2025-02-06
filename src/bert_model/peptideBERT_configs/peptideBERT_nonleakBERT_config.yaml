@@ -52,4 +52,4 @@ use_cpu: false                  # Use CPU for training
 # Miscellaneous Settings
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
 classification_weighted_labels: false   # Use weighted labels for classification
-run_verbose: True                      # Show more information during training, like encoding or configs
+run_verbose: true                      # Show more information during training, like encoding or configs
