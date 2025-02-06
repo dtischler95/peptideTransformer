@@ -427,7 +427,9 @@ def cluster_model_embedding(file_path: str,
     embedding, labels = encode_peptides(sequence_file=file_path,
                                         batch_size=batch_size,
                                         tokenizer_and_model=tokenizer_and_model,
-                                        device=device)
+                                        device=device,
+                                        label_0_cluster_data=label_0_cluster_data,
+                                        label_1_cluster_data=label_1_cluster_data)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
                        tag=data_tag,
