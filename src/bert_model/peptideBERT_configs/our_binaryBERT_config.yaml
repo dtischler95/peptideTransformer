@@ -12,7 +12,6 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 30            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
-show_encoding: True               # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
 learning_rate: 0.00005            # Learning rate for optimizer
@@ -53,3 +52,4 @@ use_cpu: false                  # Use CPU for training
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
 ignore_leakage: true                   # Ignore leakage in training data (only if certain)
+run_verbose: True                      # Show more information during training, like encoding or configs
