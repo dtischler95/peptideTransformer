@@ -318,25 +318,13 @@ def perform_clustering(embedded_sequences,
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-    try:
-        print("[Clustering] Plotting PCA")
-        plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
-    except Exception as e:
-        print(f"PCA Plotting failed: {e}")
+
+    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
     print("[Clustering] Plotting UMAP")
     plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_umap_plot")
-
-    try:
-        print("[Clustering] Plotting PCA")
-        plot_pca(pca, pca_fit, pca_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_pca_plot")
-    except Exception as e:
-        print(f"PCA Plotting failed: {e}")
-    print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, tnse_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_tsne_plot")
-    print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, umap_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_umap_plot")
 
 
 
