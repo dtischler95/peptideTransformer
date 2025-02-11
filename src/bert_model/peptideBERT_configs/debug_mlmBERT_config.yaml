@@ -3,7 +3,7 @@ model_class: 'mlm'         # Model class to use, either 'binary' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
-num_train_epochs: 1           # Number of epochs to train the model
+num_train_epochs: 3           # Number of epochs to train the model
 per_device_train_batch_size: 256  # Batch size for training
 per_device_eval_batch_size: 64    # Batch size for evaluation
 early_stopping_patience: 10       # Patience for early stopping
