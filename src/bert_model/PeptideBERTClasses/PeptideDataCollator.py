@@ -19,12 +19,18 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
         batch = self.tokenizer.pad(examples, return_tensors="pt")  # Use PyTorch tensors
 
         if self.mlm:
+            """
+            torch_mask_tokens is a method from DataCollatorForLanguageModeling that masks tokens in the input batch.
+            For 80% of the data it replaces the token with [MASK], for 10% it replaces it with a random token and for the
+            remaining 10% it keeps the original token.
+            The Masking probability for 80% of the data is set initial to 15% but with curriculum learning this can be
+            increased.
+            """
             inputs, labels = self.torch_mask_tokens(batch["input_ids"])
 
             # Convert tensors to numpy arrays for easier printing
             original_tokens = batch["input_ids"].cpu().numpy()
             masked_tokens = inputs.cpu().numpy()
-            labels_tokens = labels.cpu().numpy()
 
             # Get special token IDs
             mask_token_id = self.tokenizer.mask_token_id  # ID of [MASK]
@@ -34,12 +40,6 @@ class PeptideCurriculumDataCollator(DataCollatorForLanguageModeling):
             total_tokens = np.count_nonzero(original_tokens != pad_token_id, axis=1)  # Exclude padding
             masked_tokens_count = np.count_nonzero((masked_tokens == mask_token_id) & (original_tokens != pad_token_id), axis=1)  # Only maskable tokens
             masking_percentages = (masked_tokens_count / total_tokens) * 100  # Compute percentage
-
-
-
-            for index, perc in enumerate(masking_percentages):
-                print(f"\nPercentage for Datapoint {index} : {perc:.2f}% sequence_length: {total_tokens[index]}")
-
 
             print(f"Average Masking Percentage: {masking_percentages.mean():.2f}%")
 
