@@ -1,4 +1,5 @@
 # Training and Evaluation Settings
+model_class: 'mlm'            # Model class to use, either 'binary' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
@@ -18,8 +19,13 @@ weight_decay: 0.01                # Weight decay for optimizer
 lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
 lr_scheduler_kwargs:              # Additional scheduler arguments
   patience: 4                     # Patience for ReduceLROnPlateau scheduler
-mlm_probability: 0.15             # Masking probability for MLM
 max_length: 36                    # Maximum input sequence length
+
+# MLM Settings
+mlm_probability: 0.15                # Masking probability for MLM
+mlm_curriculum_learning: true        # Enable curriculum learning for MLM
+mlm_curriculum_increase_step: 0.15    # Step size for curriculum learning
+mlm_curriculum_max_prob: 0.8         # Maximum masking probability for MLM
 
 # Dataset and File Paths
 train_file: './data/train_data/mlm_starpep_data.csv'  # Path to training data
@@ -48,3 +54,4 @@ use_cpu: false                  # Use CPU for training
 # Miscellaneous Settings
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
 fast_debug_mode: false                  # Developer mode for pipeline testing
+run_verbose: true                       # Show more information during training, like encoding or configs

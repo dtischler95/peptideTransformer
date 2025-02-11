@@ -40,7 +40,7 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:100] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
         df_to_split = df
@@ -64,7 +64,7 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
     label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
 
-    # Load the tokenizer
+    # Load the tokenizer # TODO do i need to make my own tokenizer?
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
@@ -217,7 +217,7 @@ def data_leakage_wrapper():
 def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
     """
     Function to load the training arguments from a config file for the given training type.
-    The training type is used to select the correct training arguments from the config file.
+    You can implement more config checks here if needed.
     Training Configuration will be logged.
     """
     with open(config_file, 'r') as file:
@@ -225,9 +225,20 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
 
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
-    print("Set Parameters for this training run:")
-    for k, v in config.items():
-        print(f"  {k}: {v}")
+    if config['run_verbose']:
+        print("Set Parameters for this training run:")
+        for k, v in config.items():
+            print(f"  {k}: {v}")
+
+    if config['plot_path'] is None:
+        config.plot_path = './plots'
+        logger.info(f"Plot path not set. Using default path: {config.plot_path}")
+
+    import os
+    if not os.path.exists(config['plot_path']):
+        os.makedirs(config['plot_path'])
+        logger.info(f"Created directory: {config['plot_path']}")
+
 
     return PeptideTrainingArguments(**config)
 
@@ -318,6 +329,7 @@ def test_binary_label_bias(tokenizer, trainer, training_args):
     """
     Function to test the label bias in the predictions of the model.
     This Function takes files from the data folder and prepares the datasets for the predictions.
+    Only used for inspecting the impact of the label bias in the predictions with data leakage.
     The Datasets are chosen after these criteria:
         - Negative Dataset: Contains only non-bioactive Peptides. Should Predict only 0 if model is "perfect"
         - Positive Dataset: Contains only bioactive AND hemolytic peptides. Should Predict only 1 if model is "perfect"
@@ -398,6 +410,8 @@ def plot_label_abundance(label_0_counter,
     plt.close()
 
 
+
+# TODO Update this function for all new parameters and formats
 def generate_custom_yaml_file(config_name: str,
                               file_path: str = './bert_model/peptideBERT_configs/'):
     """
@@ -411,7 +425,8 @@ def generate_custom_yaml_file(config_name: str,
 
 
     yaml_content = """
-# Training and Evaluation Settings 
+# Training and Evaluation Settings
+model_class: 'ENTER MODELTYPE HERE'         # Model class to use, either 'binary' or 'mlm' 
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
@@ -424,6 +439,7 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 30            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
+show_encoding: False              # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
 learning_rate: 0.00005            # Learning rate for optimizer
@@ -432,6 +448,16 @@ lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
 lr_scheduler_kwargs:              # Additional scheduler arguments
   patience: 4                     # Patience for ReduceLROnPlateau scheduler
 max_length: 36                    # Maximum input sequence length
+
+# Binary Classification Settings
+label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
+
+# MLM Settings
+mlm_probability: 0.15                       # Masking probability for MLM
+mlm_curriculum_learning: false              # Enable curriculum learning for MLM
+mlm_curriculum_increase_step: 0.0000001     # Step size for curriculum learning
+mlm_curriculum_max_prob: 0.15               # Maximum masking probability for MLM
 
 # Dataset and File Paths
 train_file: SET TRAIN DATA PATH HERE                   # Path to training data
