@@ -283,7 +283,7 @@ def perform_clustering(embedded_sequences,
             perplexity=5.0,
             init="random",
             method="exact",
-            max_iter=1000,
+            n_iter=1000,
             random_state=42,
             verbose=0,
         )
@@ -318,30 +318,21 @@ def perform_clustering(embedded_sequences,
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-    try:
-        print("[Clustering] Plotting PCA")
-        plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
-    except Exception as e:
-        print(f"PCA Plotting failed: {e}")
+
+    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
     print("[Clustering] Plotting UMAP")
     plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_umap_plot")
 
-    try:
-        print("[Clustering] Plotting PCA")
-        plot_pca(pca, pca_fit, pca_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_pca_plot")
-    except Exception as e:
-        print(f"PCA Plotting failed: {e}")
-    print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, tnse_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_tsne_plot")
-    print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, umap_kmeans_labels.tolist(), plot_path=f"{plot_path}/{tag}_kmeans_label_umap_plot")
-
 
 
 def encode_peptides(sequence_file: str,
                     device,
+                    plot_path: str,
+                    label_0_cluster_data: int = 500,
+                    label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
                     batch_size: int = 32) -> [np.ndarray, list]:
 
@@ -363,7 +354,10 @@ def encode_peptides(sequence_file: str,
 
     # ------------
     # Change number of datapoints used for clustering here.
-    df = reduce_data_points_for_clustering(df)
+    df = reduce_data_points_for_clustering(df,
+                                           label_0_data=label_0_cluster_data,
+                                           label_1_data=label_1_cluster_data,
+                                           plot_path=plot_path)
     # ------------
 
     # Prepare peptides
@@ -395,6 +389,9 @@ def cluster_model_embedding(file_path: str,
                             batch_size: int,
                             plot_path:str,
                             device,
+                            data_tag: str = "test_run",
+                            label_0_cluster_data: int = 500,
+                            label_1_cluster_data: int = 500,
                             tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
     """
     Standalone Wrapper for clustering analysis if you run this file directly.
@@ -405,11 +402,14 @@ def cluster_model_embedding(file_path: str,
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
     :param device: Device to run the model on
+    :param data_tag: Tag for the output files
+    :param label_0_cluster_data: Amount of data points for label 0
+    :param label_1_cluster_data: Amount of data points for label 1
     :param tokenizer_and_model: Tuple containing the tokenizer and model
     """
 
     # Generating a tag for output files to be unique
-    data_tag = file_path.split("/")[-1].split(".")[0]
+
     if device is None:
         device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -417,13 +417,17 @@ def cluster_model_embedding(file_path: str,
     embedding, labels = encode_peptides(sequence_file=file_path,
                                         batch_size=batch_size,
                                         tokenizer_and_model=tokenizer_and_model,
-                                        device=device)
+                                        device=device,
+                                        label_0_cluster_data=label_0_cluster_data,
+                                        label_1_cluster_data=label_1_cluster_data,
+                                        plot_path=plot_path)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
                        tag=data_tag,
                        plot_path=plot_path)
 
 def reduce_data_points_for_clustering(df: pd.DataFrame,
+                                      plot_path: str,
                                       label_0_data: int = 500,
                                       label_1_data: int = 500) -> pd.DataFrame:
     """
@@ -446,6 +450,7 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     df_1 = df[df['label'] == 1].sample(frac=1)
 
     result_df = pd.concat([df_0[:label_0_data], df_1[:label_1_data]]).sample(frac=1)
+    result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';', index=False) # TODO maybe make this optional?
 
     return result_df
 

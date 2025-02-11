@@ -1,7 +1,7 @@
 import os
 import torch
 import evaluate
-from transformers import TrainerCallback, TrainerState, TrainerControl
+from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.fine_tune_utils import plot_label_abundance, _format_logit_to_label
@@ -13,9 +13,9 @@ class LearningCurveCallback(TrainerCallback):
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
 
-    def __init__(self, args: PeptideTrainingArguments, interval=1, task_name='no_task_name_provided'):
+    def __init__(self, args: PeptideTrainingArguments, interval=1):
         self.interval = interval
-        self.task_name = task_name
+        self.args = args # this could be done smoother
         self.isTrain = True
         self.eval_accuracy_metrics = []
         self.train_accuracy_metric = []
@@ -52,9 +52,13 @@ class LearningCurveCallback(TrainerCallback):
                 labels_handler.append(labels)
 
         # Compute accuracy
-        epoch_train_accuracy = accuracy.compute(predictions=[item for sublist in predictions_handler for item in sublist],
-                                                references=[item for sublist in labels_handler for item in sublist])
-        self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
+        # TODO implement accuarcy for mlm task, since the caption method above only works out for binary. In General, i need to figure out how to capture those metrics properly. This way is a mess
+        try:
+            epoch_train_accuracy = accuracy.compute(predictions=[item for prediction in predictions_handler for item in prediction],
+                                                    references=[item for label in labels_handler for item in label])
+            self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
+        except:
+            self.train_accuracy_metric.append(0)
 
 
 
@@ -106,13 +110,13 @@ class LearningCurveCallback(TrainerCallback):
             if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):
                 # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
                 raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
-            self.plot_learning_curves(plot_path=args.plot_path)
+            self.plot_learning_curves(plot_path=self.args.plot_path)
 
             if len(self.label_0_counter) > 1:
                 plot_label_abundance(label_0_counter=self.label_0_counter,
                                      label_1_counter=self.label_1_counter,
-                                     task_name=self.task_name,
-                                     plot_path=args.plot_path)
+                                     task_name=self.args.model_class,
+                                     plot_path=self.args.plot_path)
 
     def plot_learning_curves(self, plot_path: str):
         """
@@ -136,12 +140,12 @@ class LearningCurveCallback(TrainerCallback):
         ax2.tick_params(axis='y', labelcolor='red')
 
         # Set the title and legend
-        plt.title(f'Learning Curves for {self.task_name} task')
+        plt.title(f'Learning Curves for {self.args.model_class} task')
         plt.legend()
         ax2.legend()
 
         # Save the figure
-        plt.savefig(os.path.join(plot_path, f"{self.task_name}_learning_curves.png"))
+        plt.savefig(os.path.join(plot_path, f"{self.args.model_class}_learning_curves.png"))
         plt.close()
 
 
@@ -188,4 +192,10 @@ class CurriculumLearningCallback(TrainerCallback):
     Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
     A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
     """
-    ...
+    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        """
+        Update the masking percentage for the curriculum MLM task.
+        Conditions can be added here for adjusting the update algorithm.
+        """
+        if state.epoch % 20 == 0:
+            kwargs['train_dataloader'].base_dataloader.collate_fn.data_collator.update_probability()

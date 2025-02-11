@@ -6,8 +6,17 @@
 - The Idea is to first fine tune the BERT-Transformer for Peptides Tasks with MLM, afterward the model should be use-able for other downstream tasks. This Project focuses on the binary classification of toxicity of peptides for Human Blood Cells.
 
 ### To-Do
-- [ ] Think of cool Project Name
-- [ ] Paths could be more dynamic...
+- [ ] Do I need any special metric for rising the masking percentage of the data collator?
+- [x] Figure out learning curve metrics!
+  - [ ] Tensorboard seems like a simple and easy way to do this
+- [ ] FIX PATH IN MAIN. IT SHOULD ALWAYS SET WORKING PATH TO SRC PATH
+- [ ] Implement Mathews Correlation Coefficient
+- [ ] Implement Fisher Test
+- [ ] Trainer/reformat_metrics if i want to make a prettier print of the metrics
+
+### Brainstorming TODO
+- Binary
+- [ ] 
 
 
 
