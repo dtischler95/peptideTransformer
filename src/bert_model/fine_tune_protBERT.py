@@ -102,7 +102,7 @@ def fine_tune(config_path: str):
 
         # Add Curriculum Learning Callback if enabled
         # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
-        callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else None
+        callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
     elif training_args.model_class == 'custom':
         raise NotImplementedError("Custom task not implemented yet")
     else:
@@ -126,14 +126,12 @@ def fine_tune(config_path: str):
     # --------------------- Train, evaluate and predict ---------------------
     if training_args.do_train:
         trainer.train()
-
-        # TODO MCC !!!
-
         trainer.save_model(training_args.model_save_path)
         tokenizer.save_pretrained(training_args.model_save_path)
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
+        # TODO WHATS REALLY HAPPENING HERE? I shoulda be okay with all the evals i do in training
         eval_result = trainer.evaluate()
         logger.info(eval_result)
 

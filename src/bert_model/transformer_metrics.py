@@ -1,5 +1,6 @@
 import numpy as np
 import evaluate
+from sklearn.metrics import matthews_corrcoef
 
 
 def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
@@ -21,12 +22,14 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     predictions, labels = eval_preds
     predictions = (predictions > 0.5).astype(int)  # Apply the threshold to convert probabilities to binary predictions
 
+    mcc = matthews_corrcoef(labels, predictions)
     # ----- Added for debugging purposes -----
     # Save check for Prediction Bias towards one label
     if debug_print:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
             "accuracy": accuracy.compute(predictions=predictions, references=labels),
+            "mcc": mcc,
             # "recall": recall.compute(predictions=predictions, references=labels),
             # "f1": f1.compute(predictions=predictions, references=labels),
             # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
@@ -36,6 +39,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     return {
         "accuracy": accuracy.compute(predictions=predictions, references=labels),
+        "mcc": mcc
         # "recall": recall.compute(predictions=predictions, references=labels),
         # "f1": f1.compute(predictions=predictions, references=labels),
         # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
