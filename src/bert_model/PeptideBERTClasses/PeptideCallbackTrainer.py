@@ -193,5 +193,5 @@ class CurriculumLearningCallback(TrainerCallback):
     A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
     """
     def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        print(1)
-        kwargs['train_dataloader'].base_dataloader.collate_fn.data_collator.update_probability()
+        if state.epoch % 20 == 0:
+            kwargs['train_dataloader'].base_dataloader.collate_fn.data_collator.update_probability()
