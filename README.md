@@ -7,8 +7,12 @@
 
 ### To-Do
 - [ ] Do I need any special metric for rising the masking percentage of the data collator?
-- [ ] Figure out learning curve metrics!
+- [x] Figure out learning curve metrics!
+  - [ ] Tensorboard seems like a simple and easy way to do this
 - [ ] FIX PATH IN MAIN. IT SHOULD ALWAYS SET WORKING PATH TO SRC PATH
+- [ ] Implement Mathews Correlation Coefficient
+- [ ] Implement Fisher Test
+- [ ] Trainer/reformat_metrics if i want to make a prettier print of the metrics
 
 ### Brainstorming TODO
 - Binary
