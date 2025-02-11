@@ -330,6 +330,7 @@ def perform_clustering(embedded_sequences,
 
 def encode_peptides(sequence_file: str,
                     device,
+                    plot_path: str,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
@@ -355,7 +356,8 @@ def encode_peptides(sequence_file: str,
     # Change number of datapoints used for clustering here.
     df = reduce_data_points_for_clustering(df,
                                            label_0_data=label_0_cluster_data,
-                                           label_1_data=label_1_cluster_data)
+                                           label_1_data=label_1_cluster_data,
+                                           plot_path=plot_path)
     # ------------
 
     # Prepare peptides
@@ -417,13 +419,15 @@ def cluster_model_embedding(file_path: str,
                                         tokenizer_and_model=tokenizer_and_model,
                                         device=device,
                                         label_0_cluster_data=label_0_cluster_data,
-                                        label_1_cluster_data=label_1_cluster_data)
+                                        label_1_cluster_data=label_1_cluster_data,
+                                        plot_path=plot_path)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
                        tag=data_tag,
                        plot_path=plot_path)
 
 def reduce_data_points_for_clustering(df: pd.DataFrame,
+                                      plot_path: str,
                                       label_0_data: int = 500,
                                       label_1_data: int = 500) -> pd.DataFrame:
     """
@@ -446,6 +450,7 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     df_1 = df[df['label'] == 1].sample(frac=1)
 
     result_df = pd.concat([df_0[:label_0_data], df_1[:label_1_data]]).sample(frac=1)
+    result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';', index=False) # TODO maybe make this optional?
 
     return result_df
 
