@@ -86,7 +86,7 @@ class PeptideTrainer(Trainer):
         Return:
             `torch.Tensor`: The tensor with training loss on this batch.
         """
-        loss = super().training_step(model, inputs)
+        loss = super().training_step(model, inputs, num_items_in_batch)
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.
