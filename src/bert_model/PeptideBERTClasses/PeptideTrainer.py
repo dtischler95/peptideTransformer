@@ -65,7 +65,7 @@ class PeptideTrainer(Trainer):
         # Call the original log method to ensure other logging mechanisms are still in place
         super().log(logs)
 
-    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]]) -> torch.Tensor:
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]], num_items_in_batch=None) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
 
@@ -79,6 +79,9 @@ class PeptideTrainer(Trainer):
 
                 The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
                 argument `labels`. Check your model's documentation for all accepted arguments.
+            num_items_in_batch (Optional[int]):
+                The number of items in the batch. If `None`, the number of items is determined by the first input
+                tensor with a `size(0)` attribute.
 
         Return:
             `torch.Tensor`: The tensor with training loss on this batch.
