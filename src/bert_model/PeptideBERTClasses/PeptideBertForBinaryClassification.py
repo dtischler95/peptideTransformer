@@ -12,7 +12,7 @@ class PeptideBertForBinaryClassification(BertModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config, debug_label_plot_path: str):
+    def __init__(self, config):
         config.hidden_size = 480
         config.num_attention_heads = 12
         config.num_hidden_layers = 12
@@ -20,7 +20,6 @@ class PeptideBertForBinaryClassification(BertModel):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.return_dict = False
         super().__init__(config)
-        # config.
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(self.bert.config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
@@ -30,11 +29,6 @@ class PeptideBertForBinaryClassification(BertModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-        # used for debugging label bias
-        self.batch_wise_label_0_predictions = []
-        self.batch_wise_label_1_predictions = []
-
-        self.label_debug_plot_path = debug_label_plot_path
 
     def forward(
             self,
