@@ -11,6 +11,7 @@ from src.bert_model.fine_tune_utils import prepare_datasets, load_training_argum
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     CurriculumLearningCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 
 # this line should be included in the TrainingArguments
@@ -86,8 +87,9 @@ def fine_tune(config_path: str):
 
     if training_args.model_class == 'binary':
         config = BertConfig.from_pretrained(training_args.model_path)
-        model = PeptideBertForBinaryClassification(config, debug_label_plot_path=training_args.plot_path)
+        model = PeptideBertForBinaryClassification(config)
         data_collator = DefaultDataCollator()
+        run_metric = binary_metrics
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
     # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
@@ -103,8 +105,13 @@ def fine_tune(config_path: str):
         # Add Curriculum Learning Callback if enabled
         # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
         callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
+        run_metric = mlm_metrics
     elif training_args.model_class == 'custom':
-        raise NotImplementedError("Custom task not implemented yet")
+        #raise NotImplementedError("Custom task not implemented yet")
+        config = BertConfig.from_pretrained(training_args.model_path)
+        model = PeptideBertForRegression(config)
+        data_collator = DefaultDataCollator()
+        run_metric = None
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{training_args.model_class}'")
 
@@ -116,7 +123,7 @@ def fine_tune(config_path: str):
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=binary_metrics if training_args.model_class == 'binary' else mlm_metrics,
+        compute_metrics=run_metric,#binary_metrics if training_args.model_class == 'binary' else mlm_metrics,
         # calculate metrics based on the task
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
