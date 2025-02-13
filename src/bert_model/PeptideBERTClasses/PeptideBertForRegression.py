@@ -6,14 +6,22 @@ from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
 class PeptideBertForRegression(BertModel):
+    """
+    Naive implementation of a regression model using the BertModel as a base.
+    For better testing i still need to prepare my regression dataset properly.
+    I also need to implement a robust and consitent architecture for regression.
+    """
+
     def __init__(self, config):
         config.return_dict = False
         super().__init__(config)
         # config.
         self.bert = BertModel(config)
+
+        # ----------------- Add regression head -----------------
         self.dropout = nn.Dropout(0.15)
         self.regression = nn.Linear(config.hidden_size, 1)
-
+        # -------------------------------------------------------
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -76,9 +84,12 @@ class PeptideBertForRegression(BertModel):
             return_dict=return_dict,
         )
 
+        #------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
         pooled_output = self.dropout(pooled_output)
         logits = self.regression(pooled_output)
+        #--------------------------------------------------
+
 
 
         # If labels are provided, compute the loss
