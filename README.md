@@ -13,6 +13,14 @@
 - [ ] Implement Mathews Correlation Coefficient
 - [ ] Implement Fisher Test
 - [ ] Trainer/reformat_metrics if i want to make a prettier print of the metrics
+- [ ] Add regression metrics
+- [ ] Add better regression head
+- [ ] Make a preprocessing pipeline for regression data
+
+#### Run To-Do
+- [ ] Make a base mlm for train binary/regression models
+- [ ] Make binary classification hemo model
+- [ ] Make regression model for mic
 
 ### Brainstorming TODO
 - Binary
