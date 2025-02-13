@@ -111,7 +111,7 @@ def fine_tune(config_path: str):
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForRegression(config)
         data_collator = DefaultDataCollator()
-        run_metric = None
+        run_metric = None # TODO implement regression metrics
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{training_args.model_class}'")
 
