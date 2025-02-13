@@ -41,12 +41,13 @@ class PeptideTrainer(Trainer):
                 param.data = param.contiguous()
         super()._save(output_dir=output_dir, state_dict=state_dict)
 
-    def log(self, logs):
+    def log(self, logs: Dict[str, float], start_time: Optional[float] = None):
         """
         The log function just prints the metric dictionary in a more readable format.
 
         Args:
             logs (Dict): The dictionary containing the metrics to be logged.
+            start_time (Optional[float]): The start time of the logging.
 
         """
         # Custom logging logic
@@ -63,7 +64,7 @@ class PeptideTrainer(Trainer):
                 print(f"{key.capitalize()}: {value}")
 
         # Call the original log method to ensure other logging mechanisms are still in place
-        super().log(logs)
+        super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]], num_items_in_batch=None) -> torch.Tensor:
         """
