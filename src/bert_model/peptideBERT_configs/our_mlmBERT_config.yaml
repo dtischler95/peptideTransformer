@@ -9,7 +9,7 @@ per_device_eval_batch_size: 32    # Batch size for evaluation
 early_stopping_patience: 5        # Patience for early stopping
 early_stop_metric: 'eval_loss'    # Metric for early stopping
 early_stop_mode: 'min'            # Mode for early stopping
-early_stop_warm_up: 15            # Warm-up period for early stopping
+early_stop_warm_up: 35            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 
@@ -23,15 +23,15 @@ max_length: 36                    # Maximum input sequence length
 
 # MLM Settings
 mlm_probability: 0.15                # Masking probability for MLM
-mlm_curriculum_learning: true        # Enable curriculum learning for MLM
+mlm_curriculum_learning: false        # Enable curriculum learning for MLM
 mlm_curriculum_increase_step: 0.15    # Step size for curriculum learning
 mlm_curriculum_max_prob: 0.8         # Maximum masking probability for MLM
 
 # Dataset and File Paths
 train_file: './data/train_data/mlm_starpep_data.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                  # Path to pretrained model
-model_save_path: './first_mlm_BERT'                  # Path to save the model
-plot_path: './plots'                                 # Path to save the plots
+model_save_path: './mlm_base_for_binary'                  # Path to save the model
+plot_path: './mlm_base'                                 # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)
