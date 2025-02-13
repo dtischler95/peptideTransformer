@@ -1,13 +1,11 @@
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, List
 import torch
-from transformers import BertForSequenceClassification, BertModel
+from transformers import BertModel
 import torch.nn as nn
-from transformers.modeling_outputs import SequenceClassifierOutput
-from src.bert_model.fine_tune_utils import _format_logit_to_label, plot_label_abundance
-from src.bert_model.transformer_metrics import _debug_predicted_labels
+from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
-class PeptideBertForBinaryClassification(BertForSequenceClassification):
+class PeptideBertForBinaryClassification(BertModel):
     """
     This class is a reproduction of PeptideBERTs implementation for binary classification.
     It added a Sigmoid activation function to the output logits to convert the output to probabilities.
@@ -15,12 +13,14 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
     """
 
     def __init__(self, config, debug_label_plot_path: str):
-        super().__init__(config)
         config.hidden_size = 480
         config.num_attention_heads = 12
         config.num_hidden_layers = 12
         config.classifier_dropout = 0.15
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
+        config.return_dict = False
+        super().__init__(config)
+        # config.
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(self.bert.config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
@@ -44,13 +44,16 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
             position_ids: Optional[torch.Tensor] = None,
             head_mask: Optional[torch.Tensor] = None,
             inputs_embeds: Optional[torch.Tensor] = None,
-            labels: Optional[torch.Tensor] = None,
+            encoder_hidden_states: Optional[torch.Tensor] = None,
+            encoder_attention_mask: Optional[torch.Tensor] = None,
+            past_key_values: Optional[List[torch.FloatTensor]] = None,
+            use_cache: Optional[bool] = None,
             output_attentions: Optional[bool] = None,
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
-            return_pooler_output: Optional[bool] = False,  # New parameter
-            print_debug_graph: bool = False  # Only for analysis purposes
-    ) -> Union[Tuple[torch.Tensor], SequenceClassifierOutput]:
+            labels: Optional[torch.Tensor] = None,
+            return_pooler_output: Optional[bool] = False
+    ) -> Union[Tuple[torch.Tensor], BaseModelOutputWithPooling]:
         """
         Forward to propagate the input through the model adjusted to the single logit output for binary classification.
         We also added a return_pooler_output parameter to return the pooled output for visualization purposes.
@@ -66,12 +69,16 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
         :param position_ids: position ids for the model
         :param head_mask: head mask for the model
         :param inputs_embeds: input embeddings for the model
+        :param encoder_hidden_states: encoder hidden states for the model
+        :param encoder_attention_mask: encoder attention mask for the model
+        :param past_key_values: past key values for the model
+        :param use_cache: use cache for the model
         :param labels: labels for the model
         :param output_attentions: output attentions for the model
         :param output_hidden_states: output hidden states for the model
         :param return_dict: return dict for the model
         :param return_pooler_output: return pooler output for the model
-        :param print_debug_graph: print debug graph for the model
+        :return: loss, logits or logits
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -93,26 +100,6 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
 
         # Apply sigmoid activation for binary classification
         logits = self.sigmoid(logits)
-        # -----------------------------------------------------------------------------------------------------------
-        # this part is only for debugging purposes
-        # I fear a label bias in the predictions for PeptideBERT and im not to sure how to handle this
-        # I plotted this for better visualization and inspection. This if scope could be removed if not needed anymore
-        if print_debug_graph: # TODO BUG!! This could should not be executed when predicting... Only for training
-            preds = _format_logit_to_label(logits=logits.squeeze().cpu().detach().numpy())
-            label_0_preds, label_1_preds = _debug_predicted_labels(preds)
-
-            max_labels = label_0_preds + label_1_preds
-            label_0_percentage = label_0_preds / max_labels
-            label_1_percentage = label_1_preds / max_labels
-
-            self.batch_wise_label_0_predictions.append(label_0_percentage)
-            self.batch_wise_label_1_predictions.append(label_1_percentage)
-            if len(self.batch_wise_label_0_predictions) > 1:
-                plot_label_abundance(plot_path=self.label_debug_plot_path,
-                                     label_0_counter=self.batch_wise_label_0_predictions,
-                                     label_1_counter=self.batch_wise_label_1_predictions,
-                                     task_name="train_batch_wise_label_prediction")
-        # -----------------------------------------------------------------------------------------------------------
 
         # If labels are provided, compute the loss
         loss = None
@@ -123,4 +110,12 @@ class PeptideBertForBinaryClassification(BertForSequenceClassification):
         if return_pooler_output:
             return pooled_output  # Return pooled output for visualization
 
-        return (loss, logits) if loss is not None else logits
+        if not return_dict:
+            return (loss, logits) if loss is not None else logits
+
+        return BaseModelOutputWithPooling(
+            last_hidden_state=outputs.last_hidden_state,
+            pooler_output=pooled_output,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
+        )
