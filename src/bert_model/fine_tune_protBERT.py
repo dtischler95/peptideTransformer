@@ -10,7 +10,7 @@ from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_fisher_exact  # , test_binary_label_bias
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
-    CurriculumLearningCallback, EnableTrainMetricPrints
+    CurriculumLearningCallback, EnableTrainMetricPrints, MCCCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
@@ -63,7 +63,7 @@ def fine_tune(config_path: str):
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
-  
+
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
                                                                            show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
@@ -89,7 +89,9 @@ def fine_tune(config_path: str):
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config)
         data_collator = DefaultDataCollator()
+        callback_list.append(MCCCallback())
         run_metric = binary_metrics
+
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
     # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
@@ -129,6 +131,8 @@ def fine_tune(config_path: str):
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
         callbacks=callback_list
     )
+
+    # Custom Solution to enable training metrics
     trainer.add_callback(EnableTrainMetricPrints(trainer))
 
     # --------------------- Train, evaluate and predict ---------------------
@@ -140,8 +144,8 @@ def fine_tune(config_path: str):
 
     if training_args.do_eval:
         # TODO WHATS REALLY HAPPENING HERE? I shoulda be okay with all the evals i do in training
-        eval_result = trainer.evaluate()
-        logger.info(eval_result)
+        # eval_result = trainer.evaluate()
+        # logger.info(eval_result)
 
         if training_args.model_class == 'binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding

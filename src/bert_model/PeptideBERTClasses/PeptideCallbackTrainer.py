@@ -1,12 +1,8 @@
 import os
 from copy import deepcopy
-
-import torch
-import evaluate
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.fine_tune_utils import plot_label_abundance, format_logit_to_label
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -16,7 +12,6 @@ class LearningCurveCallback(TrainerCallback):
     """
 
     def __init__(self, args: PeptideTrainingArguments):
-        self.args = args # this could be done smoother
         self.eval_accuracy_metrics = []
         self.train_accuracy_metric = []
         self.eval_loss_metric = []
@@ -24,15 +19,14 @@ class LearningCurveCallback(TrainerCallback):
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
         os.makedirs(args.plot_path, exist_ok=True)
 
-
-    def on_epoch_end(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_epoch_begin(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
+        I think I should miss the last epoch metrics either when logging on epoch begin or on epoch end
         """
 
         logs = state.log_history
 
-        # I dont know why, but the logs are empty on the first epoch
         if len(logs) == 0:
             return
 
@@ -44,11 +38,9 @@ class LearningCurveCallback(TrainerCallback):
         self.train_accuracy_metric.append(logs[-3].get("train_accuracy"))
         self.train_loss_metric.append(logs[-3].get("train_loss"))
 
-        self.plot_learning_curves()
+        self.plot_learning_curves(args=args)
 
-
-
-    def plot_learning_curves(self):
+    def plot_learning_curves(self, args: PeptideTrainingArguments):
         """
         Plots a learning curve for the accuracy and loss metrics on every logging step
         """
@@ -69,13 +61,50 @@ class LearningCurveCallback(TrainerCallback):
         ax2.set_ylabel('Loss', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
+        plt.xticks(epochs)
+
         # Set the title and legend
-        plt.title(f'Learning Curves for {self.args.model_class} task')
+        plt.title(f'Learning Curves for {args.model_class} task')
         plt.legend()
         ax2.legend()
 
         # Save the figure
-        plt.savefig(os.path.join(self.args.plot_path, f"{self.args.model_class}_learning_curves.png"))
+        plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_learning_curves.png"))
+        plt.close()
+
+
+class MCCCallback(TrainerCallback):
+    def __init__(self):
+        self.eval_mcc = []
+        self.train_mcc = []
+
+    def on_epoch_begin(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        logs = state.log_history
+
+        if len(logs) == 0:
+            return
+
+        self.eval_mcc.append(logs[-1].get("eval_mcc"))
+        self.train_mcc.append(logs[-3].get("train_mcc"))
+
+        self.plot_mcc_curves(args=args)
+
+    def plot_mcc_curves(self, args: PeptideTrainingArguments):
+        epochs = range(1, len(self.eval_mcc) + 1)
+        plt.figure(figsize=(10, 5))
+
+        plt.plot(epochs, self.eval_mcc, label='Eval MCC', color='blue')
+        plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow')
+        plt.xlabel('Epochs')
+        plt.ylabel('Eval MCC', color='blue')
+        plt.tick_params(axis='y', labelcolor='blue')
+
+        plt.xticks(epochs)
+
+        plt.title(f'MCC Curves for {args.model_class} task')
+        plt.legend()
+
+        plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_mcc_curves.png"))
         plt.close()
 
 
@@ -118,6 +147,11 @@ class EarlyStoppingCallback(TrainerCallback):
 
 
 class EnableTrainMetricPrints(TrainerCallback):
+    """
+    Needed so the Trainer calculates the metrics on the training dataset as well.
+    Solution taken from:
+    https://discuss.huggingface.co/t/metrics-for-training-set-in-trainer/2461/5
+    """
 
     def __init__(self, trainer) -> None:
         super().__init__()
@@ -129,11 +163,13 @@ class EnableTrainMetricPrints(TrainerCallback):
             self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
             return control_copy
 
+
 class CurriculumLearningCallback(TrainerCallback):
     """
     Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
     A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
     """
+
     def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Update the masking percentage for the curriculum MLM task.
