@@ -7,6 +7,7 @@ import yaml
 import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 
 
 def prepare_datasets(binary_or_mlm: str,
@@ -40,7 +41,7 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-    df = df.sample(frac=1)[:100] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
         df_to_split = df
@@ -239,7 +240,6 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
         os.makedirs(config['plot_path'])
         logger.info(f"Created directory: {config['plot_path']}")
 
-
     return PeptideTrainingArguments(**config)
 
 
@@ -293,7 +293,7 @@ def get_predictions(trainer, dataset):
     return (predictions.predictions > 0.5).astype(int)
 
 
-def _format_logit_to_label(logits):
+def format_logit_to_label(logits):
     """
     Format the given logit tensor to a list of labels.
     0.5 is a typical threshold
@@ -410,7 +410,6 @@ def plot_label_abundance(label_0_counter,
     plt.close()
 
 
-
 # TODO Update this function for all new parameters and formats
 def generate_custom_yaml_file(config_name: str,
                               file_path: str = './bert_model/peptideBERT_configs/'):
@@ -422,7 +421,6 @@ def generate_custom_yaml_file(config_name: str,
     - config_name (str): Name of the current setup for easier identification.
     - file_path (str): The path where the YAML file will be saved. !Should be the peptideBERT_config folder.!
     """
-
 
     yaml_content = """
 # Training and Evaluation Settings
@@ -498,7 +496,22 @@ ignore_leakage: false                   # Ignore leakage in training data (only 
     except Exception as e:
         print(f"Error while creating YAML file: {e}")
 
+
+def prepare_fisher_exact(test_dataset: PeptideDataset,
+                         trainer: PeptideTrainer,
+                         plot_path: str):
+    from sklearn import metrics
+    actual = test_dataset.labels
+    logits = trainer.predict(test_dataset).predictions
+    confusion_matrix = metrics.confusion_matrix(actual, format_logit_to_label(logits=logits))
+    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[0, 1])
+    cm_display.plot()
+    plt.savefig(f"{plot_path}/confusion_matrix.png")
+    plt.close()
+    plt.clf()
+
+
 if __name__ == '__main__':
-    #data_leakage_wrapper()
+    # data_leakage_wrapper()
     generate_custom_yaml_file(config_name="custom_config.yaml",
                               file_path='peptideBERT_configs/')

@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
-from transformers.utils.import_utils import  is_datasets_available
+from transformers.utils.import_utils import is_datasets_available
 from transformers.trainer_utils import seed_worker
 from transformers.trainer_pt_utils import nested_detach
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -66,7 +66,8 @@ class PeptideTrainer(Trainer):
         # Call the original log method to ensure other logging mechanisms are still in place
         super().log(logs, start_time)
 
-    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]], num_items_in_batch=None) -> torch.Tensor:
+    def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
+                      num_items_in_batch=None) -> torch.Tensor:
         """
         Perform a training step on a batch of inputs.
 
@@ -156,9 +157,9 @@ class PeptideTrainer(Trainer):
             # don't change during training
             dataloader_key = eval_dataset if isinstance(eval_dataset, str) else "eval"
             if (
-                hasattr(self, "_eval_dataloaders")
-                and dataloader_key in self._eval_dataloaders
-                and self.args.dataloader_persistent_workers
+                    hasattr(self, "_eval_dataloaders")
+                    and dataloader_key in self._eval_dataloaders
+                    and self.args.dataloader_persistent_workers
             ):
                 return self.accelerator.prepare(self._eval_dataloaders[dataloader_key])
 

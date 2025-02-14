@@ -29,7 +29,6 @@ class PeptideBertForBinaryClassification(BertModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-
     def forward(
             self,
             input_ids: Optional[torch.Tensor] = None,
