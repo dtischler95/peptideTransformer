@@ -16,6 +16,7 @@
 - [ ] Add regression metrics
 - [ ] Add better regression head
 - [ ] Make a preprocessing pipeline for regression data
+- [ ] Don't track accuracy but loss in learning curve
 
 #### Run To-Do
 - [ ] Make a base mlm for train binary/regression models

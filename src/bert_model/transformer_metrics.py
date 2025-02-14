@@ -15,9 +15,6 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     """
     from src.bert_model.fine_tune_utils import format_logit_to_label
     accuracy = evaluate.load("accuracy")
-    # recall = evaluate.load("recall")
-    # f1 = evaluate.load("f1")
-    # roc_auc = evaluate.load("roc_auc")
 
     logits, labels = eval_preds
     predictions = format_logit_to_label(logits=logits)  # Apply the threshold to convert probabilities to binary predictions
@@ -30,9 +27,6 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         return {
             "accuracy": accuracy.compute(predictions=predictions, references=labels),
             "mcc": mcc,
-            # "recall": recall.compute(predictions=predictions, references=labels),
-            # "f1": f1.compute(predictions=predictions, references=labels),
-            # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
@@ -40,9 +34,6 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     return {
         "accuracy": accuracy.compute(predictions=predictions, references=labels),
         "mcc": mcc
-        # "recall": recall.compute(predictions=predictions, references=labels),
-        # "f1": f1.compute(predictions=predictions, references=labels),
-        # "roc_auc": roc_auc.compute(prediction_scores=predictions, references=labels)
     }
 
 
