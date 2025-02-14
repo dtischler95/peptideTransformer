@@ -15,112 +15,40 @@ class LearningCurveCallback(TrainerCallback):
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
 
-    def __init__(self, args: PeptideTrainingArguments, interval=1):
-        self.interval = interval
+    def __init__(self, args: PeptideTrainingArguments):
         self.args = args # this could be done smoother
-        self.isTrain = True
         self.eval_accuracy_metrics = []
         self.train_accuracy_metric = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
-        self.label_0_counter = []
-        self.label_1_counter = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
         os.makedirs(args.plot_path, exist_ok=True)
 
-    def on_epoch_end(self, args, state, control, **kwargs):
-        # Get the model and the training dataset
-        model = kwargs['model']
-        train_dataloader = kwargs['train_dataloader']
 
-        # Set the model to evaluation mode
-        model.eval()
-
-        # Initialize variables to track accuracy
-        predictions_handler = []
-        labels_handler = []
-        accuracy = evaluate.load("accuracy")
-
-        # Disable gradient calculation for evaluation
-        with torch.no_grad():
-            for batch in train_dataloader:
-                inputs = {k: v.to(args.device) for k, v in batch.items()}
-                outputs = model(**inputs)
-
-                predictions = format_logit_to_label(logits=outputs[1].cpu().detach().numpy())
-
-                labels = inputs['labels'].cpu().detach().numpy()
-                predictions_handler.append(predictions)
-                labels_handler.append(labels)
-
-        # Compute accuracy
-        # TODO implement accuarcy for mlm task, since the caption method above only works out for binary. In General, i need to figure out how to capture those metrics properly. This way is a mess
-        try:
-            epoch_train_accuracy = accuracy.compute(predictions=[item for prediction in predictions_handler for item in prediction],
-                                                    references=[item for label in labels_handler for item in label])
-            self.train_accuracy_metric.append(epoch_train_accuracy['accuracy'])
-        except:
-            self.train_accuracy_metric.append(0)
-
-
-
-        # Set the model back to training mode
-        model.train()
-
-    def on_train_end(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        """
-        Set the mode to 'eval' when evaluating the model so the learning curves are plotted for the evaluation phase
-        """
-        self.isTrain = False
-
-    def on_log(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        """
-        Logging metrics here only works because we set 'epoch' for logging_steps in the TrainingArguments.
-        If we want to log steps we would need to adjust this logging behavior in Callbacks.
-        Is there a way to get the metrics for Learning Curves at a more robust step in Training?
-        """
-
-        logs = kwargs.get("logs", {})
-        current_loss = logs.get("loss")
-        if current_loss is None:
-            return
-
-        self.train_loss_metric.append(current_loss)
-
-    def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_epoch_end(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
         """
 
-        logs = kwargs.get("metrics", {})
-        current_loss = logs.get("eval_loss")
-        current_accuracy = logs.get("eval_accuracy")['accuracy']
-        label_0_count = logs.get("eval_label_0_count_on_epoch_end")
-        label_1_count = logs.get("eval_label_1_count_on_epoch_end")
+        logs = state.log_history
 
-        if current_accuracy is None or current_loss is None:
+        # I dont know why, but the logs are empty on the first epoch
+        if len(logs) == 0:
             return
 
-        self.eval_accuracy_metrics.append(current_accuracy)
-        self.eval_loss_metric.append(current_loss)
+        # scraping the metrics from the logs
+        # eval metrics are always the last ones while the third last are the train metrics
+        # scraping them every epoch to update the learning curves by storing the values
+        self.eval_accuracy_metrics.append(logs[-1].get("eval_accuracy"))
+        self.eval_loss_metric.append(logs[-1].get("eval_loss"))
+        self.train_accuracy_metric.append(logs[-3].get("train_accuracy"))
+        self.train_loss_metric.append(logs[-3].get("train_loss"))
 
-        if label_1_count is not None:
-            self.label_0_counter.append((label_0_count / (label_0_count + label_1_count)) * 100)
-            self.label_1_counter.append((label_1_count / (label_0_count + label_1_count)) * 100)
+        self.plot_learning_curves()
 
-        if state.epoch % self.interval == 0 and len(self.eval_accuracy_metrics) > 1 and self.isTrain:
-            if len(self.eval_accuracy_metrics) != len(self.eval_loss_metric):
-                # Just for prevent bugs. im understanding more and more, but I still don't trust the on_eval call [when and how is it called??]
-                raise ValueError("The length of the accuracy and loss metrics must be equal BUG!")
-            self.plot_learning_curves(plot_path=self.args.plot_path)
 
-            if len(self.label_0_counter) > 1:
-                plot_label_abundance(label_0_counter=self.label_0_counter,
-                                     label_1_counter=self.label_1_counter,
-                                     task_name=self.args.model_class,
-                                     plot_path=self.args.plot_path)
 
-    def plot_learning_curves(self, plot_path: str):
+    def plot_learning_curves(self):
         """
         Plots a learning curve for the accuracy and loss metrics on every logging step
         """
@@ -147,7 +75,7 @@ class LearningCurveCallback(TrainerCallback):
         ax2.legend()
 
         # Save the figure
-        plt.savefig(os.path.join(plot_path, f"{self.args.model_class}_learning_curves.png"))
+        plt.savefig(os.path.join(self.args.plot_path, f"{self.args.model_class}_learning_curves.png"))
         plt.close()
 
 

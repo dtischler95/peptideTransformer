@@ -28,7 +28,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     if debug_print:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
-            "accuracy": accuracy.compute(predictions=predictions, references=labels),
+            "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
             "mcc": mcc,
             # "recall": recall.compute(predictions=predictions, references=labels),
             # "f1": f1.compute(predictions=predictions, references=labels),
@@ -86,4 +86,4 @@ def mlm_metrics(eval_preds) -> dict:
     masked_labels = labels[mask]  # Filter labels using the mask
 
     # Calculate accuracy only on valid predictions
-    return {'accuracy': accuracy.compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())}
+    return {'accuracy': accuracy.compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())["accuracy"]}

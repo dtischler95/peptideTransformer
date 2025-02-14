@@ -63,8 +63,7 @@ def fine_tune(config_path: str):
     # --------------------- Prepare tokenizer and datasets ---------------------
 
     # Prepare tokenizer and datasets
-
-    # --------------------- Prepare
+  
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
                                                                            show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
@@ -81,7 +80,7 @@ def fine_tune(config_path: str):
 
     callback_list = [
         # Custom Callback Class for plotting learning curves. STILL IN WORK
-        #LearningCurveCallback(args=training_args),
+        LearningCurveCallback(args=training_args),
         # Custom Callback Class for early stopping.
         EarlyStoppingCallback()
     ]

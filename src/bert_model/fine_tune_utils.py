@@ -41,7 +41,7 @@ def prepare_datasets(binary_or_mlm: str,
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
-    df = df.sample(frac=1)[:200] if cut_df_for_faster_debug else df
+    df = df.sample(frac=1)[:50] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
         df_to_split = df
