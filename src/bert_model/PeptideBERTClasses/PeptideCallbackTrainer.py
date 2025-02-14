@@ -1,4 +1,6 @@
 import os
+from copy import deepcopy
+
 import torch
 import evaluate
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
@@ -186,6 +188,18 @@ class EarlyStoppingCallback(TrainerCallback):
             print(
                 f"Early stopping triggered. No improvement in {args.early_stop_metric} for {args.early_stopping_patience} evaluations.")
 
+
+class EnableTrainMetricPrints(TrainerCallback):
+
+    def __init__(self, trainer) -> None:
+        super().__init__()
+        self._trainer = trainer
+
+    def on_epoch_end(self, args, state, control, **kwargs):
+        if control.should_evaluate:
+            control_copy = deepcopy(control)
+            self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
+            return control_copy
 
 class CurriculumLearningCallback(TrainerCallback):
     """
