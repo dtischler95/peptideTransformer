@@ -13,14 +13,14 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     :return: dictionary with the metrics
     """
-
+    from src.bert_model.fine_tune_utils import format_logit_to_label
     accuracy = evaluate.load("accuracy")
     # recall = evaluate.load("recall")
     # f1 = evaluate.load("f1")
     # roc_auc = evaluate.load("roc_auc")
 
-    predictions, labels = eval_preds
-    predictions = (predictions > 0.5).astype(int)  # Apply the threshold to convert probabilities to binary predictions
+    logits, labels = eval_preds
+    predictions = format_logit_to_label(logits=logits)  # Apply the threshold to convert probabilities to binary predictions
 
     mcc = matthews_corrcoef(labels, predictions)
     # ----- Added for debugging purposes -----

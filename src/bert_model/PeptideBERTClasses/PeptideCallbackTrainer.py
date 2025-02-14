@@ -4,7 +4,7 @@ import evaluate
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.fine_tune_utils import plot_label_abundance, _format_logit_to_label
+from src.bert_model.fine_tune_utils import plot_label_abundance, format_logit_to_label
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -45,7 +45,7 @@ class LearningCurveCallback(TrainerCallback):
                 inputs = {k: v.to(args.device) for k, v in batch.items()}
                 outputs = model(**inputs)
 
-                predictions = _format_logit_to_label(logits=outputs[1].cpu().detach().numpy())
+                predictions = format_logit_to_label(logits=outputs[1].cpu().detach().numpy())
 
                 labels = inputs['labels'].cpu().detach().numpy()
                 predictions_handler.append(predictions)

@@ -7,7 +7,8 @@ from transformers.utils.logging import enable_default_handler, enable_explicit_f
 import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
-from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments  # , test_binary_label_bias
+from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
+    prepare_fisher_exact  # , test_binary_label_bias
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     CurriculumLearningCallback
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
@@ -107,11 +108,11 @@ def fine_tune(config_path: str):
         callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
         run_metric = mlm_metrics
     elif training_args.model_class == 'custom':
-        #raise NotImplementedError("Custom task not implemented yet")
+        # raise NotImplementedError("Custom task not implemented yet")
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForRegression(config)
         data_collator = DefaultDataCollator()
-        run_metric = None # TODO implement regression metrics
+        run_metric = None  # TODO implement regression metrics
     else:
         raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{training_args.model_class}'")
 
@@ -123,7 +124,7 @@ def fine_tune(config_path: str):
         data_collator=data_collator,  # Data collator for masking sequences if mlm is used
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        compute_metrics=run_metric,#binary_metrics if training_args.model_class == 'binary' else mlm_metrics,
+        compute_metrics=run_metric,
         # calculate metrics based on the task
         # callback Classes from transformers are a powerful tool to customize behavior during Training! Check the docs for more
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
@@ -156,6 +157,10 @@ def fine_tune(config_path: str):
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data
                                     )
+
+            prepare_fisher_exact(test_dataset=test_dataset,
+                                 trainer=trainer,
+                                 plot_path=training_args.plot_path)
 
     # not really needed for my case I guess
     if training_args.do_predict:
