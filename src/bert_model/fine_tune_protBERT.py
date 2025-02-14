@@ -10,7 +10,7 @@ from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_fisher_exact  # , test_binary_label_bias
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
-    CurriculumLearningCallback
+    CurriculumLearningCallback, EnableTrainMetricPrints
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
@@ -81,7 +81,7 @@ def fine_tune(config_path: str):
 
     callback_list = [
         # Custom Callback Class for plotting learning curves. STILL IN WORK
-        LearningCurveCallback(args=training_args),
+        #LearningCurveCallback(args=training_args),
         # Custom Callback Class for early stopping.
         EarlyStoppingCallback()
     ]
@@ -130,6 +130,7 @@ def fine_tune(config_path: str):
         # https://huggingface.co/docs/transformers/main_classes/callback#transformers.TrainerCallback
         callbacks=callback_list
     )
+    trainer.add_callback(EnableTrainMetricPrints(trainer))
 
     # --------------------- Train, evaluate and predict ---------------------
     if training_args.do_train:
