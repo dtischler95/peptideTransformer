@@ -32,7 +32,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         }
 
     return {
-        "accuracy": accuracy.compute(predictions=predictions, references=labels),
+        "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
         "mcc": mcc
     }
 
