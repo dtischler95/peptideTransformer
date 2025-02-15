@@ -13,7 +13,6 @@ class LearningCurveCallback(TrainerCallback):
 
     def __init__(self, args: PeptideTrainingArguments):
         self.eval_accuracy_metrics = []
-        self.train_accuracy_metric = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
@@ -35,8 +34,7 @@ class LearningCurveCallback(TrainerCallback):
         # scraping them every epoch to update the learning curves by storing the values
         self.eval_accuracy_metrics.append(logs[-1].get("eval_accuracy"))
         self.eval_loss_metric.append(logs[-1].get("eval_loss"))
-        self.train_accuracy_metric.append(logs[-3].get("train_accuracy"))
-        self.train_loss_metric.append(logs[-3].get("train_loss"))
+        self.train_loss_metric.append(logs[-2].get("loss"))
 
         self.plot_learning_curves(args=args)
 
@@ -49,7 +47,7 @@ class LearningCurveCallback(TrainerCallback):
 
         # Plot accuracy on the primary y-axis
         plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
-        plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
+        #plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
         plt.xlabel('Epochs')
         plt.ylabel('Eval Accuracy', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
@@ -76,7 +74,7 @@ class LearningCurveCallback(TrainerCallback):
 class MCCCallback(TrainerCallback):
     def __init__(self):
         self.eval_mcc = []
-        self.train_mcc = []
+        #self.train_mcc = []
 
     def on_epoch_begin(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         logs = state.log_history
@@ -85,7 +83,7 @@ class MCCCallback(TrainerCallback):
             return
 
         self.eval_mcc.append(logs[-1].get("eval_mcc"))
-        self.train_mcc.append(logs[-3].get("train_mcc"))
+        #self.train_mcc.append(logs[-3].get("train_mcc"))
 
         self.plot_mcc_curves(args=args)
 
@@ -94,7 +92,7 @@ class MCCCallback(TrainerCallback):
         plt.figure(figsize=(10, 5))
 
         plt.plot(epochs, self.eval_mcc, label='Eval MCC', color='blue')
-        plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow')
+        #plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow')
         plt.xlabel('Epochs')
         plt.ylabel('Eval MCC', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
