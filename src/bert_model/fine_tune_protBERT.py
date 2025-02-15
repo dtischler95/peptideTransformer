@@ -133,7 +133,7 @@ def fine_tune(config_path: str):
     )
 
     # Custom Solution to enable training metrics
-    trainer.add_callback(EnableTrainMetricPrints(trainer))
+    # trainer.add_callback(EnableTrainMetricPrints(trainer))
 
     # --------------------- Train, evaluate and predict ---------------------
     if training_args.do_train:
