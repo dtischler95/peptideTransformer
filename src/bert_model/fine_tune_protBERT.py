@@ -8,9 +8,9 @@ import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact  # , test_binary_label_bias
+    prepare_fisher_exact
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
-    CurriculumLearningCallback, EnableTrainMetricPrints, MCCCallback
+    CurriculumLearningCallback, MCCCallback, CollectBatchWiseTrainMetrics
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
@@ -80,9 +80,11 @@ def fine_tune(config_path: str):
 
     callback_list = [
         # Custom Callback Class for plotting learning curves. STILL IN WORK
-        LearningCurveCallback(args=training_args),
+        LearningCurveCallback(plot_path=training_args.plot_path),
         # Custom Callback Class for early stopping.
-        EarlyStoppingCallback()
+        EarlyStoppingCallback(),
+        CollectBatchWiseTrainMetrics()
+        # Needed so we can track metrics while training too. Disabling this callback will result in a programm crash!!!
     ]
 
     if training_args.model_class == 'binary':
@@ -132,9 +134,6 @@ def fine_tune(config_path: str):
         callbacks=callback_list
     )
 
-    # Custom Solution to enable training metrics
-    # trainer.add_callback(EnableTrainMetricPrints(trainer))
-
     # --------------------- Train, evaluate and predict ---------------------
     if training_args.do_train:
         trainer.train()
@@ -143,15 +142,10 @@ def fine_tune(config_path: str):
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
-        # TODO WHATS REALLY HAPPENING HERE? I shoulda be okay with all the evals i do in training
-        # eval_result = trainer.evaluate()
-        # logger.info(eval_result)
 
         if training_args.model_class == 'binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
-            # TODO may provide custom file arg for this. But rn we dont have the data sadly
-            # TODO Pass logger to the function
             cluster_model_embedding(file_path=training_args.train_file,
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
