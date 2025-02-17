@@ -143,12 +143,12 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
         s=10
     )
 
-    plot_density(
-        x=tsne_fit[:, 0],
-        y=tsne_fit[:, 1],
-        ax=ax,
-        labels=labels,
-    )
+    # plot_density(
+    #     x=tsne_fit[:, 0],
+    #     y=tsne_fit[:, 1],
+    #     ax=ax,
+    #     labels=labels,
+    # )
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
@@ -193,12 +193,12 @@ def plot_umap(data, labels, plot_path=""):
         s=10
     )
 
-    plot_density(
-        x=umapped[:, 0],
-        y=umapped[:, 1],
-        ax=ax,
-        labels=labels,
-    )
+    # plot_density(
+    #     x=umapped[:, 0],
+    #     y=umapped[:, 1],
+    #     ax=ax,
+    #     labels=labels,
+    # )
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
