@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict, Any, List, Tuple
+from typing import Union, Optional, Dict, Any
 from datasets import Dataset
 import torch
 from torch import nn
@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
 from transformers.utils.import_utils import is_datasets_available
 from transformers.trainer_utils import seed_worker
-from transformers.trainer_pt_utils import nested_detach
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 
 
@@ -25,6 +24,7 @@ class PeptideTrainer(Trainer):
         """
         super().__init__(model=model, args=args, **kwargs)
         self.args = args
+
         # Additional initialization if needed
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
@@ -41,30 +41,25 @@ class PeptideTrainer(Trainer):
                 param.data = param.contiguous()
         super()._save(output_dir=output_dir, state_dict=state_dict)
 
-    # def log(self, logs: Dict[str, float], start_time: Optional[float] = None):
-    #     """
-    #     The log function just prints the metric dictionary in a more readable format.
-    #
-    #     Args:
-    #         logs (Dict): The dictionary containing the metrics to be logged.
-    #         start_time (Optional[float]): The start time of the logging.
-    #
-    #     """
-    #     # Custom logging logic
-    #     if self.state.epoch is not None:
-    #         logs["epoch"] = round(self.state.epoch, 2)
-    #     output = {**logs, **{"step": self.state.global_step}}
-    #
-    #     # Custom print format
-    #     for key, value in output.items():
-    #         if isinstance(value, dict):
-    #             for sub_key, sub_value in value.items():
-    #                 print(f"{sub_key.capitalize()}: {sub_value}")
-    #         else:
-    #             print(f"{key.capitalize()}: {value}")
-    #
-    #     # Call the original log method to ensure other logging mechanisms are still in place
-    #     super().log(logs, start_time)
+    def log(self, logs: Dict[str, float], start_time: Optional[float] = None) -> None:
+        """
+        Log `logs` on the various objects watching training.
+
+        Subclass and override this method to inject custom behavior.
+
+        Args:
+            logs (`Dict[str, float]`):
+                The values to log.
+            start_time (`Optional[float]`):
+                The start of training.
+        """
+
+        # Custom Callback logic to fetch the batch-wise accuracy and calculate a dataset wide mean accuracy
+        if 'grad_norm' in logs.keys():
+            for callback in self.callback_handler.callbacks:
+                if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
+                    logs['accuracy'] = callback.get_batch_wise_mean_accuracy()
+        super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
                       num_items_in_batch=None) -> torch.Tensor:
@@ -88,7 +83,40 @@ class PeptideTrainer(Trainer):
         Return:
             `torch.Tensor`: The tensor with training loss on this batch.
         """
+        # TODO is there any way to use the compute_metric function here??
+
         loss = super().training_step(model, inputs, num_items_in_batch)
+
+        inputs = self._prepare_inputs(inputs)
+
+        if "labels" in inputs:
+            if self.args.model_class == 'binary':
+
+                preds = model(**inputs)[1].detach()
+                acc = (preds.argmax(axis=1) == inputs["labels"]).type(torch.float).mean().item()
+            elif self.args.model_class == 'mlm':
+                # Extract the logits for the masked tokens
+                preds = model(**inputs).logits.detach()
+
+                # Get the indices of the masked tokens
+                masked_indices = inputs["labels"] != -100
+
+                # Get the predictions for the masked tokens
+                masked_preds = preds[masked_indices].argmax(axis=1)
+
+                # Get the true labels for the masked tokens
+                masked_labels = inputs["labels"][masked_indices]
+
+                # Calculate the accuracy
+                acc = (masked_preds == masked_labels).type(torch.float).mean().item()
+            else:
+                acc = 0.0
+        else:
+            acc = None
+
+        for callback in self.callback_handler.callbacks:
+            if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
+                callback.append_batch_wise_accuracy(acc)
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.

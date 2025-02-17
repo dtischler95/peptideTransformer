@@ -1,5 +1,4 @@
 import os
-from copy import deepcopy
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -11,14 +10,15 @@ class LearningCurveCallback(TrainerCallback):
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     """
 
-    def __init__(self, args: PeptideTrainingArguments):
+    def __init__(self, plot_path: str):
         self.eval_accuracy_metrics = []
         self.eval_loss_metric = []
         self.train_loss_metric = []
+        self.train_accuracy_metric = []
         # Maybe too much giving LearningCurveCallback the args, but I don't know how to do it better if I want to create a dir on init...
-        os.makedirs(args.plot_path, exist_ok=True)
+        os.makedirs(plot_path, exist_ok=True)
 
-    def on_epoch_begin(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_log(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Log the metrics and plot the learning curves on every logging step
         I think I should miss the last epoch metrics either when logging on epoch begin or on epoch end
@@ -26,17 +26,17 @@ class LearningCurveCallback(TrainerCallback):
 
         logs = state.log_history
 
-        if len(logs) == 0:
-            return
-
         # scraping the metrics from the logs
         # eval metrics are always the last ones while the third last are the train metrics
         # scraping them every epoch to update the learning curves by storing the values
-        self.eval_accuracy_metrics.append(logs[-1].get("eval_accuracy"))
-        self.eval_loss_metric.append(logs[-1].get("eval_loss"))
-        self.train_loss_metric.append(logs[-2].get("loss"))
+        if "eval_loss" in logs[-1]:
 
-        self.plot_learning_curves(args=args)
+            self.eval_accuracy_metrics.append(logs[-1].get("eval_accuracy"))
+            self.eval_loss_metric.append(logs[-1].get("eval_loss"))
+            self.plot_learning_curves(args=args)
+        else:
+            self.train_loss_metric.append(logs[-1].get("loss"))
+            self.train_accuracy_metric.append(logs[-1].get("accuracy"))
 
     def plot_learning_curves(self, args: PeptideTrainingArguments):
         """
@@ -47,7 +47,7 @@ class LearningCurveCallback(TrainerCallback):
 
         # Plot accuracy on the primary y-axis
         plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
-        #plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
+        plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
         plt.xlabel('Epochs')
         plt.ylabel('Eval Accuracy', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
@@ -74,25 +74,21 @@ class LearningCurveCallback(TrainerCallback):
 class MCCCallback(TrainerCallback):
     def __init__(self):
         self.eval_mcc = []
-        #self.train_mcc = []
+        # self.train_mcc = []
 
-    def on_epoch_begin(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+    def on_log(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         logs = state.log_history
 
-        if len(logs) == 0:
-            return
-
-        self.eval_mcc.append(logs[-1].get("eval_mcc"))
-        #self.train_mcc.append(logs[-3].get("train_mcc"))
-
-        self.plot_mcc_curves(args=args)
+        if "eval_mcc" in logs[-1]:
+            self.eval_mcc.append(logs[-1].get("eval_mcc"))
+            self.plot_mcc_curves(args=args)
 
     def plot_mcc_curves(self, args: PeptideTrainingArguments):
         epochs = range(1, len(self.eval_mcc) + 1)
         plt.figure(figsize=(10, 5))
 
         plt.plot(epochs, self.eval_mcc, label='Eval MCC', color='blue')
-        #plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow')
+        # plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow') # TODO: Implement train MCC
         plt.xlabel('Epochs')
         plt.ylabel('Eval MCC', color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
@@ -120,7 +116,6 @@ class EarlyStoppingCallback(TrainerCallback):
         BUG -> It seems that early_stop_warmup affects updates of eval_metrics somehow.... Idk
         """
 
-        # TODO add warmup
         if state.epoch < args.early_stop_warm_up:
             return
 
@@ -144,22 +139,28 @@ class EarlyStoppingCallback(TrainerCallback):
                 f"Early stopping triggered. No improvement in {args.early_stop_metric} for {args.early_stopping_patience} evaluations.")
 
 
-class EnableTrainMetricPrints(TrainerCallback):
+class CollectBatchWiseTrainMetrics(TrainerCallback):
     """
     Needed so the Trainer calculates the metrics on the training dataset as well.
     Solution taken from:
-    https://discuss.huggingface.co/t/metrics-for-training-set-in-trainer/2461/5
+    https://discuss.huggingface.co/t/metrics-for-training-set-in-trainer/2461/4
+    But instead of overwriting the compute_metrics function, i overwrote train_step and passed all the
+    necessary metrics to this callback.
+    This Callback is absolutly Needed for this script to work. Since Learning Curves and value passing
+    rely on this callback.
     """
 
-    def __init__(self, trainer) -> None:
-        super().__init__()
-        self._trainer = trainer
+    def __init__(self) -> None:
+        self.batch_wise_accuracy = []
+        self.last_saved_epoch = 0
 
-    def on_epoch_end(self, args, state, control, **kwargs):
-        if control.should_evaluate:
-            control_copy = deepcopy(control)
-            self._trainer.evaluate(eval_dataset=self._trainer.train_dataset, metric_key_prefix="train")
-            return control_copy
+    def append_batch_wise_accuracy(self, metric):
+        self.batch_wise_accuracy.append(metric)
+
+    def get_batch_wise_mean_accuracy(self):
+        mean_accuracy = sum(self.batch_wise_accuracy) / len(self.batch_wise_accuracy)
+        self.batch_wise_accuracy = []
+        return mean_accuracy
 
 
 class CurriculumLearningCallback(TrainerCallback):
