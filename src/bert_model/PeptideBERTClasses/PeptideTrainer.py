@@ -107,15 +107,16 @@ class PeptideTrainer(Trainer):
         if "labels" in inputs:
             if self.args.model_class == 'binary':
 
-                preds = model(**inputs)[1].detach()
-                acc = (preds.argmax(axis=1) == inputs["labels"]).type(torch.float).mean().item()
-                mcc = matthews_corrcoef(y_true=inputs["labels"], y_pred=preds.argmax(axis=1))
-                f1 = evaluate.load("f1").compute(predictions=preds.argmax(axis=1), references=inputs["labels"])["f1"]
+                preds = model(**inputs)[1].detach().cpu().numpy()
+                cpu_inputs = inputs["labels"].detach().cpu().numpy()
+                acc = evaluate.load("accuracy").compute(predictions=preds.argmax(axis=1), references=cpu_inputs)["accuracy"]
+                mcc = matthews_corrcoef(y_true=cpu_inputs, y_pred=preds.argmax(axis=1))
+                f1 = evaluate.load("f1").compute(predictions=preds.argmax(axis=1), references=cpu_inputs)["f1"]
                 precision = evaluate.load("precision").compute(predictions=preds.argmax(axis=1),
-                                                                references=inputs["labels"],
+                                                                references=cpu_inputs,
                                                                zero_division=0)["precision"]
                 recall = evaluate.load("recall").compute(predictions=preds.argmax(axis=1),
-                                                          references=inputs["labels"])["recall"]
+                                                          references=cpu_inputs)["recall"]
                 train_metric_callback.append_batch_wise_accuracy(acc)
                 train_metric_callback.append_batch_wise_mcc(mcc)
                 train_metric_callback.append_batch_wise_f1(f1)
@@ -123,19 +124,20 @@ class PeptideTrainer(Trainer):
                 train_metric_callback.append_batch_wise_recall(recall)
             elif self.args.model_class == 'mlm':
                 # Extract the logits for the masked tokens
-                preds = model(**inputs).logits.detach()
+                preds = model(**inputs).logits.detach().cpu().numpy()
 
                 # Get the indices of the masked tokens
-                masked_indices = inputs["labels"] != -100
+                masked_indices = inputs["labels"].detach().cpu().numpy() != -100
 
                 # Get the predictions for the masked tokens
                 masked_preds = preds[masked_indices].argmax(axis=1)
 
                 # Get the true labels for the masked tokens
-                masked_labels = inputs["labels"][masked_indices]
+                masked_labels = inputs["labels"].detach().cpu().numpy()[masked_indices]
 
                 # Calculate the accuracy
-                acc = (masked_preds == masked_labels).type(torch.float).mean().item()
+                acc = evaluate.load("accuracy").compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())["accuracy"]
+                
                 train_metric_callback.append_batch_wise_accuracy(acc)
             elif self.args.model_class == 'custom':
                 """
