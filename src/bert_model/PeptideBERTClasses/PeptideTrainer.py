@@ -1,6 +1,8 @@
 from typing import Union, Optional, Dict, Any
 from datasets import Dataset
 import torch
+import evaluate
+from sklearn.metrics import matthews_corrcoef
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
@@ -59,6 +61,11 @@ class PeptideTrainer(Trainer):
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
                     logs['accuracy'] = callback.get_batch_wise_mean_accuracy()
+                    if self.args.model_class == 'binary':
+                        logs['mcc'] = callback.get_batch_wise_mean_mcc()
+                        logs['f1'] = callback.get_batch_wise_mean_f1()
+                        logs['recall'] = callback.get_batch_wise_mean_recall()
+                        logs['precision'] = callback.get_batch_wise_mean_precision()
         super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
@@ -89,11 +96,31 @@ class PeptideTrainer(Trainer):
 
         inputs = self._prepare_inputs(inputs)
 
+        train_metric_callback = None
+        for callback in self.callback_handler.callbacks:
+            if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
+                train_metric_callback = callback
+
+        if train_metric_callback is None:
+            raise ValueError("CollectBatchWiseTrainMetrics Callback not found. This is a critical error.")
+
         if "labels" in inputs:
             if self.args.model_class == 'binary':
 
                 preds = model(**inputs)[1].detach()
                 acc = (preds.argmax(axis=1) == inputs["labels"]).type(torch.float).mean().item()
+                mcc = matthews_corrcoef(y_true=inputs["labels"], y_pred=preds.argmax(axis=1))
+                f1 = evaluate.load("f1").compute(predictions=preds.argmax(axis=1), references=inputs["labels"])["f1"]
+                precision = evaluate.load("precision").compute(predictions=preds.argmax(axis=1),
+                                                                references=inputs["labels"],
+                                                               zero_division=0)["precision"]
+                recall = evaluate.load("recall").compute(predictions=preds.argmax(axis=1),
+                                                          references=inputs["labels"])["recall"]
+                train_metric_callback.append_batch_wise_accuracy(acc)
+                train_metric_callback.append_batch_wise_mcc(mcc)
+                train_metric_callback.append_batch_wise_f1(f1)
+                train_metric_callback.append_batch_wise_precision(precision)
+                train_metric_callback.append_batch_wise_recall(recall)
             elif self.args.model_class == 'mlm':
                 # Extract the logits for the masked tokens
                 preds = model(**inputs).logits.detach()
@@ -109,14 +136,15 @@ class PeptideTrainer(Trainer):
 
                 # Calculate the accuracy
                 acc = (masked_preds == masked_labels).type(torch.float).mean().item()
-            else:
-                acc = 0.0
-        else:
-            acc = None
+                train_metric_callback.append_batch_wise_accuracy(acc)
+            elif self.args.model_class == 'custom':
+                """
+                Implement Regression Metrics here
+                """
+                ...
 
-        for callback in self.callback_handler.callbacks:
-            if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
-                callback.append_batch_wise_accuracy(acc)
+
+
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.
