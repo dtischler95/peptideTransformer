@@ -8,6 +8,7 @@ class LearningCurveCallback(TrainerCallback):
     """
     Custom Callback class for pretty logging and creating learning curves for accuracy and loss metrics during training and evaluation.
     logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
+    This is just for combining some metrics in one graph. Every single graph will be plotted in a separate callback.
     """
 
     def __init__(self, plot_path: str):
@@ -71,34 +72,65 @@ class LearningCurveCallback(TrainerCallback):
         plt.close()
 
 
-class MCCCallback(TrainerCallback):
+class PlotMetricsCallback(TrainerCallback):
+    class MetricCatcher:
+        """
+        Simple class to store train and eval Metrics for a given metric_name
+        """
+
+        def __init__(self, metric_name):
+            self.metric_name = metric_name
+            self.train_metric = []
+            self.eval_metric = []
+
     def __init__(self):
-        self.eval_mcc = []
-        # self.train_mcc = []
+        self.object_list = []  # stores an object instance of MetricCatcher for every metric to plot
+        self.metrics_to_plot = []  # Stores the metrics to plot based on the first train log given
 
     def on_log(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         logs = state.log_history
 
-        if "eval_mcc" in logs[-1]:
-            self.eval_mcc.append(logs[-1].get("eval_mcc"))
-            self.plot_mcc_curves(args=args)
+        # ---------------------------------------------------------------------------------------------------
+        # This whil be only executed once to initialize all data storages for the metrics
+        # Initialize the metrics to plot based on the first log
+        if not self.metrics_to_plot:
+            self.metrics_to_plot = [metric for metric in logs[0] if metric != "epoch" and metric != "step"]
 
-    def plot_mcc_curves(self, args: PeptideTrainingArguments):
-        epochs = range(1, len(self.eval_mcc) + 1)
+        # Initialize the object list based on the metrics to plot
+        if not self.object_list:
+            self.object_list = [self.MetricCatcher(metric) for metric in self.metrics_to_plot]
+        # ---------------------------------------------------------------------------------------------------
+
+        for obj in self.object_list:
+            if "eval_loss" in logs[-1]:  # TODO is there a better way to check if there are eval metrics?
+                obj.eval_metric.append(logs[-1].get("eval_" + obj.metric_name))
+                self.plot_mcc_curves(args=args,
+                                     train_metrics=obj.train_metric,
+                                     eval_metrics=obj.eval_metric,
+                                     metric_name=obj.metric_name)
+            else:
+                obj.train_metric.append(logs[-1].get(obj.metric_name))
+
+    @staticmethod
+    def plot_mcc_curves(args: PeptideTrainingArguments,
+                        train_metrics: list,
+                        eval_metrics: list,
+                        metric_name: str):
+        epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
-        plt.plot(epochs, self.eval_mcc, label='Eval MCC', color='blue')
-        # plt.plot(epochs, self.train_mcc, label='Train MCC', color='yellow') # TODO: Implement train MCC
+        plt.plot(epochs, eval_metrics, label=f"Eval {metric_name}", color='blue')
+        plt.plot(epochs, train_metrics, label=f"Train {metric_name}", color='yellow')
         plt.xlabel('Epochs')
-        plt.ylabel('Eval MCC', color='blue')
+        plt.ylabel(metric_name, color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
         plt.xticks(epochs)
 
-        plt.title(f'MCC Curves for {args.model_class} task')
+        plt.title(f"{metric_name} Curves for {args.model_class} task")
         plt.legend()
 
-        plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_mcc_curves.png"))
+        plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_{metric_name}_curves.png"))
         plt.close()
 
 
@@ -148,19 +180,60 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     necessary metrics to this callback.
     This Callback is absolutly Needed for this script to work. Since Learning Curves and value passing
     rely on this callback.
+    A batch_wise_mean method is NEEDED to reset epoch counter for mean calculation.
+    This method NEEDS to be called in the log Function of the PeptideTrainer subclass.
     """
 
     def __init__(self) -> None:
         self.batch_wise_accuracy = []
-        self.last_saved_epoch = 0
+        self.batch_wise_mcc = []
+        self.batch_wise_f1 = []
+        self.batch_wise_recall = []
+        self.batch_wise_precision = []
+
+    @staticmethod
+    def _get_mean(metric):
+        return sum(metric) / len(metric)
 
     def append_batch_wise_accuracy(self, metric):
         self.batch_wise_accuracy.append(metric)
+
+    def append_batch_wise_mcc(self, metric):
+        self.batch_wise_mcc.append(metric)
+
+    def append_batch_wise_f1(self, metric):
+        self.batch_wise_f1.append(metric)
+
+    def append_batch_wise_recall(self, metric):
+        self.batch_wise_recall.append(metric)
+
+    def append_batch_wise_precision(self, metric):
+        self.batch_wise_precision.append(metric)
 
     def get_batch_wise_mean_accuracy(self):
         mean_accuracy = sum(self.batch_wise_accuracy) / len(self.batch_wise_accuracy)
         self.batch_wise_accuracy = []
         return mean_accuracy
+
+    def get_batch_wise_mean_mcc(self):
+        mean_mcc = self._get_mean(self.batch_wise_mcc)
+        self.batch_wise_mcc = []
+        return mean_mcc
+
+    def get_batch_wise_mean_f1(self):
+        mean_f1 = self._get_mean(self.batch_wise_f1)
+        self.batch_wise_f1 = []
+        return mean_f1
+
+    def get_batch_wise_mean_recall(self):
+        mean_recall = self._get_mean(self.batch_wise_recall)
+        self.batch_wise_recall = []
+        return mean_recall
+
+    def get_batch_wise_mean_precision(self):
+        mean_precision = self._get_mean(self.batch_wise_precision)
+        self.batch_wise_precision = []
+        return mean_precision
 
 
 class CurriculumLearningCallback(TrainerCallback):

@@ -10,7 +10,7 @@ from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_fisher_exact
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
-    CurriculumLearningCallback, MCCCallback, CollectBatchWiseTrainMetrics
+    CurriculumLearningCallback, PlotMetricsCallback, CollectBatchWiseTrainMetrics
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
@@ -83,15 +83,14 @@ def fine_tune(config_path: str):
         LearningCurveCallback(plot_path=training_args.plot_path),
         # Custom Callback Class for early stopping.
         EarlyStoppingCallback(),
-        CollectBatchWiseTrainMetrics()
-        # Needed so we can track metrics while training too. Disabling this callback will result in a programm crash!!!
+        CollectBatchWiseTrainMetrics(),
+        PlotMetricsCallback()
     ]
 
     if training_args.model_class == 'binary':
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config)
         data_collator = DefaultDataCollator()
-        callback_list.append(MCCCallback())
         run_metric = binary_metrics
 
 
