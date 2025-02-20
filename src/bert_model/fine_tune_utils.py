@@ -290,7 +290,7 @@ def format_logit_to_label(logits):
     Format the given logit tensor to a list of labels.
     0.5 is a typical threshold
     """
-    return (logits > 0.5).astype(int)
+    return (logits > 0.5).astype(int).flatten()
 
 
 def calculate_abundance(predictions):
