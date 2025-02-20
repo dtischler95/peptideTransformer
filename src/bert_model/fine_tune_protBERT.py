@@ -8,7 +8,7 @@ import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact
+    prepare_fisher_exact, get_bce_label_weight
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     CurriculumLearningCallback, PlotMetricsCallback, CollectBatchWiseTrainMetrics
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
@@ -89,7 +89,9 @@ def fine_tune(config_path: str):
 
     if training_args.model_class == 'binary':
         config = BertConfig.from_pretrained(training_args.model_path)
-        model = PeptideBertForBinaryClassification(config)
+        model = PeptideBertForBinaryClassification(config,
+                                                   loss_function=training_args.loss_function,
+                                                   bce_logit_weight=get_bce_label_weight(labels=train_dataset.labels))
         data_collator = DefaultDataCollator()
         run_metric = binary_metrics
 

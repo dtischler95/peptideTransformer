@@ -12,7 +12,7 @@ class PeptideBertForBinaryClassification(BertModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, bce_logit_weight, loss_function: str = 'bce'):
         config.hidden_size = 480
         config.num_attention_heads = 12
         config.num_hidden_layers = 12
@@ -20,10 +20,12 @@ class PeptideBertForBinaryClassification(BertModel):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.return_dict = False
         super().__init__(config)
+        self.loss_function = loss_function
+        self.bce_logit_weight = bce_logit_weight
         self.bert = BertModel(config)
-        self.dropout = nn.Dropout(self.bert.config.classifier_dropout)
+        self.dropout = nn.Dropout(config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
-                                    self.bert.config.num_labels)  # Output only one logit for binary classification
+                                    config.num_labels)  # Output only one logit for binary classification
         self.sigmoid = nn.Sigmoid()  # Add sigmoid for binary classification
 
         # Initialize weights and apply final processing
@@ -92,13 +94,20 @@ class PeptideBertForBinaryClassification(BertModel):
         logits = self.classifier(pooled_output)
 
         # Apply sigmoid activation for binary classification
-        logits = self.sigmoid(logits)
+
 
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
-            loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
-            loss = loss_fct(logits.view(-1), labels.view(-1).float())
+            if self.loss_function == 'bce':
+                logits = self.sigmoid(logits)  # Apply sigmoid activation for binary classification
+                loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
+                loss = loss_fct(logits.view(-1), labels.view(-1).float())
+            elif self.loss_function == 'bce_logit_loss':
+                loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.bce_logit_weight)  # Use Binary Cross Entropy Loss with logits
+                loss = loss_fct(logits.view(-1), labels.view(-1).float())
+            else:
+                raise ValueError(f"Loss function {self.loss_function} not supported. Use 'bce' or 'bce_logit_loss'")
 
         if return_pooler_output:
             return pooled_output  # Return pooled output for visualization

@@ -400,6 +400,7 @@ max_length: 36                    # Maximum input sequence length
 # Binary Classification Settings
 label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
+loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
 
 # MLM Settings
 mlm_probability: 0.15                       # Masking probability for MLM
@@ -460,6 +461,15 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     plt.close()
     plt.clf()
 
+
+def get_bce_label_weight(labels):
+    """
+    Get the label weights for binary cross-entropy loss.
+    """
+    import torch
+    label_0 = np.count_nonzero(labels == 0)
+    label_1 = np.count_nonzero(labels == 1)
+    return torch.tensor([label_0 / label_1])
 
 if __name__ == '__main__':
     # data_leakage_wrapper()

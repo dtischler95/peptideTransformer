@@ -24,6 +24,7 @@ max_length: 36                    # Maximum input sequence length
 # Binary Classification Settings
 label_0_cluster_data: 50         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 50         # Number of data points for label 1 used in downstream clustering
+loss_function: 'bce_logit_loss'             # Possible Choices ['bce', 'bce_logit_loss']
 
 # MLM Settings
 mlm_curriculum_learning: true        # Enable curriculum learning for MLM
