@@ -32,6 +32,7 @@ class PeptideTrainingArguments(TrainingArguments):
                  mlm_curriculum_learning: bool = False,
                  mlm_curriculum_increase_step: int = 0.1,
                  mlm_curriculum_max_prob: float = 0.9,
+                 loss_function: str = 'bce',
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -57,6 +58,10 @@ class PeptideTrainingArguments(TrainingArguments):
         :param label_0_cluster_data: Number of samples to cluster for label 0
         :param label_1_cluster_data: Number of samples to cluster for label 1
         :param run_verbose: Show encoding of the vocabulary
+        :param mlm_curriculum_learning: Use curriculum learning for MLM
+        :param mlm_curriculum_increase_step: Increase step for the curriculum learning
+        :param mlm_curriculum_max_prob: Maximum probability for the curriculum learning
+        :param loss_function: Loss function to be used for the model
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -92,3 +97,5 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_learning = mlm_curriculum_learning
         self.mlm_curriculum_increase_step = mlm_curriculum_increase_step
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
+        self.loss_function = loss_function
+
