@@ -7,7 +7,7 @@ import yaml
 import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
-from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
+#from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
 
 
 def prepare_datasets(binary_or_mlm: str,
@@ -285,14 +285,6 @@ def prepare_label_debug_datasets(tokenizer, training_args):
     return negative_dataset, positive_dataset, positive_negative_dataset
 
 
-def get_predictions(trainer, dataset):
-    """
-    Get predictions for a given dataset using the trainer.
-    """
-    predictions = trainer.predict(dataset)
-    return (predictions.predictions > 0.5).astype(int)
-
-
 def format_logit_to_label(logits):
     """
     Format the given logit tensor to a list of labels.
@@ -324,48 +316,6 @@ def plot_abundance(abundance_dict, title, ax):
     ax.set_ylim(0, max(abundance_dict.values()) + 1)  # Add some space above the bars
     ax.grid(axis='y', linestyle='--', alpha=0.7)
 
-
-def test_binary_label_bias(tokenizer, trainer, training_args):
-    """
-    Function to test the label bias in the predictions of the model.
-    This Function takes files from the data folder and prepares the datasets for the predictions.
-    Only used for inspecting the impact of the label bias in the predictions with data leakage.
-    The Datasets are chosen after these criteria:
-        - Negative Dataset: Contains only non-bioactive Peptides. Should Predict only 0 if model is "perfect"
-        - Positive Dataset: Contains only bioactive AND hemolytic peptides. Should Predict only 1 if model is "perfect"
-        - Positive Negative Dataset: Contains only bioactive AND NON-hemolytic peptides. Should Predict only 0 if model is "perfect"
-    """
-    # Load datasets
-    negative_dataset, positive_dataset, positive_negative_dataset = prepare_label_debug_datasets(tokenizer,
-                                                                                                 training_args)
-
-    # Get predictions
-    negative_predictions = get_predictions(trainer, negative_dataset)
-    positive_predictions = get_predictions(trainer, positive_dataset)
-    positive_negative_predictions = get_predictions(trainer, positive_negative_dataset)
-
-    # Calculate abundances
-    abundance_negative = calculate_abundance(negative_predictions)
-    abundance_positive = calculate_abundance(positive_predictions)
-    abundance_positive_negative = calculate_abundance(positive_negative_predictions)
-
-    # Create a figure with two subplots
-    fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-
-    # Plot for negative dataset
-    plot_abundance(abundance_negative, 'Non-Bioactive Sequences', axs[0])
-
-    # Plot for positive dataset
-    plot_abundance(abundance_positive, 'Bioactive label 1 sequences', axs[1])
-
-    # Plot for positive negative dataset
-    plot_abundance(abundance_positive_negative, 'Bioactive label 0 sequences', axs[2])
-
-    # Adjust layout
-    plt.tight_layout()
-    plt.savefig(f"{training_args.plot_path}/label_prediction_bias.png")
-
-    # TODO: Box plots for label on dataset
 
 
 def plot_label_abundance(label_0_counter,
@@ -498,7 +448,7 @@ ignore_leakage: false                   # Ignore leakage in training data (only 
 
 
 def prepare_fisher_exact(test_dataset: PeptideDataset,
-                         trainer: PeptideTrainer,
+                         trainer,
                          plot_path: str):
     from sklearn import metrics
     actual = test_dataset.labels

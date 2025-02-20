@@ -21,8 +21,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     mcc = matthews_corrcoef(y_true=labels, y_pred=predictions)
     precision = evaluate.load("precision").compute(predictions=predictions, references=labels, zero_division=0)["precision"]
-    f1 = evaluate.load("f1").compute(predictions=predictions, references=labels)["f1"]
-    recall = evaluate.load("recall").compute(predictions=predictions, references=labels)["recall"]
+    # f1 = evaluate.load("f1").compute(predictions=predictions, references=labels)["f1"]
+    # recall = evaluate.load("recall").compute(predictions=predictions, references=labels)["recall"]
     # ----- Added for debugging purposes -----
     # Save check for Prediction Bias towards one label
     if debug_print:
@@ -31,8 +31,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
             "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
             "mcc": mcc,
             "precision": precision,
-            "f1": f1,
-            "recall": recall,
+            # "f1": f1,
+            # "recall": recall,
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
@@ -41,8 +41,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
         "mcc": mcc,
         "precision": precision,
-        "f1": f1,
-        "recall": recall
+        # "f1": f1,
+        # "recall": recall
     }
 
 
