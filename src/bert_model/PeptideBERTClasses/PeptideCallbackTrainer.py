@@ -123,7 +123,7 @@ class PlotMetricsCallback(TrainerCallback):
         plt.figure(figsize=(10, 5))
 
         plt.plot(epochs, eval_metrics, label=f"Eval {metric_name}", color='blue')
-        plt.plot(epochs, train_metrics, label=f"Train {metric_name}", color='yellow')
+        plt.plot(epochs, train_metrics, label=f"Train {metric_name}", color='red')
         plt.xlabel('Epochs')
         plt.ylabel(metric_name, color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
