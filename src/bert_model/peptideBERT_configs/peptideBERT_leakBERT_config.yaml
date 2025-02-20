@@ -27,9 +27,9 @@ label_1_cluster_data: 500         # Number of data points for label 1 used in do
 loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
 
 # Dataset and File Paths
-train_file: '../../data/train_data/whitelab_hemo_data.csv'  # Path to training data
+train_file: './data/train_data/whitelab_hemo_data.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                    # Path to pretrained model
-model_save_path: '../../peptide_binary_leakage_BERT'       # Path to save the model
+model_save_path: './peptide_binary_leakage_BERT'       # Path to save the model
 plot_path: './leak_plots'                              # Path to save the plots
 
 # Validation and Test Settings
@@ -48,7 +48,7 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: true                  # Use CPU for training
+use_cpu: false                  # Use CPU for training
 
 # Miscellaneous Settings
 ignore_leakage: true                    # Ignore leakage in training data (only if certain)
