@@ -82,6 +82,7 @@ def fine_tune(config_path: str):
         LearningCurveCallback(plot_path=training_args.plot_path),
         # Custom Callback Class for early stopping.
         EarlyStoppingCallback(),
+        # following callbacks are essential for calculating metrics during training!
         CollectBatchWiseTrainMetrics(),
         PlotMetricsCallback()
     ]
