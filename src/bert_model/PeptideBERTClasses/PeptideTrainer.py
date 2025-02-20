@@ -1,14 +1,13 @@
 from typing import Union, Optional, Dict, Any
 from datasets import Dataset
 import torch
-import evaluate
-from sklearn.metrics import matthews_corrcoef
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
 from transformers.utils.import_utils import is_datasets_available
 from transformers.trainer_utils import seed_worker
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.bert_model.fine_tune_utils import format_logit_to_label
 
 
 class PeptideTrainer(Trainer):
@@ -60,12 +59,14 @@ class PeptideTrainer(Trainer):
         if 'grad_norm' in logs.keys():
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
-                    logs['accuracy'] = callback.get_batch_wise_mean_accuracy()
+                    logs['accuracy'] = callback.get_train_accuracy()
                     if self.args.model_class == 'binary':
-                        logs['mcc'] = callback.get_batch_wise_mean_mcc()
-                        logs['f1'] = callback.get_batch_wise_mean_f1()
-                        logs['recall'] = callback.get_batch_wise_mean_recall()
-                        logs['precision'] = callback.get_batch_wise_mean_precision()
+                        logs['precision'] = callback.get_train_precision()
+                        logs['mcc'] = callback.get_train_mcc()
+                        logs['recall'] = callback.get_train_recall()
+                        logs['f1'] = callback.get_train_f1()
+
+                    callback.clear_results_after_epoch()
         super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
@@ -109,19 +110,9 @@ class PeptideTrainer(Trainer):
 
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
-                acc = evaluate.load("accuracy").compute(predictions=preds.argmax(axis=1), references=cpu_inputs)["accuracy"]
-                mcc = matthews_corrcoef(y_true=cpu_inputs, y_pred=preds.argmax(axis=1))
-                f1 = evaluate.load("f1").compute(predictions=preds.argmax(axis=1), references=cpu_inputs)["f1"]
-                precision = evaluate.load("precision").compute(predictions=preds.argmax(axis=1),
-                                                                references=cpu_inputs,
-                                                               zero_division=0)["precision"]
-                recall = evaluate.load("recall").compute(predictions=preds.argmax(axis=1),
-                                                          references=cpu_inputs)["recall"]
-                train_metric_callback.append_batch_wise_accuracy(acc)
-                train_metric_callback.append_batch_wise_mcc(mcc)
-                train_metric_callback.append_batch_wise_f1(f1)
-                train_metric_callback.append_batch_wise_precision(precision)
-                train_metric_callback.append_batch_wise_recall(recall)
+                pred_labels = format_logit_to_label(logits=preds)
+                train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs)
+
             elif self.args.model_class == 'mlm':
                 # Extract the logits for the masked tokens
                 preds = model(**inputs).logits.detach().cpu().numpy()
@@ -136,17 +127,13 @@ class PeptideTrainer(Trainer):
                 masked_labels = inputs["labels"].detach().cpu().numpy()[masked_indices]
 
                 # Calculate the accuracy
-                acc = evaluate.load("accuracy").compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())["accuracy"]
-                
-                train_metric_callback.append_batch_wise_accuracy(acc)
+                train_metric_callback.append_batch_results(predictions=masked_preds, labels=masked_labels)
+
             elif self.args.model_class == 'custom':
                 """
                 Implement Regression Metrics here
                 """
                 ...
-
-
-
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.

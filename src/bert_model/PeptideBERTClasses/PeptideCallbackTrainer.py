@@ -1,7 +1,10 @@
 import os
+
+from sklearn.metrics import matthews_corrcoef
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+import evaluate
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -104,18 +107,18 @@ class PlotMetricsCallback(TrainerCallback):
         for obj in self.object_list:
             if "eval_loss" in logs[-1]:  # TODO is there a better way to check if there are eval metrics?
                 obj.eval_metric.append(logs[-1].get("eval_" + obj.metric_name))
-                self.plot_mcc_curves(args=args,
-                                     train_metrics=obj.train_metric,
-                                     eval_metrics=obj.eval_metric,
-                                     metric_name=obj.metric_name)
+                self.plot_metric_curve(args=args,
+                                       train_metrics=obj.train_metric,
+                                       eval_metrics=obj.eval_metric,
+                                       metric_name=obj.metric_name)
             else:
                 obj.train_metric.append(logs[-1].get(obj.metric_name))
 
     @staticmethod
-    def plot_mcc_curves(args: PeptideTrainingArguments,
-                        train_metrics: list,
-                        eval_metrics: list,
-                        metric_name: str):
+    def plot_metric_curve(args: PeptideTrainingArguments,
+                          train_metrics: list,
+                          eval_metrics: list,
+                          metric_name: str):
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
@@ -185,55 +188,32 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     """
 
     def __init__(self) -> None:
-        self.batch_wise_accuracy = []
-        self.batch_wise_mcc = []
-        self.batch_wise_f1 = []
-        self.batch_wise_recall = []
-        self.batch_wise_precision = []
+        self.collected_predictions = []
+        self.collected_labels = []
 
-    @staticmethod
-    def _get_mean(metric):
-        return sum(metric) / len(metric)
 
-    def append_batch_wise_accuracy(self, metric):
-        self.batch_wise_accuracy.append(metric)
+    def append_batch_results(self, predictions, labels):
+        self.collected_predictions.extend(predictions)
+        self.collected_labels.extend(labels)
 
-    def append_batch_wise_mcc(self, metric):
-        self.batch_wise_mcc.append(metric)
+    def clear_results_after_epoch(self):
+        self.collected_predictions = []
+        self.collected_labels = []
 
-    def append_batch_wise_f1(self, metric):
-        self.batch_wise_f1.append(metric)
+    def get_train_mcc(self):
+        return matthews_corrcoef(y_true=self.collected_labels, y_pred=self.collected_predictions)
 
-    def append_batch_wise_recall(self, metric):
-        self.batch_wise_recall.append(metric)
+    def get_train_accuracy(self):
+        return evaluate.load("accuracy").compute(predictions=self.collected_predictions, references=self.collected_labels)["accuracy"]
 
-    def append_batch_wise_precision(self, metric):
-        self.batch_wise_precision.append(metric)
+    def get_train_precision(self):
+        return evaluate.load("precision").compute(predictions=self.collected_predictions, references=self.collected_labels)["precision"]
 
-    def get_batch_wise_mean_accuracy(self):
-        mean_accuracy = sum(self.batch_wise_accuracy) / len(self.batch_wise_accuracy)
-        self.batch_wise_accuracy = []
-        return mean_accuracy
+    def get_train_recall(self):
+        return evaluate.load("recall").compute(predictions=self.collected_predictions, references=self.collected_labels)["recall"]
 
-    def get_batch_wise_mean_mcc(self):
-        mean_mcc = self._get_mean(self.batch_wise_mcc)
-        self.batch_wise_mcc = []
-        return mean_mcc
-
-    def get_batch_wise_mean_f1(self):
-        mean_f1 = self._get_mean(self.batch_wise_f1)
-        self.batch_wise_f1 = []
-        return mean_f1
-
-    def get_batch_wise_mean_recall(self):
-        mean_recall = self._get_mean(self.batch_wise_recall)
-        self.batch_wise_recall = []
-        return mean_recall
-
-    def get_batch_wise_mean_precision(self):
-        mean_precision = self._get_mean(self.batch_wise_precision)
-        self.batch_wise_precision = []
-        return mean_precision
+    def get_train_f1(self):
+        return evaluate.load("f1").compute(predictions=self.collected_predictions, references=self.collected_labels)["f1"]
 
 
 class CurriculumLearningCallback(TrainerCallback):

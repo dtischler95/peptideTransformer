@@ -16,7 +16,6 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBe
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 
 # this line should be included in the TrainingArguments
-# device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 logger = logging.getLogger(__name__)
 
 
