@@ -91,7 +91,8 @@ def fine_tune(config_path: str):
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config,
                                                    loss_function=training_args.loss_function,
-                                                   bce_logit_weight=get_bce_label_weight(labels=train_dataset.labels))
+                                                   bce_logit_weight=get_bce_label_weight(
+                                                       labels=train_dataset.labels).to(training_args.device))
         data_collator = DefaultDataCollator()
         run_metric = binary_metrics
 
