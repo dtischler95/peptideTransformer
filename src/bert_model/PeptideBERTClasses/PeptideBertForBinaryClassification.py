@@ -93,14 +93,14 @@ class PeptideBertForBinaryClassification(BertModel):
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
-        # Apply sigmoid activation for binary classification
-
 
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
             if self.loss_function == 'bce':
+                # Apply sigmoid activation for binary classification
                 logits = self.sigmoid(logits)  # Apply sigmoid activation for binary classification
+
                 loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
             elif self.loss_function == 'bce_logit_loss':
