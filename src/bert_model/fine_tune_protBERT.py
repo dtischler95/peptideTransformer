@@ -2,7 +2,7 @@ import sys
 import warnings
 
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import logging
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
@@ -103,14 +103,16 @@ def fine_tune(config_path: str):
     # first.
     elif training_args.model_class == 'mlm':
         model = BertForMaskedLM.from_pretrained(training_args.model_path)
-        data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
-                                                      initial_prob=training_args.mlm_probability,
-                                                      increase_step=training_args.mlm_curriculum_increase_step,
-                                                      max_prob=training_args.mlm_curriculum_max_prob)
+        # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
+        #                                               initial_prob=training_args.mlm_probability,
+        #                                               increase_step=training_args.mlm_curriculum_increase_step,
+        #                                               max_prob=training_args.mlm_curriculum_max_prob)
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
+                                                        mlm_probability=training_args.mlm_probability)
 
         # Add Curriculum Learning Callback if enabled
         # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
-        callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
+        #callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
         run_metric = mlm_metrics
     elif training_args.model_class == 'custom':
         # raise NotImplementedError("Custom task not implemented yet")
