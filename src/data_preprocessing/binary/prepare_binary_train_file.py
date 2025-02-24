@@ -268,7 +268,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
                                    out_path: str,
                                    dataset_tag: str,
                                    filter_sequences: bool = False,
-                                   label_threshold: float = 0.8):
+                                   label_threshold: float or None):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
     This function is specific for our data and should be refactored if new data is added.
@@ -334,12 +334,10 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Process units
     df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
 
-    # Calculate the relation between hemo_percent and hemo_concentration
-    # Based on my thoughts on how to quantify the hemolytic activity of a peptide
-    df_raw_hemo['relation'] = df_raw_hemo['hemo_percent'] / df_raw_hemo['hemo_concentration']
-
-    # Label the data based on a threshold on the relation. ADJUST THIS THRESHOLD IF NEEDED INSIDE THE FUNCTION.
-    df_raw_hemo['label'] = df_raw_hemo['relation'].apply(lambda x: 1 if x >= label_threshold else 0)
+    if label_threshold is not None:
+        df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
+    else:
+        df_raw_hemo = label_after_happenn(df=df_raw_hemo)
 
     # result_df should contain cleaned data useable for training and further analysis
     result_df = df_raw_hemo[['sequence', 'label']]
@@ -356,6 +354,19 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         # If you dont want to filter ambiguous sequences, just save the data
         print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
         result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
+
+
+def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+def label_via_relation(df: pd.DataFrame, label_threshold: float=0.8) -> pd.DataFrame:
+    # Calculate the relation between hemo_percent and hemo_concentration
+    # Based on my thoughts on how to quantify the hemolytic activity of a peptide
+    df['relation'] = df['hemo_percent'] / df['hemo_concentration']
+    # Label the data based on a threshold on the relation. ADJUST THIS THRESHOLD IF NEEDED INSIDE THE FUNCTION.
+    df['label'] = df['relation'].apply(lambda x: 1 if x >= label_threshold else 0)
+
+    return df
 
 
 if __name__ == '__main__':
