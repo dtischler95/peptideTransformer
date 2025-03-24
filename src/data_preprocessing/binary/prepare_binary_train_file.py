@@ -355,7 +355,52 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
         result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
 
+def label_after_happen_style(df: pd.DataFrame) -> pd.DataFrame:
 
+    row_already_flagged = False
+
+    if df['hemo_percent'] >= 50 and df['hemo_concentration'] <= 300 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 55 and df['hemo_concentration'] <= 330 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 60 and df['hemo_concentration'] <= 360 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 70 and df['hemo_concentration'] <= 420 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 75 and df['hemo_concentration'] <= 450 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 80 and df['hemo_concentration'] <= 480 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 85 and df['hemo_concentration'] <= 510 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 90 and df['hemo_concentration'] <= 540 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 95 and df['hemo_concentration'] <= 570 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+    if df['hemo_percent'] >= 100 and df['hemo_concentration'] <= 600 and not row_already_flagged:
+        df['label'] = 1
+        row_already_flagged = True
+
+
+    return df
 def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
