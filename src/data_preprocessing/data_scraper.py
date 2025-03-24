@@ -44,7 +44,7 @@ def prepare_happenn_data(file_path: str):
                 sequence_counter += 1
 
     df = pd.DataFrame(sequence_label_dict)
-    df.to_csv('../../data/data_from_database/happen_data.csv', sep=';', index=False)
+    df.to_csv('../../data/train_data/happen_data.csv', sep=';', index=False)
     print(sequence_counter)
     print(len(sequence_label_dict['sequence']))
 
@@ -53,7 +53,7 @@ def prepare_happenn_data(file_path: str):
 if __name__ == '__main__':
 
     df_1 = pd.read_csv('../../data/train_data/our_hemo_labeled.csv', sep=';')
-    df_2 = pd.read_csv('../../data/data_from_database/happen_data.csv', sep=';')
+    df_2 = pd.read_csv('../../data/train_data/happen_data.csv', sep=';')
     df_3 = pd.read_csv('../../data/train_data/whitelab_hemo_data.csv', sep=';')
     df_tmp = pd.concat([df_1, df_2, df_3])
     compare_rows_of_two_dataframes(df_1, df_2)
