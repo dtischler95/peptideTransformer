@@ -24,7 +24,8 @@ def get_filtered_and_combined_dataframe(dataframes: list[pd.DataFrame]) -> pd.Da
     if not dataframes:
         raise ValueError(
             'No dataframes provided. Please provide the dataframes containing the data from the databases.')
-
+    if len(dataframes) == 1:
+        return dataframes[0]
     df_to_concat = []
     for df in dataframes:
         # Filter Sequences by seq_length and Ambiguous Amino Acids
@@ -290,6 +291,8 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         data_df_list.append(data_df)
 
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
+    base_df = base_df[['sequence', 'measure_type', 'value', 'activity']]
+    base_df = base_df.dropna()
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
     df_hc = base_df[base_df['measure_type'].str.contains('HC5')]
@@ -399,7 +402,6 @@ def label_after_happen_style(df: pd.DataFrame) -> pd.DataFrame:
         df['label'] = 1
         row_already_flagged = True
 
-
     return df
 def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
     return df
@@ -421,8 +423,9 @@ if __name__ == '__main__':
 
     hemolytik_db = '../../../data/data_from_database/Hemolytik_scraped.csv'
     dbaasp_db = '../../../data/data_from_database/dbaasp_scraped.csv'
+    all_db = '../../../data/data_from_database/complete_amp_data.csv'
 
-    parse_and_label_hemolytic_data(hemolytik_db, dbaasp_db,
+    parse_and_label_hemolytic_data(all_db,
                                    out_path='../../../data/',
                                    dataset_tag='our_hemo_labeled',
                                    filter_sequences=True,
