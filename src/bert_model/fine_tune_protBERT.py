@@ -88,7 +88,9 @@ def fine_tune(config_path: str):
     ]
 
     if training_args.model_class == 'binary':
-        config = BertConfig.from_pretrained(training_args.model_path)
+
+        config = BertConfig.from_pretrained('GrimSqueaker/proteinBERT')
+        #config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForBinaryClassification(config,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
