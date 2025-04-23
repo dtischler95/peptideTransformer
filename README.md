@@ -9,7 +9,7 @@
 - [ ] Clean up files and sort functions
 - [ ] Add some plots to view datasets
   - [ ] May include some for regression/multilabel task for mic later on
-
+- [ ] Use CD-Hit and prepare dataset with GO-Annotations
 
 ### To-Do
 - [ ] Do I need any special metric for rising the masking percentage of the data collator?
