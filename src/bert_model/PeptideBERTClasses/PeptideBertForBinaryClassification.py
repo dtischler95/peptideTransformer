@@ -22,7 +22,8 @@ class PeptideBertForBinaryClassification(BertModel):
         super().__init__(config)
         self.loss_function = loss_function
         self.bce_logit_weight = bce_logit_weight
-        self.bert = BertModel(config)
+        #self.bert = BertModel(config)
+        self.bert = BertModel.from_pretrained('Rostlab/prot_bert_bfd')
         self.dropout = nn.Dropout(config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
                                     config.num_labels)  # Output only one logit for binary classification

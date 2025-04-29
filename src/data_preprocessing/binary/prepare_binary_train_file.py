@@ -401,8 +401,8 @@ def label_after_happen_style(df: pd.DataFrame) -> pd.DataFrame:
     if df['hemo_percent'] >= 100 and df['hemo_concentration'] <= 600 and not row_already_flagged:
         df['label'] = 1
         row_already_flagged = True
-
     return df
+
 def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
     return df
 

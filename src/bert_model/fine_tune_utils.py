@@ -11,6 +11,7 @@ from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 
 
 def prepare_datasets(binary_or_mlm: str,
+                     model_path: str,
                      show_encoding: bool,
                      train_file: str,
                      logger: logging.Logger,
@@ -66,7 +67,7 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
 
     # Load the tokenizer # TODO do i need to make my own tokenizer?
-    tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', clean_up_tokenization_spaces=True)
+    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
                                    max_length=max_length)
