@@ -90,6 +90,7 @@ def fine_tune(config_path: str):
     if training_args.model_class == 'binary':
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config,
+                                                   model_path=training_args.model_path,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
                                                        labels=train_dataset.labels).to(training_args.device))
