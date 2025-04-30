@@ -93,6 +93,7 @@ def fine_tune(config_path: str):
         config = BertConfig.from_pretrained(training_args.model_path)#('GrimSqueaker/proteinBERT')
         #config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForBinaryClassification(config,
+                                                   model_path=training_args.model_path,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
                                                        labels=train_dataset.labels).to(training_args.device))
