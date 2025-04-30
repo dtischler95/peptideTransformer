@@ -12,7 +12,7 @@ class PeptideBertForBinaryClassification(BertModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config, bce_logit_weight, loss_function: str = 'bce'):
+    def __init__(self, config,model_path: str,  bce_logit_weight, loss_function: str = 'bce'):
         config.hidden_size = 120
         config.num_attention_heads = 6
         config.num_hidden_layers = 6
@@ -20,10 +20,11 @@ class PeptideBertForBinaryClassification(BertModel):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.return_dict = False
         super().__init__(config)
+        self.config = config
+        self.num_labels = config.num_labels
         self.loss_function = loss_function
         self.bce_logit_weight = bce_logit_weight
-        #self.bert = BertModel(config)
-        self.bert = BertModel.from_pretrained('Rostlab/prot_bert_bfd')
+        self.bert = BertModel.from_pretrained(model_path, config=config, ignore_mismatched_sizes=True)
         self.dropout = nn.Dropout(config.classifier_dropout)
         self.classifier = nn.Linear(config.hidden_size,
                                     config.num_labels)  # Output only one logit for binary classification
