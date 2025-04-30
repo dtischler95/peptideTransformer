@@ -64,6 +64,7 @@ def fine_tune(config_path: str):
     # Prepare tokenizer and datasets
 
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
+                                                                           model_path=training_args.model_path,
                                                                            show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
@@ -88,8 +89,11 @@ def fine_tune(config_path: str):
     ]
 
     if training_args.model_class == 'binary':
-        config = BertConfig.from_pretrained(training_args.model_path)
+
+        config = BertConfig.from_pretrained(training_args.model_path)#('GrimSqueaker/proteinBERT')
+        #config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForBinaryClassification(config,
+                                                   model_path=training_args.model_path,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
                                                        labels=train_dataset.labels).to(training_args.device))

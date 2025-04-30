@@ -1,7 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+"""
+This script is thought to be used soley on the whitelab dataset.
+Functions here provide some inside into the specific problems i had with the data provided by them and the
+way the other labs handled them.
 
+"""
 # TODO COMPLETE REFACTOR! First Markdown makes sense, but for secend i need to remove the ambigous data first
 
 def get_overall_stats(our_positive_path: str,
