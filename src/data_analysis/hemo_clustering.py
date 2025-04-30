@@ -283,7 +283,7 @@ def perform_clustering(embedded_sequences,
             perplexity=5.0,
             init="random",
             method="exact",
-            n_iter=1000,
+            max_iter=1000,
             random_state=42,
             verbose=0,
         )
