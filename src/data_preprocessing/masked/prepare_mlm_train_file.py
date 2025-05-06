@@ -86,6 +86,6 @@ if __name__ == '__main__':
     gather_data_and_generate_mlm_train_file('../../../data/data_from_database/starPEP_peptides.fasta',
                                             '../../../data/data_from_database/APD_Hs_all.fasta',
                                             '../../../data/data_from_database/complete_amp_data.csv',
-                                            out_path='../../../data/train_data/mlm_train_data.csv',
+                                            out_path='../../../data/train_data/mlm/mlm_train_data.csv',
                                             down_sample_if_to_big=0.1
                                             )
