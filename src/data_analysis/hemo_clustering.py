@@ -10,7 +10,6 @@ from sklearn.cluster import KMeans
 from warnings import filterwarnings
 from transformers import BertTokenizer, BertModel
 
-
 """
 This code is an to my usecase adapted version of the code from Lukas Bayerle 
 of the workgroup i work in for Prof. Dr. Franz Cemic.
@@ -97,7 +96,8 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
     ax2.set_ylabel("Explained variance ratio")
     ax2.set_xlabel("Principal components")
     plt.suptitle("PCA Plot analysis")
-    ax2.plot(np.arange(30) + 1, pca.explained_variance_ratio_, "o-", linewidth=2) # needs to be the same as pca comps TODO move to param
+    ax2.plot(np.arange(30) + 1, pca.explained_variance_ratio_, "o-",
+             linewidth=2)  # needs to be the same as pca comps TODO move to param
     """ax1.scatter(
         kmeans.cluster_centers_[:, 0],
         kmeans.cluster_centers_[:, 1],
@@ -217,7 +217,7 @@ def plot_umap(data, labels, plot_path=""):
 def perform_clustering(embedded_sequences,
                        sequence_labels,
                        plot_path: str,
-                       tag: str= ""):
+                       tag: str = ""):
     """
     Perform clustering analysis on the data points.
     Wrapper for the basic clustering analysis.
@@ -227,6 +227,7 @@ def perform_clustering(embedded_sequences,
     :param plot_path: path to sav{plot_path
     :param tag: tag for the output files
     """
+
     def cluster_metrics(data, labels, cluster_labels, cluster_tag=""):
         """
         Print and return clustering metrics.
@@ -241,7 +242,8 @@ def perform_clustering(embedded_sequences,
         )
         unique_labels = set(cluster_labels)
         if len(unique_labels) < 2:
-            print(f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
+            print(
+                f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
             print(f"Unique labels: {unique_labels}")
             silhouette_score = None
         else:
@@ -270,8 +272,7 @@ def perform_clustering(embedded_sequences,
         print(f"Mutual Information Score: {res['mifs']:4f}")
         print("----------------------------------------------------")
 
-
-    def run_pca(data, comps=30): #need to be the same as in line 93
+    def run_pca(data, comps=30):  # need to be the same as in line 93
         print("[Clustering] Running PCA")
         _pca = PCA(n_components=comps, random_state=42)
         return _pca, _pca.fit(data).transform(data)
@@ -304,9 +305,7 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-
     pca, pca_fit = run_pca(embedded_sequences)
-
 
     tsne_fit = run_tsne(embedded_sequences)
     umap_fit = run_umap(embedded_sequences)
@@ -327,19 +326,18 @@ def perform_clustering(embedded_sequences,
     plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_umap_plot")
 
 
-
-def encode_peptides(sequence_file: str,
+def encode_peptides(sequence_file,
                     device,
                     plot_path: str,
+                    sequence_max_length: int,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
                     batch_size: int = 32) -> [np.ndarray, list]:
-
-
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
-        tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False, clean_up_tokenization_spaces=True)
+        tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False,
+                                                  clean_up_tokenization_spaces=True)
         model = BertModel.from_pretrained("Rostlab/prot_bert_bfd")
 
 
@@ -348,7 +346,7 @@ def encode_peptides(sequence_file: str,
 
     model.eval()
 
-    df = pd.read_csv(sequence_file, sep=';')
+    df = pd.DataFrame({'sequence': sequence_file.peptides, 'label': sequence_file.labels})
     # Shuffle the data to ensure labels are mixed
     df = df.sample(frac=1).reset_index(drop=True)
 
@@ -361,14 +359,15 @@ def encode_peptides(sequence_file: str,
     # ------------
 
     # Prepare peptides
-    peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
+    # peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
     # Generate embeddings in batches
     progress = 0
     embeddings = []
-    for i in range(0, len(peptides_prepared), batch_size):
-        batch_peptides = peptides_prepared[i:i + batch_size]
-        enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True, max_length=36) # TODO move to training args max length
+    for i in range(0, len(df['sequence']), batch_size):
+        batch_peptides = df['sequence'][i:i + batch_size].to_list()
+        enc = tokenizer(batch_peptides, return_tensors="pt", padding='max_length', truncation=True,
+                        max_length=sequence_max_length)
 
         enc = {key: value.to(device) for key, value in enc.items()}
 
@@ -376,7 +375,7 @@ def encode_peptides(sequence_file: str,
 
         embeddings.append(outputs.cpu().detach().numpy())
         progress += len(batch_peptides)
-        print(f"[Embedding] Progress: {progress}/{len(peptides_prepared)}")
+        print(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
 
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
@@ -384,11 +383,11 @@ def encode_peptides(sequence_file: str,
     return embeddings, df['label'].to_list()
 
 
-
-def cluster_model_embedding(file_path: str,
+def cluster_model_embedding(file_path,
                             batch_size: int,
-                            plot_path:str,
+                            plot_path: str,
                             device,
+                            sequence_max_length: int,
                             data_tag: str = "test_run",
                             label_0_cluster_data: int = 500,
                             label_1_cluster_data: int = 500,
@@ -402,6 +401,7 @@ def cluster_model_embedding(file_path: str,
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
     :param device: Device to run the model on
+    :param sequence_max_length: Maximum length of the sequences
     :param data_tag: Tag for the output files
     :param label_0_cluster_data: Amount of data points for label 0
     :param label_1_cluster_data: Amount of data points for label 1
@@ -413,11 +413,11 @@ def cluster_model_embedding(file_path: str,
     if device is None:
         device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
 
-
     embedding, labels = encode_peptides(sequence_file=file_path,
                                         batch_size=batch_size,
                                         tokenizer_and_model=tokenizer_and_model,
                                         device=device,
+                                        sequence_max_length=sequence_max_length,
                                         label_0_cluster_data=label_0_cluster_data,
                                         label_1_cluster_data=label_1_cluster_data,
                                         plot_path=plot_path)
@@ -425,6 +425,7 @@ def cluster_model_embedding(file_path: str,
                        sequence_labels=labels,
                        tag=data_tag,
                        plot_path=plot_path)
+
 
 def reduce_data_points_for_clustering(df: pd.DataFrame,
                                       plot_path: str,
@@ -450,9 +451,11 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     df_1 = df[df['label'] == 1].sample(frac=1)
 
     result_df = pd.concat([df_0[:label_0_data], df_1[:label_1_data]]).sample(frac=1)
-    result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';', index=False) # TODO maybe make this optional?
+    result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';',
+                     index=False)  # TODO maybe make this optional?
 
     return result_df
+
 
 if __name__ == "__main__":
     filterwarnings("ignore", category=UserWarning)
@@ -461,5 +464,3 @@ if __name__ == "__main__":
                             plot_path="../../plots",
                             tokenizer_and_model=None,
                             device=None)
-
-
