@@ -3,7 +3,7 @@ model_class: 'binary'         # Model class to use, either 'binary' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
-num_train_epochs: 50           # Number of epochs to train the model
+num_train_epochs: 1           # Number of epochs to train the model
 per_device_train_batch_size: 256  # Batch size for training
 per_device_eval_batch_size: 64    # Batch size for evaluation
 early_stopping_patience: 5       # Patience for early stopping
@@ -33,7 +33,7 @@ mlm_curriculum_increase_step: 0.1    # Step size for curriculum learning
 mlm_curriculum_max_prob: 0.9         # Maximum masking probability for MLM
 
 # Dataset and File Paths
-data_shuffle: false                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
+data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
 train_file: '../../data/tamper_data/train_tamper.csv'  # Path to training data
 val_file: '../../data/tamper_data/val_tamper.csv'      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
@@ -41,8 +41,8 @@ model_save_path: '../test'                             # Path to save the model
 plot_path: '../../plots'                                    # Path to save the plots
 
 # Validation and Test Settings
-validation_data_size: 0.1       # Validation dataset size (fraction)
-test_data_size: 0.1             # Test dataset size (fraction)
+validation_data_size: 0.5       # Validation dataset size (fraction)
+test_data_size: 0.9             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
@@ -61,5 +61,5 @@ use_cpu: true                  # Use CPU for training
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
-fast_debug_mode: false                  # Developer mode for pipeline testing
+fast_debug_mode: true                  # Developer mode for pipeline testing
 run_verbose: true                      # Show more information during training, like encoding or configs
