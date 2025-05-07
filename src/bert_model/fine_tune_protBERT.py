@@ -63,16 +63,30 @@ def fine_tune(config_path: str):
 
     # Prepare tokenizer and datasets
 
+
+
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
                                                                            model_path=training_args.model_path,
                                                                            show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
+                                                                           val_file=training_args.val_file,
                                                                            ignore_leakage=training_args.ignore_leakage,
                                                                            max_length=training_args.max_length,
                                                                            logger=logger,
                                                                            cut_df_for_faster_debug=training_args.fast_debug_mode,
                                                                            validation_data_size=training_args.validation_data_size,
-                                                                           test_data_size=training_args.test_data_size)
+                                                                           test_data_size=training_args.test_data_size,
+                                                                           random_data_shuffle=training_args.data_shuffle)
+
+
+    ###--------------- TO DELETE
+
+    import pandas as pd
+    df = pd.DataFrame({'sequence': [''.join(pep.split(' ')) for pep in test_dataset.peptides], 'label': test_dataset.labels})
+    df.to_csv("./test_dataset.csv", index=False, sep=';')
+
+
+    #--------------
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
@@ -154,7 +168,7 @@ def fine_tune(config_path: str):
         if training_args.model_class == 'binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
-            cluster_model_embedding(file_path=training_args.train_file,
+            cluster_model_embedding(file_path="./test_dataset.csv",
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
                                     plot_path=training_args.plot_path,

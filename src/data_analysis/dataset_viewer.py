@@ -1,4 +1,5 @@
 from collections import Counter
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ TODO:
 """
 
 
-def plot_binary_label_distribution(df, plot_path=""):
+def plot_binary_label_distribution(df, plot_path):
     """
     Plots the distribution of binary labels in the dataset.
 
@@ -28,19 +29,20 @@ def plot_binary_label_distribution(df, plot_path=""):
     plt.ylabel("Count [%]")
     plt.title("Label Distribution")
     plt.xticks([0, 1], ["0", "1"])
-    if plot_path != "":
-        plt.savefig(f"/{plot_path}_label_distribution.png")
-        plt.clf()
-    else:
+    if plot_path is None:
         plt.show()
+    else:
+        plt.savefig(f"{plot_path}_label_distribution.png")
+        plt.clf()
 
 
 def amino_acid_frequency_comparison(
-    sequences_0, sequences_1, plot_path=""
+        sequences_0, sequences_1, plot_path=""
 ):
     """
     Function from lucas bayerle snippet codes
     """
+
     def _tokenize(sequences) -> dict:
         counts = Counter()
         for seq in sequences:
@@ -50,7 +52,7 @@ def amino_acid_frequency_comparison(
     counts_0 = _tokenize(sequences_0)
     counts_1 = _tokenize(sequences_1)
 
-    tick_labels = sorted(set(counts_0.keys())) #| set(counts_1.keys()))
+    tick_labels = sorted(set(counts_0.keys()))  # | set(counts_1.keys()))
     vec_0 = np.array([counts_0[k] for k in tick_labels])
     vec_0 = vec_0 / vec_0.sum()
 
@@ -76,28 +78,35 @@ def amino_acid_frequency_comparison(
     ax2.set_xlabel("Amino Acids")
     ax2.set_title("Negativ - Positiv")
 
-    if plot_path != "":
+    if plot_path is None:
+        plt.show()
+    else:
         plt.savefig(f"/{plot_path}_amino_acid_frequency.png")
         plt.clf()
-    else:
-        plt.show()
 
 
-def generate_dataset_plots(df, plot_path=""):
+def look_into_datasets(file_paths: list[tuple[str, str]],
+                       plot_path: str or None = None):
     """
-    Generates and saves plots for the dataset.
+    Function to look into the datasets and print the first 5 rows of each dataset.
 
     Args:
-        df (pd.DataFrame): The dataframe containing the dataset.
-        plot_path (str): The path to save the plots. If empty, the plots will be shown.
+        file_paths (list[tuple[str, str]]): A list of tuples containing the file path and the separator.
+        plot_path (str or None): The path to save the plots. If None, the plots will be shown.
     """
-    plot_binary_label_distribution(df, plot_path=plot_path)
-    sequences_0 = df[df["label"] == 0]["sequence"].tolist()
-    sequences_1 = df[df["label"] == 1]["sequence"].tolist()
-    amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=plot_path)
+
+    for file_path in file_paths:
+        df = pd.read_csv(file_path[0], sep=file_path[1])
+
+        print(f"\033[31mGenerating Info for {file_path[0]}:\033[0m")
+        print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
+        print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\033[0m")
+
+        plot_binary_label_distribution(df, plot_path=plot_path)
+        sequences_0 = df[df["label"] == 0]["sequence"].tolist()
+        sequences_1 = df[df["label"] == 1]["sequence"].tolist()
+        amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=plot_path)
+
 
 if __name__ == "__main__":
-
-    df = pd.read_csv("../../data/train_data/our_hemo_labeled.csv", sep=';')
-    generate_dataset_plots(df=df,
-                           plot_path="../../plots")
+    file_path = "../../data/train_data/our_hemo_labeled.csv"

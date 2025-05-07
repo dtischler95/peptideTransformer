@@ -5,6 +5,11 @@ from peptides import Peptide as Pep
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
 
+"""
+Script for our data preprocessing. It contains the main logic for creating 
+the training files for the Hemolytic Activity Prediction by setting labels and combining our different references.
+"""
+
 
 def get_filtered_and_combined_dataframe(dataframes: list[pd.DataFrame]) -> pd.DataFrame:
     """
