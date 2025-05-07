@@ -21,6 +21,11 @@ def prepare_tamper_data():
 
     val_df = pd.concat([pd.DataFrame(val_neg_dict), pd.DataFrame(val_pos_dict)])
 
+
+    # Remove sequences from val_df that are in train_df
+    val_df = val_df[~val_df['sequence'].isin(train_df['sequence'])]
+
+
     train_df.to_csv("../../../data/tamper_data/train_tamper.csv", index=False, sep=';')
     val_df.to_csv("../../../data/tamper_data/val_tamper.csv", index=False, sep=';')
 
