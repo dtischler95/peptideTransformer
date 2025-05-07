@@ -46,14 +46,16 @@ def prepare_datasets(binary_or_mlm: str,
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
     # Load the data
-    df = pd.read_csv(train_file, sep=';')
-    df_val = pd.read_csv(val_file, sep=';')
-    df = df.sample(frac=1)[:50] if cut_df_for_faster_debug else df
+    df_train = pd.read_csv(train_file, sep=';')
+
+    df_train = df_train.sample(frac=1)[:50] if cut_df_for_faster_debug else df_train
+
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
+    # Those id's are later used to load the Dataframes with the corresponding sequences
     if ignore_leakage:
-        df_to_split = df
+        df_to_split = df_train
     else:
-        df_to_split = df['sequence'].unique()
+        df_to_split = df_train['sequence'].unique()
 
     # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
     # TODO add stratified args for train_test_split
@@ -63,15 +65,19 @@ def prepare_datasets(binary_or_mlm: str,
     if random_data_shuffle:
         train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
         val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
+        all_sequence_df = df_train
     else:
-        train_sequences = df
-        val_sequences, test_sequences = train_test_split(df_val, test_size=test_data_size, shuffle=True)
+        train_sequences = df_to_split
+        df_val = pd.read_csv(val_file, sep=';')
+        df_val_to_split = df_val['sequence'].unique()
+        val_sequences, test_sequences = train_test_split(df_val_to_split, test_size=test_data_size, shuffle=True)
+        all_sequence_df = pd.concat([df_train, df_val], ignore_index=True)
 
     if not ignore_leakage:
         # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
-        train_sequences = df[df['sequence'].isin(train_sequences)]
-        val_sequences = df[df['sequence'].isin(val_sequences)]
-        test_sequences = df[df['sequence'].isin(test_sequences)]
+        train_sequences = all_sequence_df[all_sequence_df['sequence'].isin(train_sequences)]
+        val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
+        test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
     label_data_train = train_sequences['label'].values if binary_or_mlm == 'binary' else None
     label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
@@ -386,67 +392,71 @@ def generate_custom_yaml_file(config_name: str,
 
     yaml_content = """
 # Training and Evaluation Settings
-model_class: 'ENTER MODELTYPE HERE'         # Model class to use, either 'binary' or 'mlm' 
-do_train: true                # Train the model
-do_eval: true                 # Evaluate the model
-do_predict: true              # Predict with the model
-num_train_epochs: 50          # Number of epochs to train the model
-per_device_train_batch_size: 256  # Batch size for training
-per_device_eval_batch_size: 64    # Batch size for evaluation
-early_stopping_patience: 7        # Patience for early stopping
-early_stop_metric: 'eval_loss'    # Metric for early stopping
-early_stop_mode: 'min'            # Mode for early stopping
-early_stop_warm_up: 30            # Warm-up period for early stopping
-dataloader_drop_last: false       # Drop last batch if smaller than batch size
-dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
-show_encoding: False              # Show the encoding of the sequences from the tokenizer
+model_class: 'ENTER MODELTYPE HERE'                    # Model class to use, either 'binary' or 'mlm' 
+do_train: true                                         # Train the model
+do_eval: true                                          # Evaluate the model
+do_predict: true                                       # Predict with the model
+num_train_epochs: 50                                   # Number of epochs to train the model
+per_device_train_batch_size: 256                       # Batch size for training
+per_device_eval_batch_size: 64                         # Batch size for evaluation
+early_stopping_patience: 7                             # Patience for early stopping
+early_stop_metric: 'eval_loss'                         # Metric for early stopping
+early_stop_mode: 'min'                                 # Mode for early stopping
+early_stop_warm_up: 30                                 # Warm-up period for early stopping
+dataloader_drop_last: false                            # Drop last batch if smaller than batch size
+dataloader_num_workers: 2                              # Number of dataloader workers (higher can affect performance)
+show_encoding: False                                   # Show the encoding of the sequences from the tokenizer
 
 # Model and Optimizer Settings
-learning_rate: 0.00005            # Learning rate for optimizer
-weight_decay: 0.01                # Weight decay for optimizer
+learning_rate: 0.00005                                 # Learning rate for optimizer
+weight_decay: 0.01                                     # Weight decay for optimizer
 lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
-lr_scheduler_kwargs:              # Additional scheduler arguments
-  patience: 4                     # Patience for ReduceLROnPlateau scheduler
-max_length: 36                    # Maximum input sequence length
+lr_scheduler_kwargs:                                   # Additional scheduler arguments
+  patience: 4                                          # Patience for ReduceLROnPlateau scheduler
+max_length: 36                                         # Maximum input sequence length
 
 # Binary Classification Settings
-label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
-label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
-loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
+label_0_cluster_data: 500                              # Number of data points for label 0 used in downstream clustering
+label_1_cluster_data: 500                              # Number of data points for label 1 used in downstream clustering
+loss_function: 'bce'                                   # Possible Choices ['bce', 'bce_logit_loss']
 
 # MLM Settings
-mlm_probability: 0.15                       # Masking probability for MLM
-mlm_curriculum_learning: false              # Enable curriculum learning for MLM
-mlm_curriculum_increase_step: 0.0000001     # Step size for curriculum learning
-mlm_curriculum_max_prob: 0.15               # Maximum masking probability for MLM
+mlm_probability: 0.15                                  # Masking probability for MLM
+mlm_curriculum_learning: false                         # Enable curriculum learning for MLM
+mlm_curriculum_increase_step: 0.0000001                # Step size for curriculum learning
+mlm_curriculum_max_prob: 0.15                          # Maximum masking probability for MLM
 
 # Dataset and File Paths
+data_shuffle: true or false                            # [True] Randomly splits train/val/test data from one given input [false] if train and test data are already split beforehand
 train_file: SET TRAIN DATA PATH HERE                   # Path to training data
+val_file: SET VAL DATA PATH HERE                       # Path to validation data
 model_path: SET MODEL PATH HERE                        # Path to pretrained model
 model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
 plot_path: './plots'                                   # Path to save the plots
 
 # Validation and Test Settings
-validation_data_size: 0.2       # Validation dataset size (fraction)
-test_data_size: 0.5             # Test dataset size (fraction)
-metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
+validation_data_size: 0.2                              # Validation dataset size (fraction)
+test_data_size: 0.5                                    # Test dataset size (fraction)
+metric_for_best_model: 'loss'                          # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
-output_dir: './results'         # Path to checkpoints
-logging_dir: './logs'           # Path to logging directory
-logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
-log_level: 'info'               # Log level
-eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
+output_dir: './results'                                # Path to checkpoints
+logging_dir: './logs'                                  # Path to logging directory
+logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
+log_level: 'info'                                      # Log level
+eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
 
 # Reproducibility
-seed: 42                        # Random seed for reproducibility
+seed: 42                                               # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: false                  # Use CPU for training
+use_cpu: false                                         # Use CPU for training
 
 # Miscellaneous Settings
-classification_weighted_labels: false   # Use weighted labels for classification
-ignore_leakage: false                   # Ignore leakage in training data (only if certain)
+classification_weighted_labels: false                  # Use weighted labels for classification
+ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
+fast_debug: false                                      # Use fast debug mode (only if certain)
+run_verbose: true                                      # Verbose output
 """
 
     try:
