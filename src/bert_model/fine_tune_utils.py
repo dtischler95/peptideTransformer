@@ -14,34 +14,40 @@ def prepare_datasets(binary_or_mlm: str,
                      model_path: str,
                      show_encoding: bool,
                      train_file: str,
+                     val_file: str,
                      logger: logging.Logger,
                      ignore_leakage: bool = False,
                      max_length: int = 36,
                      cut_df_for_faster_debug: bool = False,
                      validation_data_size: float = 0.2,
-                     test_data_size: float = 0.5) -> tuple[
+                     test_data_size: float = 0.5,
+                     random_data_shuffle: bool = False) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
-    Creates the datasets for training, validation and testing. for the given transformers Dataset class
+    Creates the datasets for training, validation and testing. For the given transformers Dataset class
     Differentiates between binary classification and masked language modeling in this case.
     Update the Dataset class if you want to use a different model or a different task so the Dataset class fits the
     data and the task.
 
-    :param binary_or_mlm: if the model should be fine-tuned for binary classification or masked language modeling
+    :param binary_or_mlm: If the model should be fine-tuned for binary classification or masked language modeling
                           Is used for your task, update this flag if you want to use a different model or a different task
+    :param model_path: path to the pretrained model
     :param show_encoding: if the encoding of the vocabulary should be shown
     :param train_file: path to the training data
+    :param val_file: path to the validation data
     :param logger: logger for logging
     :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
     :param max_length: Maximum length for padding/truncation.
     :param cut_df_for_faster_debug: If the dataframe should be cut for faster debugging. Default is False.
     :param validation_data_size: Size of the validation data. Default is 0.2.
     :param test_data_size: Size of the test data. Default is 0.5.
+    :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
 
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
     # Load the data
     df = pd.read_csv(train_file, sep=';')
+    df_val = pd.read_csv(val_file, sep=';')
     df = df.sample(frac=1)[:50] if cut_df_for_faster_debug else df
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     if ignore_leakage:
@@ -53,8 +59,13 @@ def prepare_datasets(binary_or_mlm: str,
     # TODO add stratified args for train_test_split
 
     # Split the data into training, validation and test sets
-    train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
-    val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
+
+    if random_data_shuffle:
+        train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
+        val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
+    else:
+        train_sequences = df
+        val_sequences, test_sequences = train_test_split(df_val, test_size=test_data_size, shuffle=True)
 
     if not ignore_leakage:
         # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
@@ -66,7 +77,7 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
     label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
 
-    # Load the tokenizer # TODO do i need to make my own tokenizer?
+    # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
