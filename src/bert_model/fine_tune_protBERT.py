@@ -63,8 +63,6 @@ def fine_tune(config_path: str):
 
     # Prepare tokenizer and datasets
 
-
-
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
                                                                            model_path=training_args.model_path,
                                                                            show_encoding=training_args.run_verbose,
@@ -78,15 +76,6 @@ def fine_tune(config_path: str):
                                                                            test_data_size=training_args.test_data_size,
                                                                            random_data_shuffle=training_args.data_shuffle)
 
-
-    ###--------------- TO DELETE
-
-    import pandas as pd
-    df = pd.DataFrame({'sequence': [''.join(pep.split(' ')) for pep in test_dataset.peptides], 'label': test_dataset.labels})
-    df.to_csv("./test_dataset.csv", index=False, sep=';')
-
-
-    #--------------
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
@@ -104,8 +93,8 @@ def fine_tune(config_path: str):
 
     if training_args.model_class == 'binary':
 
-        config = BertConfig.from_pretrained(training_args.model_path)#('GrimSqueaker/proteinBERT')
-        #config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        config = BertConfig.from_pretrained(training_args.model_path)  # ('GrimSqueaker/proteinBERT')
+        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForBinaryClassification(config,
                                                    model_path=training_args.model_path,
                                                    loss_function=training_args.loss_function,
@@ -130,7 +119,7 @@ def fine_tune(config_path: str):
 
         # Add Curriculum Learning Callback if enabled
         # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
-        #callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
+        # callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
         run_metric = mlm_metrics
     elif training_args.model_class == 'custom':
         # raise NotImplementedError("Custom task not implemented yet")
@@ -168,12 +157,13 @@ def fine_tune(config_path: str):
         if training_args.model_class == 'binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
-            cluster_model_embedding(file_path="./test_dataset.csv",
+            cluster_model_embedding(file_path=test_dataset,
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
                                     plot_path=training_args.plot_path,
                                     tokenizer_and_model=(tokenizer, trainer.model),
                                     device=training_args.device,
+                                    sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data
                                     )
