@@ -24,34 +24,13 @@
 - [ ] Make a preprocessing pipeline for regression data
 - [ ] Don't track accuracy but loss in learning curve
 
-#### Run To-Do
-- [ ] Make a base mlm for train binary/regression models
-- [ ] Make binary classification hemo model
-- [ ] Make regression model for mic
-
-### Brainstorming TODO
-- Binary
-- [ ] 
-
-
 
 #### Preprocessing
 - [ ] Flesh out get_overall_stats function with more graphs and stats. *binary task* [low prio]
-- [ ] Train_Data_viewer.py -> make sense of statistics 
-  - [ ] Add data to Train Dataset
-    - [ ] Add more Bioactive Peptides for binary classification and mlm task
 - [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
 - [ ] Think of removing Peptides that scores too similar with scoring tools for Peptide Sequences
   - [ ] Research Scoring Tools for Peptides. CD-HIT and stuff
-
-#### Training
-- [ ] Train StarPep MLMBert
-  - [ ] RESEARCH CURRICULUM LEARNING !!
-
-
-#### Evaluation
-- [ ] Implement Fisher Test
-
+    
 
 ### Content
 

@@ -12,6 +12,7 @@ class PeptideTrainingArguments(TrainingArguments):
     def __init__(self, *args,
                  model_class: str,
                  train_file=None,
+                 val_file=None,
                  model_path: str = 'Rostlab/prot_bert_bfd',
                  model_save_path: str = '../default_path_BERT',
                  plot_path: str = '../../plots',
@@ -33,6 +34,7 @@ class PeptideTrainingArguments(TrainingArguments):
                  mlm_curriculum_increase_step: int = 0.1,
                  mlm_curriculum_max_prob: float = 0.9,
                  loss_function: str = 'bce',
+                 data_shuffle: bool = True,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -41,6 +43,7 @@ class PeptideTrainingArguments(TrainingArguments):
 
         :param model_class: One of binary, mlm, custom.
         :param train_file: Path to the training file
+        :param val_file: Path to the validation file
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
         :param plot_path: Path to save the plots to
@@ -62,6 +65,7 @@ class PeptideTrainingArguments(TrainingArguments):
         :param mlm_curriculum_increase_step: Increase step for the curriculum learning
         :param mlm_curriculum_max_prob: Maximum probability for the curriculum learning
         :param loss_function: Loss function to be used for the model
+        :param data_shuffle: Shuffle the data before training
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -71,6 +75,7 @@ class PeptideTrainingArguments(TrainingArguments):
             # TODO may raise an error here and make a different inference function
             print(
                 f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")
+        self.val_file = val_file
         self.model_path = model_path
         self.model_save_path = model_save_path
         self.plot_path = plot_path
@@ -98,4 +103,5 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_increase_step = mlm_curriculum_increase_step
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
         self.loss_function = loss_function
+        self.data_shuffle = data_shuffle
 
