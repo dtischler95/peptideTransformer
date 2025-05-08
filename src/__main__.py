@@ -20,7 +20,7 @@ def main():
     if args.command == 'bert_model':
         # If we have configs in our config dir we can just pass the config name.
         if '/' not in args.config_path:
-            args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
+            args.config_path = f"./peptideTransformer/src/bert_model/peptideBERT_configs/{args.config_path}"
         # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
         fine_tune(
             config_path=args.config_path

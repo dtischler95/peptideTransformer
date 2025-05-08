@@ -11,7 +11,7 @@ early_stop_metric: 'eval_loss'    # Metric for early stopping
 early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 30            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
-dataloader_num_workers: 2         # Number of dataloader workers (higher can affect performance)
+dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 
 # Model and Optimizer Settings
 learning_rate: 0.00005            # Learning rate for optimizer
@@ -27,8 +27,8 @@ label_1_cluster_data: 500         # Number of data points for label 1 used in do
 loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
 
 # Dataset and File Paths
-train_file: './data/train_data/happen_data.csv'  # Path to training data
-model_path: './mlm_BERT'                               # Path to pretrained model
+train_file: '.peptideTransformer/data/train_data/happen_data.csv'  # Path to training data
+model_path: '.peptideTransformer/mlm_BERT'                               # Path to pretrained model
 model_save_path: './happen_BERT'             # Path to save the model
 plot_path: './happen_plots'                                   # Path to save the plots
 
