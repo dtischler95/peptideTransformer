@@ -12,6 +12,7 @@ from src.bert_model.fine_tune_utils import prepare_datasets, load_training_argum
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     CurriculumLearningCallback, PlotMetricsCallback, CollectBatchWiseTrainMetrics
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 
@@ -95,7 +96,7 @@ def fine_tune(config_path: str):
 
         config = BertConfig.from_pretrained(training_args.model_path)  # ('GrimSqueaker/proteinBERT')
         # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
-        model = PeptideBertForBinaryClassification(config,
+        model = PeptideBertForConvBinaryClassification(config,
                                                    model_path=training_args.model_path,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
