@@ -71,10 +71,6 @@ class PeptideTrainingArguments(TrainingArguments):
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file
-        if self.train_file is None:
-            # TODO may raise an error here and make a different inference function
-            print(
-                f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")
         self.val_file = val_file
         self.model_path = model_path
         self.model_save_path = model_save_path
@@ -86,9 +82,6 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_probability = mlm_probability
         self.max_length = max_length
         self.fast_debug_mode = fast_debug_mode
-        if self.fast_debug_mode:
-            print(
-                f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
         self.validation_data_size = validation_data_size
         self.test_data_size = test_data_size
         self.early_stopping_patience = early_stopping_patience
@@ -104,4 +97,13 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
         self.loss_function = loss_function
         self.data_shuffle = data_shuffle
+        if not self.data_shuffle and self.val_file == None:
+            raise ValueError("Validation file (val_file) must be provided if data_shuffle is set to False.")
+        if self.fast_debug_mode:
+            print(
+                f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
+        if self.train_file is None:
+            # TODO may raise an error here and make a different inference function
+            print(
+                f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")
 
