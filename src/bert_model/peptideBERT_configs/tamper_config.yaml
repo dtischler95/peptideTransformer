@@ -28,11 +28,11 @@ loss_function: 'bce'             # Possible Choices ['bce', 'bce_logit_loss']
 
 # Dataset and File Paths
 data_shuffle: false                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
-train_file: './peptideTransformer/data/tamper_data/train_tamper.csv'  # Path to training data
-val_file: './peptideTransformer/data/tamper_data/val_tamper.csv'      # Path to validation data
+train_file: './data/tamper_data/train_tamper.csv'  # Path to training data
+val_file: './data/tamper_data/val_tamper.csv'      # Path to validation data
 model_path: './mlm_BERT'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './tamper_data'                             # Path to save the model
-plot_path: './tamper_plots'                                    # Path to save the plots
+model_save_path: '../tamper_data'                             # Path to save the model
+plot_path: '../tamper_plots'                                    # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)
