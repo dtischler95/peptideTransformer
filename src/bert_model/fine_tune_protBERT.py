@@ -126,7 +126,7 @@ def fine_tune(config_path: str):
     # first.
     elif training_args.model_class == 'mlm':
 
-        model = BertForMaskedLM.from_pretrained(training_args.model_path)#, config=config)
+        model = BertForMaskedLM.from_pretrained(training_args.model_path, config=config)
         # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
         #                                               initial_prob=training_args.mlm_probability,
         #                                               increase_step=training_args.mlm_curriculum_increase_step,

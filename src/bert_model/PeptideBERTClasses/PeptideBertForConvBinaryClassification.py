@@ -13,8 +13,6 @@ class PeptideBertForConvBinaryClassification(BertModel):
     """
 
     def __init__(self, config,model_path: str,  bce_logit_weight, loss_function: str = 'bce'):
-        config.hidden_size = 1024
-        config.num_attention_heads = 16
         config.num_hidden_layers = 4
         config.classifier_dropout = 0.15
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
@@ -25,7 +23,7 @@ class PeptideBertForConvBinaryClassification(BertModel):
         self.loss_function = loss_function
         self.bce_logit_weight = bce_logit_weight
 
-        self.bert = BertModel.from_pretrained(model_path, config=config)#, ignore_mismatched_sizes=True)
+        self.bert = BertModel.from_pretrained(model_path, config=config)
         self.dropout = nn.Dropout(config.classifier_dropout)
 
         self.conv1 = nn.Conv1d(in_channels=config.hidden_size, out_channels=128, kernel_size=3, padding=1)

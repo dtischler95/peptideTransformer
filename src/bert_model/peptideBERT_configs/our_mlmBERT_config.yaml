@@ -9,7 +9,7 @@ per_device_eval_batch_size: 32    # Batch size for evaluation
 early_stopping_patience: 5        # Patience for early stopping
 early_stop_metric: 'eval_loss'    # Metric for early stopping
 early_stop_mode: 'min'            # Mode for early stopping
-early_stop_warm_up: 35            # Warm-up period for early stopping
+early_stop_warm_up: 15            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 
@@ -35,7 +35,7 @@ plot_path: './mlm_base'                                 # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)
-test_data_size: 0.5             # Test dataset size (fraction)
+test_data_size: 0.01             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
