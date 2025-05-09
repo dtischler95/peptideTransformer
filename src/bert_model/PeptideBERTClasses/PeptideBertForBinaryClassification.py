@@ -13,7 +13,7 @@ class PeptideBertForBinaryClassification(BertModel):
     """
 
     def __init__(self, config,model_path: str,  bce_logit_weight, loss_function: str = 'bce'):
-        config.num_hidden_layers = 4
+        config.num_hidden_layers = 8
         config.classifier_dropout = 0.15
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.return_dict = False
