@@ -31,7 +31,7 @@ mlm_curriculum_max_prob: 0.8         # Maximum masking probability for MLM
 train_file: './data/train_data/mlm_starpep_data.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                  # Path to pretrained model
 model_save_path: './mlm_base_for_binary'                  # Path to save the model
-plot_path: './mlm_base'                                 # Path to save the plots
+plot_path: './mlm_base_plots'                                 # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)
