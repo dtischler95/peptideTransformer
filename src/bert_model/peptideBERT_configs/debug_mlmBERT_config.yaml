@@ -1,5 +1,5 @@
 # Training and Evaluation Settings
-model_class: 'binary'         # Model class to use, either 'binary' or 'mlm'
+model_class: 'mlm'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
@@ -41,8 +41,8 @@ model_save_path: '../test'                             # Path to save the model
 plot_path: '../../plots'                                    # Path to save the plots
 
 # Validation and Test Settings
-validation_data_size: 0.5       # Validation dataset size (fraction)
-test_data_size: 0.9             # Test dataset size (fraction)
+validation_data_size: 0.2       # Validation dataset size (fraction)
+test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings

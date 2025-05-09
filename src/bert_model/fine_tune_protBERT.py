@@ -92,9 +92,11 @@ def fine_tune(config_path: str):
         PlotMetricsCallback()
     ]
 
-    if training_args.model_class == 'binary':
+    config = BertConfig.from_pretrained(training_args.model_path)
+    config.max_length = 36
+    if training_args.model_class == 'binary_conv':
 
-        config = BertConfig.from_pretrained(training_args.model_path)  # ('GrimSqueaker/proteinBERT')
+         # ('GrimSqueaker/proteinBERT')
         # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForConvBinaryClassification(config,
                                                    model_path=training_args.model_path,
@@ -104,13 +106,27 @@ def fine_tune(config_path: str):
         data_collator = DefaultDataCollator()
         run_metric = binary_metrics
 
+    elif training_args.model_class == 'binary_dense':
+
+         # ('GrimSqueaker/proteinBERT')
+        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        model = PeptideBertForBinaryClassification(config,
+                                                   model_path=training_args.model_path,
+                                                   loss_function=training_args.loss_function,
+                                                   bce_logit_weight=get_bce_label_weight(
+                                                       labels=train_dataset.labels).to(training_args.device))
+        data_collator = DefaultDataCollator()
+        run_metric = binary_metrics
+
+
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
     # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
     # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
     # first.
     elif training_args.model_class == 'mlm':
-        model = BertForMaskedLM.from_pretrained(training_args.model_path)
+
+        model = BertForMaskedLM.from_pretrained(training_args.model_path)#, config=config)
         # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
         #                                               initial_prob=training_args.mlm_probability,
         #                                               increase_step=training_args.mlm_curriculum_increase_step,
@@ -124,12 +140,11 @@ def fine_tune(config_path: str):
         run_metric = mlm_metrics
     elif training_args.model_class == 'custom':
         # raise NotImplementedError("Custom task not implemented yet")
-        config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForRegression(config)
         data_collator = DefaultDataCollator()
         run_metric = None  # TODO implement regression metrics
     else:
-        raise ValueError(f"binary_or_mlm must be either 'binary' or 'mlm'. You provided: '{training_args.model_class}'")
+        raise ValueError(f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
 
     # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
     # configured PeptideTrainingArguments class is provided
@@ -155,7 +170,7 @@ def fine_tune(config_path: str):
 
     if training_args.do_eval:
 
-        if training_args.model_class == 'binary':
+        if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
             cluster_model_embedding(file_path=test_dataset,
