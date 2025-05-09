@@ -93,7 +93,7 @@ def fine_tune(config_path: str):
     ]
 
     config = BertConfig.from_pretrained(training_args.model_path)
-    config.max_length = 36
+
     if training_args.model_class == 'binary_conv':
 
          # ('GrimSqueaker/proteinBERT')
