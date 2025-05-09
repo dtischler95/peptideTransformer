@@ -79,12 +79,12 @@ def prepare_datasets(binary_or_mlm: str,
         val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
-    label_data_train = train_sequences['label'].values if binary_or_mlm == 'binary' else None
-    label_data_val = val_sequences['label'].values if binary_or_mlm == 'binary' else None
-    label_data_test = test_sequences['label'].values if binary_or_mlm == 'binary' else None
+    label_data_train = train_sequences['label'].values if binary_or_mlm.startswith('binary') else None
+    label_data_val = val_sequences['label'].values if binary_or_mlm.startswith('binary') else None
+    label_data_test = test_sequences['label'].values if binary_or_mlm.startswith('binary') else None
 
     # Load the tokenizer
-    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True)
+    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
                                    max_length=max_length)
