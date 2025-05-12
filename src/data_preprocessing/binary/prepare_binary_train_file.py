@@ -4,6 +4,7 @@ import re
 from peptides import Peptide as Pep
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
+from src.data_preprocessing.binary.happenn_preprocess import label_after_happen_style, label_after_happenn
 
 """
 Script for our data preprocessing. It contains the main logic for creating 
@@ -296,7 +297,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         data_df_list.append(data_df)
 
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
-    base_df = base_df[['sequence', 'measure_type', 'value', 'activity']]
+    base_df = base_df[['sequence', 'measure_type']]
     base_df = base_df.dropna()
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
@@ -342,10 +343,14 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Process units
     df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
 
+
+
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
     else:
         df_raw_hemo = label_after_happenn(df=df_raw_hemo)
+
+
 
     # result_df should contain cleaned data useable for training and further analysis
     result_df = df_raw_hemo[['sequence', 'label']]
@@ -363,53 +368,9 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
         result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
 
-def label_after_happen_style(df: pd.DataFrame) -> pd.DataFrame:
 
-    row_already_flagged = False
 
-    if df['hemo_percent'] >= 50 and df['hemo_concentration'] <= 300 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
 
-    if df['hemo_percent'] >= 55 and df['hemo_concentration'] <= 330 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 60 and df['hemo_concentration'] <= 360 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 70 and df['hemo_concentration'] <= 420 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 75 and df['hemo_concentration'] <= 450 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 80 and df['hemo_concentration'] <= 480 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 85 and df['hemo_concentration'] <= 510 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 90 and df['hemo_concentration'] <= 540 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 95 and df['hemo_concentration'] <= 570 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-
-    if df['hemo_percent'] >= 100 and df['hemo_concentration'] <= 600 and not row_already_flagged:
-        df['label'] = 1
-        row_already_flagged = True
-    return df
-
-def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
-    return df
 
 def label_via_relation(df: pd.DataFrame, label_threshold: float=0.8) -> pd.DataFrame:
     # Calculate the relation between hemo_percent and hemo_concentration
@@ -430,8 +391,9 @@ if __name__ == '__main__':
     dbaasp_db = '../../../data/data_from_database/dbaasp_scraped.csv'
     all_db = '../../../data/data_from_database/complete_amp_data.csv'
 
-    parse_and_label_hemolytic_data(all_db,
+    parse_and_label_hemolytic_data(hemolytik_db,
+                                   dbaasp_db,
                                    out_path='../../../data/',
-                                   dataset_tag='our_hemo_labeled',
+                                   dataset_tag='happen_style',
                                    filter_sequences=True,
-                                   label_threshold=0.8)
+                                   label_threshold=None)
