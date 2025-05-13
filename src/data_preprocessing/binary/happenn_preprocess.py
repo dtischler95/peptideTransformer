@@ -99,13 +99,27 @@ def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
             if activity <= act_thresh and conc > min_conc:
                 return 0
 
-        # If no label is assigned, ask for manual input
-        print(f"Unclassified: Activity {activity}, Concentration {conc}")
+        if activity >= 10.0 and 50.0 <= conc <= 150.0:
+            return 0
 
-        input_save = input("Please adjust Label Manually: ")
-        return input_save
+        if activity <= 10.0 and conc >= 50.0:
+            return 0
+
+        if activity <= 10.0 and conc <= 50.0:
+            return 0
+
+        if 10.0 <= activity <= 50.0 and conc <= 50.0:
+            return 1
+
+        return 2  # Unclassified
+        # If no label is assigned, ask for manual input
+        # print(f"Unclassified: Activity {activity}, Concentration {conc}")
+        #
+        # input_save = input("Please adjust Label Manually: ")
+        #return input_save
 
     df['label'] = df.apply(classify, axis=1)
+    print(f"Unclassified Labels: {df['label'].value_counts().get(2, 0)} from {len(df)} labels")
     return df
 
 

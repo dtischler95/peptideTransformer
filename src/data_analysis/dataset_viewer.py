@@ -1,6 +1,7 @@
 from collections import Counter
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
 
@@ -13,6 +14,32 @@ Add new functions here.
 TODO:
 - Add more plots to visualize the dataset
 """
+
+
+
+def look_into_datasets(file_paths: list[tuple[str, str]],
+                       out_path: str or None = None):
+    """
+    Function to look into the datasets and print the first 5 rows of each dataset.
+
+    Args:
+        file_paths (list[tuple[str, str]]): A list of tuples containing the file path and the separator.
+        out_path (str or None): The path to save the plots. If None, the plots will be shown.
+    """
+
+    for file_path in file_paths:
+        df = pd.read_csv(file_path[0], sep=file_path[1])
+
+        print(f"\033[31mGenerating Info for {file_path[0]}:\033[0m")
+        print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
+        print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\033[0m")
+
+        plot_binary_label_distribution(df, plot_path=out_path)
+        sequences_0 = df[df["label"] == 0]["sequence"].tolist()
+        sequences_1 = df[df["label"] == 1]["sequence"].tolist()
+        amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=out_path)
+        sequence_length_correlation_plot(df, plot_path=out_path)
+
 
 
 def plot_binary_label_distribution(df, plot_path):
@@ -81,31 +108,48 @@ def amino_acid_frequency_comparison(
     if plot_path is None:
         plt.show()
     else:
-        plt.savefig(f"/{plot_path}_amino_acid_frequency.png")
+        plt.savefig(f"{plot_path}_amino_acid_frequency.png")
         plt.clf()
 
 
-def look_into_datasets(file_paths: list[tuple[str, str]],
-                       plot_path: str or None = None):
+
+
+
+def sequence_length_correlation_plot(df: pd.DataFrame,
+                                     plot_path: str or None = None):
+
+
+    # Example: df contains 'Sequence' and 'Label'
+    df['SeqLength'] = df['sequence'].apply(len)
+
+    # Optional: Basic correlation check
+    correlation = df['SeqLength'].corr(df['label'])
+    print(f"Correlation between sequence length and label: {correlation:.3f}")
+
+    # Plot using seaborn (boxplot + swarm for visibility)
+    plt.figure(figsize=(8, 5))
+    sns.boxplot(x='label', y='SeqLength', data=df, showfliers=False)
+    sns.stripplot(x='label', y='SeqLength', data=df, color='black', alpha=0.5, jitter=True)
+
+    plt.title('Sequence Length vs Hemolytic Label')
+    plt.xlabel('Label (0 = Non-Hemolytic, 1 = Hemolytic)')
+    plt.ylabel('Peptide Sequence Length')
+    plt.xticks([0, 1], ['Non-Hemolytic', 'Hemolytic'])
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_sequence_length_correlation.png")
+        plt.clf()
+
+
+def check_ambiguous_labeled_sequences():
     """
-    Function to look into the datasets and print the first 5 rows of each dataset.
-
-    Args:
-        file_paths (list[tuple[str, str]]): A list of tuples containing the file path and the separator.
-        plot_path (str or None): The path to save the plots. If None, the plots will be shown.
+    Check how many sequences are labeled ambiguously.
     """
 
-    for file_path in file_paths:
-        df = pd.read_csv(file_path[0], sep=file_path[1])
-
-        print(f"\033[31mGenerating Info for {file_path[0]}:\033[0m")
-        print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
-        print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\033[0m")
-
-        plot_binary_label_distribution(df, plot_path=plot_path)
-        sequences_0 = df[df["label"] == 0]["sequence"].tolist()
-        sequences_1 = df[df["label"] == 1]["sequence"].tolist()
-        amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=plot_path)
+    ...
 
 
 if __name__ == "__main__":

@@ -284,7 +284,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param dataset_tag: Tag for the dataset. Used for naming the output files.
-    :param filter_sequences: Flag to filter ambiguous sequences based on the majority label.
+    :param filter_sequences: Flag to filter ambiguous sequences based on the majority label. Should be True
     :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
 
@@ -357,6 +357,12 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
+
+    # remove abiguous labels
+    if 2 in result_df['label'].unique():
+        print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences.\033[0m")
+        result_df = result_df[result_df['label'] != 2]
+
 
     if filter_sequences:
         new_file_name = f"{out_path_train_file}_filtered.csv"
