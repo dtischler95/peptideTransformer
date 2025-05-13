@@ -58,7 +58,7 @@ def check_data_type(data, sep=';') -> pd.DataFrame:
     return df
 
 
-def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str):
+def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: str or None):
     """
     Filter ambiguous sequences and sort them into positive or negative based on the majority label.
 
@@ -96,6 +96,8 @@ def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: 
         # If there is only one label for the sequence, add it to the result DataFrame
         else:
             result_df = pd.concat([result_df, seq_df[1]])
-
-    result_df.to_csv(out_path, sep=';', index=False)
+    if out_path is None:
+        print(result_df)
+    else:
+        result_df.to_csv(out_path, sep=';', index=False)
 
