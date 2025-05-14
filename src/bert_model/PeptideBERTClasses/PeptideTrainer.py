@@ -60,7 +60,7 @@ class PeptideTrainer(Trainer):
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
                     logs['accuracy'] = callback.get_train_accuracy()
-                    if self.args.model_class == 'binary':
+                    if self.args.model_class.startswith('binary'):
                         logs['precision'] = callback.get_train_precision()
                         logs['mcc'] = callback.get_train_mcc()
                         logs['recall'] = callback.get_train_recall()
@@ -106,7 +106,7 @@ class PeptideTrainer(Trainer):
             raise ValueError("CollectBatchWiseTrainMetrics Callback not found. This is a critical error.")
 
         if "labels" in inputs:
-            if self.args.model_class == 'binary':
+            if self.args.model_class.startswith('binary'):
 
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
