@@ -1,5 +1,5 @@
 # Training and Evaluation Settings
-model_class: 'mlm'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
+model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
