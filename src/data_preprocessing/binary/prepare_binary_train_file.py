@@ -297,7 +297,6 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         data_df_list.append(data_df)
 
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
-    base_df = base_df[['sequence', 'measure_type']]
     base_df = base_df.dropna()
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
