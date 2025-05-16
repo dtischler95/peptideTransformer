@@ -59,12 +59,12 @@ class PeptideTrainer(Trainer):
         if 'grad_norm' in logs.keys():
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
-                    logs['accuracy'] = callback.get_train_accuracy()
+                    logs['accuracy'] = round(callback.get_train_accuracy(), 2)
                     if self.args.model_class.startswith('binary'):
-                        logs['precision'] = callback.get_train_precision()
-                        logs['mcc'] = callback.get_train_mcc()
-                        logs['recall'] = callback.get_train_recall()
-                        logs['f1'] = callback.get_train_f1()
+                        logs['precision'] = round(callback.get_train_precision(), 2)
+                        logs['mcc'] = round(callback.get_train_mcc(), 2)
+                        logs['recall'] = round(callback.get_train_recall(), 2)
+                        logs['f1'] = round(callback.get_train_f1(), 2)
 
                     callback.clear_results_after_epoch()
         super().log(logs, start_time)
