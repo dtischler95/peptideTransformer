@@ -152,5 +152,42 @@ def check_ambiguous_labeled_sequences():
     ...
 
 
+def check_value_distance_inside_one_sequence(df: pd.DataFrame or str, plot_path: str):
+    """
+    Check how much the measured hemolytic values differ inside one sequence.
+    """
+    if df.__class__ == str:
+        df = pd.read_csv(file_path, sep=';')
+    print(df.shape)
+    difference_list = []
+    high_dif_sequence = []
+    for sequence, sequence_df in df.groupby('sequence'):
+        if len(sequence_df) != 0:
+            difference = sequence_df['hemo_concentration'].max() - sequence_df['hemo_concentration'].min()
+            if difference > 50:
+                high_dif_sequence.append(sequence)
+                difference_list.append(
+
+                     difference if difference < 400 else 0
+                )
+    sorted_differences = sorted(difference_list, reverse=True)
+
+    plt.figure(figsize=(8, 5))
+    plt.hist(sorted_differences, bins=50)
+    plt.title('Distribution of Hemolytic Value Differences')
+    plt.xlabel('Difference in Hemolytic Value')
+    plt.ylabel('Frequency')
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    plt.savefig(f"{plot_path}")
+
+
+    return high_dif_sequence
+
+
+
+    # print(difference_list)
+
 if __name__ == "__main__":
-    file_path = "../../data/train_data/happen_style_filtered.csv"
+    file_path = "../../data/train_data/happen_style_raw.csv"
+    check_value_distance_inside_one_sequence(df=file_path, plot_path="../../data/train_data/hemolytic_value_differences.png")

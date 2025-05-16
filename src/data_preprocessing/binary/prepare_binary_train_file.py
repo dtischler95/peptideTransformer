@@ -5,6 +5,7 @@ from peptides import Peptide as Pep
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
 from src.data_preprocessing.binary.happenn_preprocess import label_after_happen_style, label_after_happenn
+from src.data_analysis.dataset_viewer import check_value_distance_inside_one_sequence
 
 """
 Script for our data preprocessing. It contains the main logic for creating 
@@ -342,7 +343,12 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Process units
     df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
 
+    # Only needed if u want to manually check the data
+    df_raw_hemo.to_csv(f"{out_path_train_file}_raw.csv", sep=';', index=False)
 
+    sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo, plot_path="../../../data/train_data/hemolytic_value_differences.png")
+    # Drop sequences with high value distance
+    df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
 
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
@@ -357,11 +363,17 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
 
-    # remove abiguous labels
-    if 2 in result_df['label'].unique():
-        print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences.\033[0m")
-        result_df = result_df[result_df['label'] != 2]
+    # # remove abiguous labels
+    # if 2 in result_df['label'].unique():
+    #     print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences. (Label 2)\033[0m")
+    #     sequences_df = result_df[result_df['label'] == 2]
+    #     result_df = result_df[result_df['label'] != 2]
+    #
+    #     unique_list = sequences_df['sequence'].unique()
+    #     for seq in unique_list:
+    #         print(seq)
 
+    print(result_df.shape)
 
     if filter_sequences:
         new_file_name = f"{out_path_train_file}_filtered.csv"
