@@ -24,7 +24,7 @@ class PeptideBertForBinaryClassification(BertModel):
         self.bce_logit_weight = bce_logit_weight
         self.bert = BertModel.from_pretrained(model_path, config=config)
         self.dropout = nn.Dropout(config.classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size,
+        self.classifier = nn.Linear(config.hidden_size + 1,
                                     config.num_labels)  # Output only one logit for binary classification
         self.sigmoid = nn.Sigmoid()  # Add sigmoid for binary classification
 
@@ -35,6 +35,7 @@ class PeptideBertForBinaryClassification(BertModel):
             self,
             input_ids: Optional[torch.Tensor] = None,
             attention_mask: Optional[torch.Tensor] = None,
+            concentration: Optional[torch.Tensor] = None,
             token_type_ids: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.Tensor] = None,
             head_mask: Optional[torch.Tensor] = None,
@@ -60,6 +61,7 @@ class PeptideBertForBinaryClassification(BertModel):
 
         :param input_ids: input ids for the model
         :param attention_mask: attention mask for the model
+        :param concentration: concentration for the model
         :param token_type_ids: token type ids for the model
         :param position_ids: position ids for the model
         :param head_mask: head mask for the model
@@ -91,6 +93,10 @@ class PeptideBertForBinaryClassification(BertModel):
 
         pooled_output = outputs[1]  # Use pooled output
         pooled_output = self.dropout(pooled_output)
+        concentration = concentration.unsqueeze(-1)
+        # Concatenate pooled output and concentration
+        pooled_output = torch.cat((pooled_output, concentration), dim=1)  # Concatenate along the feature dimension
+        # Apply the classifier to the concatenated output
         logits = self.classifier(pooled_output)
 
 

@@ -34,8 +34,8 @@ mlm_curriculum_max_prob: 0.9         # Maximum masking probability for MLM
 
 # Dataset and File Paths
 data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
-train_file: '../../data/tamper_data/train_tamper.csv'  # Path to training data
-val_file: '../../data/tamper_data/val_tamper.csv'      # Path to validation data
+train_file: '../../data/train_data/happen_style_unvoted.csv'  # Path to training data
+val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: '../test'                             # Path to save the model
 plot_path: '../../plots'                                    # Path to save the plots
