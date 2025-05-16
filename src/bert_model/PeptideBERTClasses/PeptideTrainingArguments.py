@@ -97,7 +97,7 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
         self.loss_function = loss_function
         self.data_shuffle = data_shuffle
-        if not self.data_shuffle and self.val_file == None:
+        if not self.data_shuffle and self.val_file is None:
             raise ValueError("Validation file (val_file) must be provided if data_shuffle is set to False.")
         if self.fast_debug_mode:
             print(

@@ -93,6 +93,9 @@ class PeptideBertForBinaryClassification(BertModel):
 
         pooled_output = outputs[1]  # Use pooled output
         pooled_output = self.dropout(pooled_output)
+        if return_pooler_output:
+            return pooled_output  # Return pooled output for visualization
+
         concentration = concentration.unsqueeze(-1)
         # Concatenate pooled output and concentration
         pooled_output = torch.cat((pooled_output, concentration), dim=1)  # Concatenate along the feature dimension
@@ -118,8 +121,7 @@ class PeptideBertForBinaryClassification(BertModel):
             else:
                 raise ValueError(f"Loss function {self.loss_function} not supported. Use 'bce' or 'bce_logit_loss'")
 
-        if return_pooler_output:
-            return pooled_output  # Return pooled output for visualization
+
 
         if not return_dict:
             return (loss, logits) if loss is not None else logits
