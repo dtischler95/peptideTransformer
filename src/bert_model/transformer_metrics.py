@@ -29,20 +29,20 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
             "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 2),
-            "mcc": round(mcc, 2),
-            "precision": round(precision, 2),
-            "f1": round(f1, 2),
-            "recall": round(recall, 2),
+            "mcc": round(mcc, 4),
+            "precision": round(precision, 4),
+            "f1": round(f1, 4),
+            "recall": round(recall, 4),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
 
     return {
         "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 2),
-        "mcc": round(mcc, 2),
-        "precision": round(precision, 2),
-        "f1": round(f1, 2),
-        "recall": round(recall, 2)
+        "mcc": round(mcc, 4),
+        "precision": round(precision, 4),
+        "f1": round(f1, 4),
+        "recall": round(recall, 4)
     }
 
 
