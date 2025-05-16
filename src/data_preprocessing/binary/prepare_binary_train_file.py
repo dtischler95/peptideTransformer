@@ -275,7 +275,7 @@ def _process_units(final, verbose: bool = False):
 def parse_and_label_hemolytic_data(*data_paths: str,
                                    out_path: str,
                                    dataset_tag: str,
-                                   filter_sequences: bool = False,
+                                   vote_label: bool = False,
                                    label_threshold: float or None):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
@@ -285,7 +285,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param dataset_tag: Tag for the dataset. Used for naming the output files.
-    :param filter_sequences: Flag to filter ambiguous sequences based on the majority label. Should be True
+    :param vote_label: Flag to filter ambiguous sequences based on the majority label. Should be True
     :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
 
@@ -358,7 +358,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
 
     # result_df should contain cleaned data useable for training and further analysis
-    result_df = df_raw_hemo[['sequence', 'label']]
+    result_df = df_raw_hemo[['sequence', 'hemo_concentration', 'label']]
 
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
@@ -375,15 +375,15 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
     print(result_df.shape)
 
-    if filter_sequences:
-        new_file_name = f"{out_path_train_file}_filtered.csv"
+    if vote_label:
+        new_file_name = f"{out_path_train_file}_voted.csv"
         # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
         filter_and_evaluate_ambiguous_sequences(labeled_df=result_df,
                                                 out_path=new_file_name)
     else:
         # If you dont want to filter ambiguous sequences, just save the data
-        print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
-        result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
+        print(f"\033[31mSkipping Vote of ambiguous sequences.\033[0m")
+        result_df.to_csv(f"{out_path_train_file}_unvoted.csv", sep=';', index=False)
 
 
 
@@ -412,5 +412,5 @@ if __name__ == '__main__':
                                    dbaasp_db,
                                    out_path='../../../data/',
                                    dataset_tag='happen_style',
-                                   filter_sequences=True,
+                                   vote_label=False,
                                    label_threshold=None)

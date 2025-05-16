@@ -7,7 +7,9 @@ import yaml
 import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
-#from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
+
+
+# from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
 
 
 def prepare_datasets(binary_or_mlm: str,
@@ -83,14 +85,27 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_val = val_sequences['label'].values if binary_or_mlm.startswith('binary') else None
     label_data_test = test_sequences['label'].values if binary_or_mlm.startswith('binary') else None
 
+    concentration_data_train = train_sequences['hemo_concentration'].values if binary_or_mlm.startswith('binary') else None
+    concentration_data_val = val_sequences['hemo_concentration'].values if binary_or_mlm.startswith('binary') else None
+    concentration_data_test = test_sequences['hemo_concentration'].values if binary_or_mlm.startswith('binary') else None
+
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
+                                   concentrations=concentration_data_train,
+                                   tokenizer=tokenizer,
+                                   labels=label_data_train,
                                    max_length=max_length)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], tokenizer=tokenizer, labels=label_data_val,
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
+                                 concentrations=concentration_data_val,
+                                 tokenizer=tokenizer,
+                                 labels=label_data_val,
                                  max_length=max_length)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], tokenizer=tokenizer, labels=label_data_test,
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
+                                  concentrations=concentration_data_test,
+                                  tokenizer=tokenizer,
+                                  labels=label_data_test,
                                   max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
@@ -335,7 +350,6 @@ def plot_abundance(abundance_dict, title, ax):
     ax.grid(axis='y', linestyle='--', alpha=0.7)
 
 
-
 def plot_label_abundance(label_0_counter,
                          label_1_counter,
                          task_name: str,
@@ -492,6 +506,7 @@ def get_bce_label_weight(labels):
     label_0 = np.count_nonzero(labels == 0)
     label_1 = np.count_nonzero(labels == 1)
     return torch.tensor([label_0 / label_1])
+
 
 if __name__ == '__main__':
     # data_leakage_wrapper()
