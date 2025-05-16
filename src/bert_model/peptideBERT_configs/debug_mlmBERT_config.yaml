@@ -14,7 +14,7 @@ dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 
 # Model and Optimizer Settings
-learning_rate: 0.00005            # Learning rate for optimizer
+learning_rate: 0.00002            # Learning rate for optimizer
 weight_decay: 0.01                # Weight decay for optimizer
 lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
 lr_scheduler_kwargs:              # Additional scheduler arguments
