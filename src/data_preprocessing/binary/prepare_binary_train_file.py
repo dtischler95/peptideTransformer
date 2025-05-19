@@ -296,10 +296,13 @@ def parse_and_label_hemolytic_data(*data_paths: str,
         data_df = pd.read_csv(file_path, sep=';')
         data_df_list.append(data_df)
 
+
+    # concats all given dataframes
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
     base_df = base_df.dropna()
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
+    # Data i found here showed ughe discrepancy in sequency and hemolytic activity
     df_hc = base_df[base_df['measure_type'].str.contains('HC5')]
 
     # Filter all Datapoints that are hemolytik active! HERE NO CHECK FOR HUMAN RELATED DATA This should be done before using this Main Function!
@@ -400,5 +403,5 @@ if __name__ == '__main__':
                                    dbaasp_db,
                                    out_path='../../../data/',
                                    dataset_tag='happen_style',
-                                   filter_sequences=True,
+                                   filter_sequences=False,
                                    label_threshold=None)
