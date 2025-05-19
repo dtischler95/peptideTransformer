@@ -75,7 +75,8 @@ def fine_tune(config_path: str):
                                                                            cut_df_for_faster_debug=training_args.fast_debug_mode,
                                                                            validation_data_size=training_args.validation_data_size,
                                                                            test_data_size=training_args.test_data_size,
-                                                                           random_data_shuffle=training_args.data_shuffle)
+                                                                           random_data_shuffle=training_args.data_shuffle,
+                                                                           use_concentration=training_args.use_concentration)
 
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
@@ -112,6 +113,7 @@ def fine_tune(config_path: str):
         # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
         model = PeptideBertForBinaryClassification(config,
                                                    model_path=training_args.model_path,
+                                                   extra_feature=training_args.use_concentration,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
                                                        labels=train_dataset.labels).to(training_args.device))

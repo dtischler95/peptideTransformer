@@ -35,6 +35,7 @@ class PeptideTrainingArguments(TrainingArguments):
                  mlm_curriculum_max_prob: float = 0.9,
                  loss_function: str = 'bce',
                  data_shuffle: bool = True,
+                 use_concentration: bool = False,
                  **kwargs):
         """
         Custom Init for the Training Arguments to adjust behavior to our needs.
@@ -66,6 +67,7 @@ class PeptideTrainingArguments(TrainingArguments):
         :param mlm_curriculum_max_prob: Maximum probability for the curriculum learning
         :param loss_function: Loss function to be used for the model
         :param data_shuffle: Shuffle the data before training
+        :param use_concentration: Use concentration as input for the model
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
@@ -97,6 +99,7 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
         self.loss_function = loss_function
         self.data_shuffle = data_shuffle
+        self.use_concentration = use_concentration
         if not self.data_shuffle and self.val_file is None:
             raise ValueError("Validation file (val_file) must be provided if data_shuffle is set to False.")
         if self.fast_debug_mode:
