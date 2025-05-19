@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
+from sklearn.feature_extraction import DictVectorizer
 
 """
 This script is thought to be used to visualize the dataset used for training the model.
@@ -18,12 +19,16 @@ TODO:
 
 
 def look_into_datasets(file_paths: list[tuple[str, str]],
+                       k_mer_inspection_file: str or None,
+                       show_top_kmers: int = 20 or None,
                        out_path: str or None = None):
     """
     Function to look into the datasets and print the first 5 rows of each dataset.
 
     Args:
         file_paths (list[tuple[str, str]]): A list of tuples containing the file path and the separator.
+        k_mer_inspection_file (str or None): The path to the k-mer inspection file. If None, no k-mer inspection will be done.
+        show_top_kmers (int or None): The number of top k-mers to show. If None, all k-mers will be
         out_path (str or None): The path to save the plots. If None, the plots will be shown.
     """
 
@@ -41,6 +46,24 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
         sequence_length_correlation_plot(df, plot_path=out_path)
 
 
+    if k_mer_inspection_file is not None:
+        for k_mer_file in k_mer_inspection_file:
+            df = pd.read_csv(k_mer_file[0], sep=k_mer_file[1])
+
+
+            print(f"\033[31mGenerating Info for {k_mer_file[0]}:\033[0m")
+            print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
+
+            print(f"\033[31mDifferences in hemolytic concentrations inside one sequence\033[0m")
+            print(
+                f"\033[31m[WARNING]Extrem Values are set to 0! Its expected that data feeded here only show data OVER a certrain threshold set by train_data creation!!!\033[0m")
+            check_value_distance_inside_one_sequence(df=df,
+                                                     plot_path=out_path)
+
+            print(f"\033[31mCheck for k_mer content\033[0m")
+            get_k_mer_overview(df=df,
+                               plot_path=out_path,
+                               show_top_kmers=show_top_kmers)
 
 def plot_binary_label_distribution(df, plot_path):
     """
@@ -152,23 +175,26 @@ def check_ambiguous_labeled_sequences():
     ...
 
 
-def check_value_distance_inside_one_sequence(df: pd.DataFrame or str, plot_path: str):
+def check_value_distance_inside_one_sequence(df: pd.DataFrame or str,
+                                             plot_path: str or None,
+                                             min_concentration_difference: int = 50,
+                                             filter_extrem_threshold: int = 400):
     """
     Check how much the measured hemolytic values differ inside one sequence.
     """
     if df.__class__ == str:
-        df = pd.read_csv(file_path, sep=';')
+        df = pd.read_csv(df, sep=';')
     print(df.shape)
     difference_list = []
     high_dif_sequence = []
     for sequence, sequence_df in df.groupby('sequence'):
         if len(sequence_df) != 0:
             difference = sequence_df['hemo_concentration'].max() - sequence_df['hemo_concentration'].min()
-            if difference > 50:
+            if difference > min_concentration_difference:
                 high_dif_sequence.append(sequence)
                 difference_list.append(
 
-                     difference if difference < 400 else 0
+                     difference if difference < filter_extrem_threshold else 0
                 )
     sorted_differences = sorted(difference_list, reverse=True)
 
@@ -179,7 +205,10 @@ def check_value_distance_inside_one_sequence(df: pd.DataFrame or str, plot_path:
     plt.ylabel('Frequency')
     plt.grid(True, axis='y')
     plt.tight_layout()
-    plt.savefig(f"{plot_path}")
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}")
 
 
     return high_dif_sequence
@@ -188,6 +217,82 @@ def check_value_distance_inside_one_sequence(df: pd.DataFrame or str, plot_path:
 
     # print(difference_list)
 
+
+
+def get_k_mer_overview(df: str or pd.DataFrame,
+                       plot_path: str,
+                       show_top_kmers: int = 20 or None):
+    """
+    Get an overview of the k-mers in the dataset.
+    """
+    from collections import Counter
+    def get_kmers(sequence, k):
+        return [sequence[i:i + k] for i in range(len(sequence) - k + 1)]
+
+    if df.__class__ == str:
+        df = pd.read_csv(df, sep=';')
+    df['k_mers'] = df['sequence'].apply(lambda x: get_kmers(x, 3))
+    k_mer_list = df['k_mers'].tolist()
+    _overall_kmer_abundancy(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
+
+    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path)
+
+
+def _cluster_kmers_per_sequence(k_mer_list, plot_path):
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction import DictVectorizer
+    from sklearn.manifold import TSNE
+    # prepare for cluster analysis
+    kmer_frequency_per_sequence = [Counter(kmers) for kmers in k_mer_list]
+    kmer_vector = DictVectorizer(sparse=False)
+    x = kmer_vector.fit_transform(kmer_frequency_per_sequence)
+
+    n_cluster = 3
+    kmeans = KMeans(n_clusters=n_cluster, random_state=42)
+    labels = kmeans.fit_predict(x)
+
+    x_tsne = TSNE(n_components=2, random_state=42).fit_transform(x)
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(x_tsne[:, 0], x_tsne[:, 1], c=labels, cmap='tab10', s=80)
+    plt.title('K-mer t-SNE Clustering')
+    plt.xlabel('Dim 1')
+    plt.ylabel('Dim 2')
+    plt.legend(*scatter.legend_elements(), title='Cluster')
+    plt.grid(True)
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_k_mer_clustering.png")
+
+
+def _overall_kmer_abundancy(k_mer_list, plot_path, show_top_kmers):
+    # comprehension for unflatten nested lists
+    flatten_k_mer_list = [kmer for k_mer_sub_list in k_mer_list for kmer in k_mer_sub_list]
+    k_mer_counts = Counter(flatten_k_mer_list)
+    if show_top_kmers is not None:
+        k_mer_counts = k_mer_counts.most_common(show_top_kmers)
+    # Split into labels and values
+    kmers, counts = zip(*k_mer_counts)
+    # Plot
+    plt.figure(figsize=(12, 6))
+    plt.bar(kmers, counts, color='skyblue')
+    plt.xlabel('k-mer')
+    plt.ylabel('Frequency')
+    plt.title('Top 20 Most Frequent k-mers')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_k_mer_overview.png")
+    plt.clf()
+    print(k_mer_counts)
+
+
 if __name__ == "__main__":
-    file_path = "../../data/train_data/happen_style_raw.csv"
-    check_value_distance_inside_one_sequence(df=file_path, plot_path="../../data/train_data/hemolytic_value_differences.png")
+    # file_path = "../../data/train_data/happen_style_raw.csv"
+    # check_value_distance_inside_one_sequence(df=file_path, plot_path="../../data/train_data/hemolytic_value_differences.png")
+    get_k_mer_overview(df="../../data/train_data/happen_style_high_difference_sequences_100.csv",
+                       plot_path="../../data/train_data/",
+                       show_top_kmers=100)
