@@ -28,7 +28,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     if debug_print:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
-            "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 2),
+            "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
             "mcc": round(mcc, 4),
             "precision": round(precision, 4),
             "f1": round(f1, 4),
@@ -38,7 +38,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         }
 
     return {
-        "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 2),
+        "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
         "mcc": round(mcc, 4),
         "precision": round(precision, 4),
         "f1": round(f1, 4),
