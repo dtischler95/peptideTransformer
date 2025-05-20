@@ -28,7 +28,7 @@ loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
 use_concentration: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Dataset and File Paths
-train_file: '.peptideTransformer/data/train_data/happen_style_unvoted.csv'  # Path to training data
+train_file: './data/train_data/happen_style_unvoted.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                               # Path to pretrained model
 model_save_path: './feature_BERT'             # Path to save the model
 plot_path: './feature_plots'                                   # Path to save the plots
