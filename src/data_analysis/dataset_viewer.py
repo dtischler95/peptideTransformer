@@ -63,9 +63,11 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
                                                      plot_path=out_path)
 
             print(f"\033[31m\nCheck for k_mer content\033[0m")
-            get_k_mer_overview(df=df,
+            df = get_k_mer_overview(df=df,
                                plot_path=out_path,
                                show_top_kmers=show_top_kmers)
+            df = df.drop(columns=['k_mers'])
+            df.to_csv(f"../../data/data_for_data_viewer/{k_mer_file[0].split('/')[-1].strip('.csv')}_k_mer_overview.csv", sep=';', index=False)
 
 def plot_binary_label_distribution(df, plot_path):
     """
@@ -238,8 +240,11 @@ def get_k_mer_overview(df: str or pd.DataFrame,
     ground_truth_label = df['label'].tolist()
     _overall_kmer_abundancy(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
 
-    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers, ground_truth_label=ground_truth_label)
+    cluster_label = _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers, ground_truth_label=ground_truth_label)
 
+    # add cluster label to input datraframe as new column
+    df['cluster_label'] = cluster_label
+    return df
 
 def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers, ground_truth_label):
     from sklearn.cluster import KMeans
@@ -299,7 +304,7 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers, ground_tr
         plt.show()
     else:
         plt.savefig(f"{plot_path}_k_mer_clustering_ground_label.png")
-
+    return cluster_labels
 
 def generate_heatmap(k_mer_list, labels, top_kmers, plot_path, inspect_heatmap_file: bool = False):
 
