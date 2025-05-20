@@ -275,6 +275,7 @@ def _process_units(final, verbose: bool = False):
 def parse_and_label_hemolytic_data(*data_paths: str,
                                    out_path: str,
                                    dataset_tag: str,
+                                   filter_sequences: bool,
                                    vote_label: bool = False,
                                    label_threshold: float or None):
     """
@@ -285,6 +286,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param dataset_tag: Tag for the dataset. Used for naming the output files.
+    :param filter_sequences: Flag to filter sequences with high value distance. Should be True
     :param vote_label: Flag to filter ambiguous sequences based on the majority label. Should be True
     :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
@@ -346,11 +348,12 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Only needed if u want to manually check the data
     df_raw_hemo.to_csv(f"{out_path_train_file}_raw.csv", sep=';', index=False)
 
-    sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo, plot_path="../../../data/train_data/hemolytic_value_differences.png")
-    # Drop sequences with high value distance
-    high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
-    high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_50.csv", sep=';', index=False)
-    df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
+    if filter_sequences:
+        sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo, plot_path="../../../data/train_data/hemolytic_value_differences.png")
+        # Drop sequences with high value distance
+        high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
+        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_50.csv", sep=';', index=False)
+        df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
 
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
@@ -376,6 +379,9 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     #         print(seq)
 
     print(result_df.shape)
+
+    if filter_sequences:
+        out_path_train_file = f"{out_path_train_file}_filtered"
 
     if vote_label:
         new_file_name = f"{out_path_train_file}_voted.csv"
@@ -414,5 +420,6 @@ if __name__ == '__main__':
                                    dbaasp_db,
                                    out_path='../../../data/',
                                    dataset_tag='happen_style',
+                                   filter_sequences=True,
                                    vote_label=False,
                                    label_threshold=None)
