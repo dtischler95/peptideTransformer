@@ -118,7 +118,7 @@ def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
         # input_save = input("Please adjust Label Manually: ")
         #return input_save
 
-    df['label'] = df.apply(classify, axis=1)
+    df.loc[:, 'label'] = df.apply(classify, axis=1)
 
     return df
 
