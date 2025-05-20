@@ -349,11 +349,8 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Process units
     df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
 
-    # Only needed if u want to manually check the data
-    df_raw_hemo.to_csv(f"{out_path_train_file}_raw.csv", sep=';', index=False)
-
     if filter_sequences:
-        seq_to_filter = 50
+        seq_to_filter = 100
         sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo,
                                                                      plot_path="../../../data/train_data/hemolytic_value_differences.png",
                                                                      min_concentration_difference=seq_to_filter)
