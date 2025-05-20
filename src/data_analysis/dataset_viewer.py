@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -235,10 +235,10 @@ def get_k_mer_overview(df: str or pd.DataFrame,
     k_mer_list = df['k_mers'].tolist()
     _overall_kmer_abundancy(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
 
-    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path)
+    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
 
 
-def _cluster_kmers_per_sequence(k_mer_list, plot_path):
+def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers):
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction import DictVectorizer
     from sklearn.manifold import TSNE
@@ -247,9 +247,15 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path):
     kmer_vector = DictVectorizer(sparse=False)
     x = kmer_vector.fit_transform(kmer_frequency_per_sequence)
 
-    n_cluster = 3
+    # prepare data for heatmap
+    heatmap_count = _count_kmers(k_mer_list)
+    top_kmers = set([k for k, _ in heatmap_count.most_common(show_top_kmers)])
+
+    n_cluster = 5
     kmeans = KMeans(n_clusters=n_cluster, random_state=42)
     labels = kmeans.fit_predict(x)
+
+    generate_heatmap(k_mer_list, labels, top_kmers, plot_path)
 
     x_tsne = TSNE(n_components=2, random_state=42).fit_transform(x)
     plt.figure(figsize=(8, 6))
@@ -266,12 +272,50 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path):
         plt.savefig(f"{plot_path}_k_mer_clustering.png")
 
 
+def generate_heatmap(k_mer_list, labels, top_kmers, plot_path, inspect_heatmap_file: bool = False):
+
+    cluster_kmers_heatmap = defaultdict(list)
+    for label, kmer in zip(labels, k_mer_list):
+        cluster_kmers_heatmap[label].extend(kmer)
+
+
+    heatmap_kmer_count = {}
+    for label, kmers in cluster_kmers_heatmap.items():
+        filtered = [k for k in kmers if k in top_kmers]
+        heatmap_kmer_count[label] = Counter(filtered)
+
+    heatmap_df = pd.DataFrame(heatmap_kmer_count).fillna(0).astype(int)
+    heatmap_df = heatmap_df.loc[heatmap_df.sum(axis=1) > 0]
+    heatmap_df["total"] = heatmap_df.sum(axis=1)
+    heatmap_df = heatmap_df.sort_values(by="total", ascending=False).drop(columns=["total"])
+
+    if inspect_heatmap_file:
+        heatmap_df.to_csv(f"{plot_path}_k_mer_clustering_heatmap.csv", sep=';', index=False)
+
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_df, cmap='viridis', cbar=True, annot=False, fmt='d')
+    plt.title('K-mer Clustering Heatmap')
+    plt.ylabel('K-mer')
+    plt.xlabel('Cluster')
+
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_k_mer_clustering_heatmap.png")
+
+
 def _overall_kmer_abundancy(k_mer_list, plot_path, show_top_kmers):
     # comprehension for unflatten nested lists
-    flatten_k_mer_list = [kmer for k_mer_sub_list in k_mer_list for kmer in k_mer_sub_list]
-    k_mer_counts = Counter(flatten_k_mer_list)
-    if show_top_kmers is not None:
-        k_mer_counts = k_mer_counts.most_common(show_top_kmers)
+    k_mer_counts = _count_kmers(k_mer_list)
+
+    k_mer_counts = k_mer_counts.most_common(show_top_kmers)
+
+    # generate_heatmap(k_mer_list=k_mer_list,
+    #                  labels=k_mer_counts,
+    #                  plot_path=plot_path,
+    #                  inspect_heatmap_file=True)
     # Split into labels and values
     kmers, counts = zip(*k_mer_counts)
     # Plot
@@ -279,8 +323,9 @@ def _overall_kmer_abundancy(k_mer_list, plot_path, show_top_kmers):
     plt.bar(kmers, counts, color='skyblue')
     plt.xlabel('k-mer')
     plt.ylabel('Frequency')
-    plt.title('Top 20 Most Frequent k-mers')
-    plt.xticks(rotation=45)
+    title_value = show_top_kmers if show_top_kmers is not None else "all"
+    plt.title(f"Top {title_value} Most Frequent k-mers")
+    plt.xticks(rotation=90)
     plt.tight_layout()
     if plot_path is None:
         plt.show()
@@ -288,6 +333,12 @@ def _overall_kmer_abundancy(k_mer_list, plot_path, show_top_kmers):
         plt.savefig(f"{plot_path}_k_mer_overview.png")
     plt.clf()
     print(k_mer_counts)
+
+
+def _count_kmers(k_mer_list):
+    flatten_k_mer_list = [kmer for k_mer_sub_list in k_mer_list for kmer in k_mer_sub_list]
+    k_mer_counts = Counter(flatten_k_mer_list)
+    return k_mer_counts
 
 
 if __name__ == "__main__":
