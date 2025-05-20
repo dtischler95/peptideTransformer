@@ -39,6 +39,7 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
         print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\n\033[0m")
 
         plot_binary_label_distribution(df, plot_path=out_path)
+        plot_concentration_to_percent(df, plot_path=out_path)
         sequences_0 = df[df["label"] == 0]["sequence"].tolist()
         sequences_1 = df[df["label"] == 1]["sequence"].tolist()
         amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=out_path)
@@ -53,6 +54,7 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
             print(f"\033[31m\n\nNumber of sequences: {df.shape[0]}\033[0m")
             print(f"\033[31mPlotting Ground Truth Label distribution for k_mer file\n\033[0m")
             plot_binary_label_distribution(df, plot_path=out_path)
+            plot_concentration_to_percent(df, plot_path=out_path)
 
             print(f"\033[31m\nDifferences in hemolytic concentrations inside one sequence\033[0m")
             print(
@@ -366,6 +368,42 @@ def _count_kmers(k_mer_list):
     k_mer_counts = Counter(flatten_k_mer_list)
     return k_mer_counts
 
+
+def plot_concentration_to_percent(df: pd.DataFrame,
+                                  plot_path: str or None = None):
+    """
+    Plot the concentration to percent ratio.
+    """
+    # sort values by concentration for cleaner curve
+    df = df[df['hemo_concentration'] < 500]
+    df = df.sort_values(by='hemo_percent', ascending=False).reset_index(drop=True)
+
+
+    data_index = df.index
+
+
+    fig, ax1 = plt.subplots(figsize=(8, 5))
+
+    color1 = 'tab:blue'
+    ax1.set_xlabel('Datapoint ID')
+    ax1.set_ylabel('Concentration', color=color1)
+    ax1.scatter(data_index, df['hemo_concentration'], color=color1, label='Concentration')
+    ax1.tick_params(axis='y', labelcolor=color1)
+
+    ax2 = ax1.twinx()
+    color2 = 'tab:orange'
+    ax2.set_ylabel('Percent', color=color2)
+    ax2.scatter(data_index, df['hemo_percent'], color=color2, label='Percent')
+    ax2.tick_params(axis='y', labelcolor=color2)
+
+    plt.title('Concentration and Percent per Datapoint')
+    fig.tight_layout()
+
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_concentration_to_percent.png")
+    plt.clf()
 
 if __name__ == "__main__":
     # file_path = "../../data/train_data/happen_style_raw.csv"

@@ -206,7 +206,8 @@ def _process_units(final, verbose: bool = False):
     final['unit'] = final['unit'].replace(replace_units)
 
     # Calculate molecular weight using lambda
-    final['mol_weight'] = final['sequence'].apply(lambda p: Pep(p).molecular_weight())
+
+    final.loc[:, 'mol_weight'] = final['sequence'].apply(lambda p: Pep(p).molecular_weight())
 
     # Apply conversions based on units
     def convert_values(row):
@@ -247,7 +248,8 @@ def _process_units(final, verbose: bool = False):
         else:
             return row['hemo_concentration']
 
-    final['hemo_concentration'] = final.apply(convert_values, axis=1)
+
+    final.loc[:, 'hemo_concentration'] = final.apply(convert_values, axis=1)
 
     # Drop the temporary molecular weight column
     final = final.drop(columns=["mol_weight"])
@@ -330,12 +332,14 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_percent'] != 'X']
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_concentration'] != 'X']
 
+
     df_raw_hemo['hemo_percent'] = df_raw_hemo['hemo_percent'].str.extract(r'(\d+\.?\d*)').astype(float)
     df_raw_hemo['hemo_concentration'] = df_raw_hemo['hemo_concentration'].str.extract(r'(\d+\.?\d*)').astype(
         float)
 
     # TODO MAY SET 0.0 % HEMO ACTIVITY TO 0.001% SO THAT DATA WONT GET LOST
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_concentration'] != 0.0]
+    df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_percent'] <= 100.0]
 
     # needed for this specific usecase. Found no better way to filter dynamically for wrongly parsed data in time
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "why"]
@@ -349,15 +353,17 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo.to_csv(f"{out_path_train_file}_raw.csv", sep=';', index=False)
 
     if filter_sequences:
+        seq_to_filter = 50
         sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo,
                                                                      plot_path="../../../data/train_data/hemolytic_value_differences.png",
-                                                                     min_concentration_difference=100)
+                                                                     min_concentration_difference=seq_to_filter)
         # Drop sequences with high value distance
         high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
         high_difference_sequences = label_after_happenn(df=high_difference_sequences)
-        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_100.csv", sep=';', index=False)
+        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_{seq_to_filter}.csv", sep=';', index=False)
 
         df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
+        out_path_train_file = f"{out_path_train_file}_filtered_{seq_to_filter}"
 
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
@@ -367,7 +373,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
 
     # result_df should contain cleaned data useable for training and further analysis
-    result_df = df_raw_hemo[['sequence', 'hemo_concentration', 'label']]
+    result_df = df_raw_hemo[['sequence', 'hemo_concentration', 'hemo_percent', 'label']]
 
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
@@ -384,8 +390,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
     print(result_df.shape)
 
-    if filter_sequences:
-        out_path_train_file = f"{out_path_train_file}_filtered"
+
 
     if vote_label:
         new_file_name = f"{out_path_train_file}_voted.csv"
