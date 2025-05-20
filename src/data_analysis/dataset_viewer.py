@@ -259,7 +259,8 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers, ground_tr
     cluster_labels = kmeans.fit_predict(x)
 
     print(f"\033[31m\nLabel Enrichment per Cluster: (pd.crosstab)\033[0m")
-    ct_norm = pd.crosstab(ground_truth_label, cluster_labels, rownames=['ground_truth_label'], colnames=['cluster_label'], normalize='index')
+    ct_norm = pd.crosstab(ground_truth_label, cluster_labels, rownames=['ground_truth_label'], colnames=['cluster_label'], normalize='columns')
+    print(f"{ct_norm}")
     sns.heatmap(ct_norm, cmap='viridis', cbar=True, annot=False)
     plt.title('Cluster Label Enrichment')
     plt.ylabel('Ground Truth Label')
