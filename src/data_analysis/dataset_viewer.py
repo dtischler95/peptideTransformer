@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
-from sklearn.feature_extraction import DictVectorizer
 
 """
 This script is thought to be used to visualize the dataset used for training the model.
@@ -31,13 +30,13 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
         show_top_kmers (int or None): The number of top k-mers to show. If None, all k-mers will be
         out_path (str or None): The path to save the plots. If None, the plots will be shown.
     """
-
+    print(f"\033[31m\n----------------------------Analysing Train Files-------------------------------------\033[0m")
     for file_path in file_paths:
         df = pd.read_csv(file_path[0], sep=file_path[1])
 
-        print(f"\033[31mGenerating Info for {file_path[0]}:\033[0m")
-        print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
-        print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\033[0m")
+        print(f"\033[31m-----------------Generating Info for {file_path[0]}:----------------------------------------\033[0m")
+        print(f"\033[31m\n\nNumber of sequences: {df.shape[0]}\033[0m")
+        print(f"\033[31mNumber of unique sequences: {df['sequence'].nunique()}\n\033[0m")
 
         plot_binary_label_distribution(df, plot_path=out_path)
         sequences_0 = df[df["label"] == 0]["sequence"].tolist()
@@ -45,22 +44,23 @@ def look_into_datasets(file_paths: list[tuple[str, str]],
         amino_acid_frequency_comparison(sequences_0, sequences_1, plot_path=out_path)
         sequence_length_correlation_plot(df, plot_path=out_path)
 
-
+    print(f"\033[31m\n-------------------------Analysing High Difference Sequences------------------------------\033[0m")
     if k_mer_inspection_file is not None:
         for k_mer_file in k_mer_inspection_file:
             df = pd.read_csv(k_mer_file[0], sep=k_mer_file[1])
 
+            print(f"\033[31m-------------------Generating Info for {k_mer_file[0]}:-------------------------------\033[0m")
+            print(f"\033[31m\n\nNumber of sequences: {df.shape[0]}\033[0m")
+            print(f"\033[31mPlotting Ground Truth Label distribution for k_mer file\n\033[0m")
+            plot_binary_label_distribution(df, plot_path=out_path)
 
-            print(f"\033[31mGenerating Info for {k_mer_file[0]}:\033[0m")
-            print(f"\033[31mNumber of sequences: {df.shape[0]}\033[0m")
-
-            print(f"\033[31mDifferences in hemolytic concentrations inside one sequence\033[0m")
+            print(f"\033[31m\nDifferences in hemolytic concentrations inside one sequence\033[0m")
             print(
-                f"\033[31m[WARNING]Extrem Values are set to 0! Its expected that data feeded here only show data OVER a certrain threshold set by train_data creation!!!\033[0m")
+                f"\033[31m\n[WARNING]Extrem Values are set to 0! Its expected that data feeded here only show data OVER a certrain threshold set by train_data creation!!!\033[0m")
             check_value_distance_inside_one_sequence(df=df,
                                                      plot_path=out_path)
 
-            print(f"\033[31mCheck for k_mer content\033[0m")
+            print(f"\033[31m\nCheck for k_mer content\033[0m")
             get_k_mer_overview(df=df,
                                plot_path=out_path,
                                show_top_kmers=show_top_kmers)
@@ -225,7 +225,7 @@ def get_k_mer_overview(df: str or pd.DataFrame,
     """
     Get an overview of the k-mers in the dataset.
     """
-    from collections import Counter
+
     def get_kmers(sequence, k):
         return [sequence[i:i + k] for i in range(len(sequence) - k + 1)]
 
@@ -233,12 +233,13 @@ def get_k_mer_overview(df: str or pd.DataFrame,
         df = pd.read_csv(df, sep=';')
     df['k_mers'] = df['sequence'].apply(lambda x: get_kmers(x, 3))
     k_mer_list = df['k_mers'].tolist()
+    ground_truth_label = df['label'].tolist()
     _overall_kmer_abundancy(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
 
-    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers)
+    _cluster_kmers_per_sequence(k_mer_list=k_mer_list, plot_path=plot_path, show_top_kmers=show_top_kmers, ground_truth_label=ground_truth_label)
 
 
-def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers):
+def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers, ground_truth_label):
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction import DictVectorizer
     from sklearn.manifold import TSNE
@@ -253,13 +254,25 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers):
 
     n_cluster = 5
     kmeans = KMeans(n_clusters=n_cluster, random_state=42)
-    labels = kmeans.fit_predict(x)
+    cluster_labels = kmeans.fit_predict(x)
 
-    generate_heatmap(k_mer_list, labels, top_kmers, plot_path)
+    print(f"\033[31m\nLabel Enrichment per Cluster: (pd.crosstab)\033[0m")
+    ct_norm = pd.crosstab(ground_truth_label, cluster_labels, rownames=['ground_truth_label'], colnames=['cluster_label'], normalize='index')
+    sns.heatmap(ct_norm, cmap='viridis', cbar=True, annot=False)
+    plt.title('Cluster Label Enrichment')
+    plt.ylabel('Ground Truth Label')
+    plt.xlabel('Cluster Label')
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_k_mer_label_clustering_enrichment.png")
+
+    generate_heatmap(k_mer_list, cluster_labels, top_kmers, plot_path)
 
     x_tsne = TSNE(n_components=2, random_state=42).fit_transform(x)
     plt.figure(figsize=(8, 6))
-    scatter = plt.scatter(x_tsne[:, 0], x_tsne[:, 1], c=labels, cmap='tab10', s=80)
+    scatter = plt.scatter(x_tsne[:, 0], x_tsne[:, 1], c=cluster_labels, cmap='tab10', s=80)
     plt.title('K-mer t-SNE Clustering')
     plt.xlabel('Dim 1')
     plt.ylabel('Dim 2')
@@ -269,7 +282,20 @@ def _cluster_kmers_per_sequence(k_mer_list, plot_path, show_top_kmers):
     if plot_path is None:
         plt.show()
     else:
-        plt.savefig(f"{plot_path}_k_mer_clustering.png")
+        plt.savefig(f"{plot_path}_k_mer_clustering_cluster_label.png")
+
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(x_tsne[:, 0], x_tsne[:, 1], c=ground_truth_label, cmap='tab10', s=80)
+    plt.title('K-mer t-SNE Clustering')
+    plt.xlabel('Dim 1')
+    plt.ylabel('Dim 2')
+    plt.legend(*scatter.legend_elements(), title='Cluster')
+    plt.grid(True)
+    plt.tight_layout()
+    if plot_path is None:
+        plt.show()
+    else:
+        plt.savefig(f"{plot_path}_k_mer_clustering_ground_label.png")
 
 
 def generate_heatmap(k_mer_list, labels, top_kmers, plot_path, inspect_heatmap_file: bool = False):

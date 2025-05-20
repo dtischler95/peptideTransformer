@@ -349,10 +349,14 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo.to_csv(f"{out_path_train_file}_raw.csv", sep=';', index=False)
 
     if filter_sequences:
-        sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo, plot_path="../../../data/train_data/hemolytic_value_differences.png")
+        sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo,
+                                                                     plot_path="../../../data/train_data/hemolytic_value_differences.png",
+                                                                     min_concentration_difference=100)
         # Drop sequences with high value distance
         high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
-        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_50.csv", sep=';', index=False)
+        high_difference_sequences = label_after_happenn(df=high_difference_sequences)
+        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_100.csv", sep=';', index=False)
+
         df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
 
     if label_threshold is not None:
