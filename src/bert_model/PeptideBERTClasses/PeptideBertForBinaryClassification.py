@@ -12,7 +12,7 @@ class PeptideBertForBinaryClassification(BertModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config,model_path: str,  bce_logit_weight, loss_function: str = 'bce'):
+    def __init__(self, config,model_path: str, extra_feature,  bce_logit_weight, loss_function: str = 'bce'):
         config.num_hidden_layers = 8
         config.classifier_dropout = 0.15
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
@@ -24,7 +24,7 @@ class PeptideBertForBinaryClassification(BertModel):
         self.bce_logit_weight = bce_logit_weight
         self.bert = BertModel.from_pretrained(model_path, config=config)
         self.dropout = nn.Dropout(config.classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size,
+        self.classifier = nn.Linear(config.hidden_size + (1 if extra_feature else 0),
                                     config.num_labels)  # Output only one logit for binary classification
         self.sigmoid = nn.Sigmoid()  # Add sigmoid for binary classification
 
@@ -35,6 +35,7 @@ class PeptideBertForBinaryClassification(BertModel):
             self,
             input_ids: Optional[torch.Tensor] = None,
             attention_mask: Optional[torch.Tensor] = None,
+            concentration: Optional[torch.Tensor] = None,
             token_type_ids: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.Tensor] = None,
             head_mask: Optional[torch.Tensor] = None,
@@ -60,6 +61,7 @@ class PeptideBertForBinaryClassification(BertModel):
 
         :param input_ids: input ids for the model
         :param attention_mask: attention mask for the model
+        :param concentration: concentration for the model
         :param token_type_ids: token type ids for the model
         :param position_ids: position ids for the model
         :param head_mask: head mask for the model
@@ -91,6 +93,14 @@ class PeptideBertForBinaryClassification(BertModel):
 
         pooled_output = outputs[1]  # Use pooled output
         pooled_output = self.dropout(pooled_output)
+        if return_pooler_output:
+            return pooled_output  # Return pooled output for visualization
+
+        if concentration is not None:
+            concentration = concentration.unsqueeze(-1)
+            # Concatenate pooled output and concentration
+            pooled_output = torch.cat((pooled_output, concentration), dim=1)
+        # Apply the classifier to the concatenated output
         logits = self.classifier(pooled_output)
 
 
@@ -112,8 +122,7 @@ class PeptideBertForBinaryClassification(BertModel):
             else:
                 raise ValueError(f"Loss function {self.loss_function} not supported. Use 'bce' or 'bce_logit_loss'")
 
-        if return_pooler_output:
-            return pooled_output  # Return pooled output for visualization
+
 
         if not return_dict:
             return (loss, logits) if loss is not None else logits

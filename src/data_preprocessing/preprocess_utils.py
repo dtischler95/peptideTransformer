@@ -67,12 +67,14 @@ def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: 
     """
 
     result_df = pd.DataFrame()
+    ambiguous_labeled_sequences = 0
 
     # Group by sequence and check if there are multiple labels for the same sequence
     for seq_df in labeled_df.groupby(by=['sequence']):
 
         # If there are multiple labels for the same sequence, sort them into positive or negative based on the majority label
         if seq_df[1]['label'].unique().shape[0] > 1:
+            ambiguous_labeled_sequences += 1
             positive_compare = pd.DataFrame()
             negative_compare = pd.DataFrame()
             for label_df in seq_df[1].groupby(by=['label']):
@@ -99,5 +101,6 @@ def filter_and_evaluate_ambiguous_sequences(labeled_df: pd.DataFrame, out_path: 
     if out_path is None:
         print(result_df)
     else:
+        print(f"{ambiguous_labeled_sequences} ambiguous sequences found. Label was set by majority vote.")
         result_df.to_csv(out_path, sep=';', index=False)
 

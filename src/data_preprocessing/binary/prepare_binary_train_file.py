@@ -5,6 +5,7 @@ from peptides import Peptide as Pep
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
 from src.data_preprocessing.binary.happenn_preprocess import label_after_happen_style, label_after_happenn
+from src.data_analysis.dataset_viewer import check_value_distance_inside_one_sequence
 
 """
 Script for our data preprocessing. It contains the main logic for creating 
@@ -205,7 +206,8 @@ def _process_units(final, verbose: bool = False):
     final['unit'] = final['unit'].replace(replace_units)
 
     # Calculate molecular weight using lambda
-    final['mol_weight'] = final['sequence'].apply(lambda p: Pep(p).molecular_weight())
+
+    final.loc[:, 'mol_weight'] = final['sequence'].apply(lambda p: Pep(p).molecular_weight())
 
     # Apply conversions based on units
     def convert_values(row):
@@ -246,7 +248,8 @@ def _process_units(final, verbose: bool = False):
         else:
             return row['hemo_concentration']
 
-    final['hemo_concentration'] = final.apply(convert_values, axis=1)
+
+    final.loc[:, 'hemo_concentration'] = final.apply(convert_values, axis=1)
 
     # Drop the temporary molecular weight column
     final = final.drop(columns=["mol_weight"])
@@ -274,7 +277,8 @@ def _process_units(final, verbose: bool = False):
 def parse_and_label_hemolytic_data(*data_paths: str,
                                    out_path: str,
                                    dataset_tag: str,
-                                   filter_sequences: bool = False,
+                                   filter_sequences: bool,
+                                   vote_label: bool = False,
                                    label_threshold: float or None):
     """
     Main logic for creating the Training Files for the Hemolytic Activity Prediction.
@@ -284,25 +288,23 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     :param data_paths: Paths to the data files containing the hemolytic activity data.
     :param out_path: Path to the data directory. should contain a train_data and data_for_data_viewer directory.
     :param dataset_tag: Tag for the dataset. Used for naming the output files.
-    :param filter_sequences: Flag to filter ambiguous sequences based on the majority label. Should be True
+    :param filter_sequences: Flag to filter sequences with high value distance. Should be True
+    :param vote_label: Flag to filter ambiguous sequences based on the majority label. Should be True
     :param label_threshold: Threshold for the label. If the relation between hemo_percent and hemo_concentration is greater or equal to this threshold, the label is set to 1, otherwise to 0.
     """
 
     out_path_train_file = f"{out_path}train_data/{dataset_tag}"
-    out_path_splitted_file = f"{out_path}data_for_data_viewer/"
+    out_path_splitted_file = f"{out_path}data_for_data_viewer/{dataset_tag}"
 
     data_df_list = []
     for file_path in data_paths:
         data_df = pd.read_csv(file_path, sep=';')
         data_df_list.append(data_df)
 
-
-    # concats all given dataframes
     base_df = get_filtered_and_combined_dataframe(dataframes=data_df_list)
     base_df = base_df.dropna()
 
     # DataFrame containing HC50 annotations. This Data inside here is not used in the current train data
-    # Data i found here showed ughe discrepancy in sequency and hemolytic activity
     df_hc = base_df[base_df['measure_type'].str.contains('HC5')]
 
     # Filter all Datapoints that are hemolytik active! HERE NO CHECK FOR HUMAN RELATED DATA This should be done before using this Main Function!
@@ -330,12 +332,14 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_percent'] != 'X']
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_concentration'] != 'X']
 
+
     df_raw_hemo['hemo_percent'] = df_raw_hemo['hemo_percent'].str.extract(r'(\d+\.?\d*)').astype(float)
     df_raw_hemo['hemo_concentration'] = df_raw_hemo['hemo_concentration'].str.extract(r'(\d+\.?\d*)').astype(
         float)
 
     # TODO MAY SET 0.0 % HEMO ACTIVITY TO 0.001% SO THAT DATA WONT GET LOST
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_concentration'] != 0.0]
+    df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_percent'] <= 100.0]
 
     # needed for this specific usecase. Found no better way to filter dynamically for wrongly parsed data in time
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "why"]
@@ -345,7 +349,18 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Process units
     df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
 
+    if filter_sequences:
+        seq_to_filter = 100
+        sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo,
+                                                                     plot_path="../../../data/train_data/hemolytic_value_differences.png",
+                                                                     min_concentration_difference=seq_to_filter)
+        # Drop sequences with high value distance
+        high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
+        high_difference_sequences = label_after_happenn(df=high_difference_sequences)
+        high_difference_sequences.to_csv(f"{out_path_splitted_file}_high_difference_sequences_{seq_to_filter}.csv", sep=';', index=False)
 
+        df_raw_hemo = df_raw_hemo[~df_raw_hemo['sequence'].isin(sequences_to_drop)]
+        out_path_train_file = f"{out_path_train_file}_filtered_{seq_to_filter}"
 
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
@@ -355,26 +370,34 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
 
     # result_df should contain cleaned data useable for training and further analysis
-    result_df = df_raw_hemo[['sequence', 'label']]
+    result_df = df_raw_hemo[['sequence', 'hemo_concentration', 'hemo_percent', 'label']]
 
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
 
-    # remove abiguous labels
-    if 2 in result_df['label'].unique():
-        print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences.\033[0m")
-        result_df = result_df[result_df['label'] != 2]
+    # # remove abiguous labels
+    # if 2 in result_df['label'].unique():
+    #     print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences. (Label 2)\033[0m")
+    #     sequences_df = result_df[result_df['label'] == 2]
+    #     result_df = result_df[result_df['label'] != 2]
+    #
+    #     unique_list = sequences_df['sequence'].unique()
+    #     for seq in unique_list:
+    #         print(seq)
+
+    print(result_df.shape)
 
 
-    if filter_sequences:
-        new_file_name = f"{out_path_train_file}_filtered.csv"
+
+    if vote_label:
+        new_file_name = f"{out_path_train_file}_voted.csv"
         # Finally filter ambiguous labeled sequences and sort them into positive or negative based on the majority label
         filter_and_evaluate_ambiguous_sequences(labeled_df=result_df,
                                                 out_path=new_file_name)
     else:
         # If you dont want to filter ambiguous sequences, just save the data
-        print(f"\033[31mSkipping filtering of ambiguous sequences.\033[0m")
-        result_df.to_csv(f"{out_path_train_file}.csv", sep=';', index=False)
+        print(f"\033[31mSkipping Vote of ambiguous sequences.\033[0m")
+        result_df.to_csv(f"{out_path_train_file}_unvoted.csv", sep=';', index=False)
 
 
 
@@ -403,5 +426,6 @@ if __name__ == '__main__':
                                    dbaasp_db,
                                    out_path='../../../data/',
                                    dataset_tag='happen_style',
-                                   filter_sequences=False,
+                                   filter_sequences=True,
+                                   vote_label=False,
                                    label_threshold=None)

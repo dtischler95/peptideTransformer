@@ -8,7 +8,7 @@ class PeptideDataset(Dataset):
 
     This class tokenizes the peptide sequences and returns the tokenized input_ids and attention_mask tensors.
     """
-    def __init__(self, peptides, tokenizer, labels=None, max_length=36):
+    def __init__(self, peptides, concentrations, tokenizer, labels=None, max_length=36):
         """
         Args:
             peptides: List of peptide sequences.
@@ -16,7 +16,10 @@ class PeptideDataset(Dataset):
             tokenizer: Tokenizer to tokenize the peptide sequences.
             max_length: Maximum length for padding/truncation.
         """
+        # Peptides need this formating for tokenizer
         self.peptides = [' '.join(seq) for seq in peptides]
+
+        self.concentrations = concentrations
         if labels is not None:
             self.labels = labels  # Labels are optional for self-supervised learning tasks
         self.tokenizer = tokenizer
@@ -42,12 +45,13 @@ class PeptideDataset(Dataset):
         # For binary classification, return labels; otherwise, ignore
         item = {
             'input_ids': input_ids,
-            'attention_mask': attention_mask,
+            'attention_mask': attention_mask
         }
 
-        try:  # Only include labels for binary classification
+        if self.concentrations is not None:
+            item['concentration'] = torch.tensor(self.concentrations[idx], dtype=torch.float)
+        if self.labels is not None:
             item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
-        except AttributeError:
-            pass
+
 
         return item
