@@ -28,21 +28,21 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     if debug_print:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
-            "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
-            "mcc": mcc,
-            "precision": precision,
-            "f1": f1,
-            "recall": recall,
+            "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
+            "mcc": round(mcc, 4),
+            "precision": round(precision, 4),
+            "f1": round(f1, 4),
+            "recall": round(recall, 4),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
 
     return {
-        "accuracy": accuracy.compute(predictions=predictions, references=labels)["accuracy"],
-        "mcc": mcc,
-        "precision": precision,
-        "f1": f1,
-        "recall": recall
+        "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
+        "mcc": round(mcc, 4),
+        "precision": round(precision, 4),
+        "f1": round(f1, 4),
+        "recall": round(recall, 4)
     }
 
 

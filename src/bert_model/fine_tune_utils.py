@@ -7,7 +7,9 @@ import yaml
 import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
-#from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
+
+
+# from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
 
 
 def prepare_datasets(binary_or_mlm: str,
@@ -21,7 +23,8 @@ def prepare_datasets(binary_or_mlm: str,
                      cut_df_for_faster_debug: bool = False,
                      validation_data_size: float = 0.2,
                      test_data_size: float = 0.5,
-                     random_data_shuffle: bool = False) -> tuple[
+                     random_data_shuffle: bool = False,
+                     use_concentration: bool = False) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
     Creates the datasets for training, validation and testing. For the given transformers Dataset class
@@ -42,6 +45,7 @@ def prepare_datasets(binary_or_mlm: str,
     :param validation_data_size: Size of the validation data. Default is 0.2.
     :param test_data_size: Size of the test data. Default is 0.5.
     :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
+    :param use_concentration: If the concentration data should be used for training. Default is False.
 
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
@@ -83,14 +87,27 @@ def prepare_datasets(binary_or_mlm: str,
     label_data_val = val_sequences['label'].values if binary_or_mlm.startswith('binary') else None
     label_data_test = test_sequences['label'].values if binary_or_mlm.startswith('binary') else None
 
+    concentration_data_train = train_sequences['hemo_concentration'].values if use_concentration else None
+    concentration_data_val = val_sequences['hemo_concentration'].values if use_concentration else None
+    concentration_data_test = test_sequences['hemo_concentration'].values if use_concentration else None
+
     # Load the tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], tokenizer=tokenizer, labels=label_data_train,
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
+                                   concentrations=concentration_data_train,
+                                   tokenizer=tokenizer,
+                                   labels=label_data_train,
                                    max_length=max_length)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], tokenizer=tokenizer, labels=label_data_val,
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
+                                 concentrations=concentration_data_val,
+                                 tokenizer=tokenizer,
+                                 labels=label_data_val,
                                  max_length=max_length)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], tokenizer=tokenizer, labels=label_data_test,
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
+                                  concentrations=concentration_data_test,
+                                  tokenizer=tokenizer,
+                                  labels=label_data_test,
                                   max_length=max_length)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
@@ -335,7 +352,6 @@ def plot_abundance(abundance_dict, title, ax):
     ax.grid(axis='y', linestyle='--', alpha=0.7)
 
 
-
 def plot_label_abundance(label_0_counter,
                          label_1_counter,
                          task_name: str,
@@ -492,6 +508,7 @@ def get_bce_label_weight(labels):
     label_0 = np.count_nonzero(labels == 0)
     label_1 = np.count_nonzero(labels == 1)
     return torch.tensor([label_0 / label_1])
+
 
 if __name__ == '__main__':
     # data_leakage_wrapper()
