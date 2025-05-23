@@ -1,6 +1,6 @@
 import os
 
-from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -215,6 +215,14 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def get_train_f1(self):
         return evaluate.load("f1").compute(predictions=self.collected_predictions, references=self.collected_labels)["f1"]
 
+    def get_train_mse(self):
+        return mean_squared_error(self.collected_labels, self.collected_predictions)
+
+    def get_train_mae(self):
+        return mean_absolute_error(self.collected_labels, self.collected_predictions)
+
+    def get_train_r2(self):
+        return r2_score(self.collected_labels, self.collected_predictions)
 
 class CurriculumLearningCallback(TrainerCallback):
     """
