@@ -51,7 +51,7 @@ class PeptideDataset(Dataset):
         if self.concentrations is not None:
             item['concentration'] = torch.tensor(self.concentrations[idx], dtype=torch.float)
         if self.labels is not None:
-            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.float)
 
 
         return item
