@@ -11,7 +11,7 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import
 from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
-from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
+from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, BertForSequenceClassification
 
 
@@ -58,7 +58,7 @@ def prepare_datasets(binary_or_mlm: str,
     # Load the data
     df_train = pd.read_csv(train_file, sep=';')
 
-    df_train = df_train.sample(frac=1)[:50] if cut_df_for_faster_debug else df_train
+    df_train = df_train.sample(frac=1)[:200] if cut_df_for_faster_debug else df_train
 
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     # Those id's are later used to load the Dataframes with the corresponding sequences
@@ -570,7 +570,7 @@ def init_model(tokenizer, train_dataset, training_args):
         config.num_labels = 1
         model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         data_collator = DefaultDataCollator()
-        run_metric = None  # TODO implement regression metrics
+        run_metric = regression_metrics  # TODO implement regression metrics
     else:
         raise ValueError(
             f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")

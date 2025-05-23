@@ -3,6 +3,32 @@ import evaluate
 from sklearn.metrics import matthews_corrcoef
 
 
+def regression_metrics(eval_preds) -> dict:
+    """
+    computes accuracy for regression task.
+
+    :param eval_preds: predictions and labels
+
+    :return: dictionary with the metrics
+    """
+
+    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+    predictions, labels = eval_preds
+    # Get predicted labels from logits
+    preds = np.argmax(predictions, axis=-1)
+
+    mse = mean_squared_error(labels, preds)
+    mae = mean_absolute_error(labels, preds)
+    r2 = r2_score(labels, preds)
+
+    return {
+        "mse": round(mse, 4),
+        "mae": round(mae, 4),
+        "r2": round(r2, 4)
+    }
+
+
 def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     """
     Taken and adapted from:

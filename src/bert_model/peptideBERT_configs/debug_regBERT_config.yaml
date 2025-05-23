@@ -42,7 +42,7 @@ model_save_path: '../test'                             # Path to save the model
 plot_path: '../../plots'                                    # Path to save the plots
 
 # Validation and Test Settings
-validation_data_size: 0.2       # Validation dataset size (fraction)
+validation_data_size: 0.5       # Validation dataset size (fraction)
 test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
