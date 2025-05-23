@@ -12,7 +12,7 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification im
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, BertForSequenceClassification
 
 
 # from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
@@ -89,9 +89,9 @@ def prepare_datasets(binary_or_mlm: str,
         val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
-    label_data_train = train_sequences['label'].values if binary_or_mlm.startswith('binary') else None
-    label_data_val = val_sequences['label'].values if binary_or_mlm.startswith('binary') else None
-    label_data_test = test_sequences['label'].values if binary_or_mlm.startswith('binary') else None
+    label_data_train = None if binary_or_mlm.startswith('mlm') else train_sequences['label'].values
+    label_data_val = None if binary_or_mlm.startswith('mlm') else val_sequences['label'].values
+    label_data_test = None if binary_or_mlm.startswith('mlm') else test_sequences['label'].values
 
     concentration_data_train = train_sequences['hemo_concentration'].values if use_concentration else None
     concentration_data_val = val_sequences['hemo_concentration'].values if use_concentration else None
@@ -564,9 +564,11 @@ def init_model(tokenizer, train_dataset, training_args):
         # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
         # callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
         run_metric = mlm_metrics
-    elif training_args.model_class == 'custom':
+    elif training_args.model_class == 'regression':
         # raise NotImplementedError("Custom task not implemented yet")
-        model = PeptideBertForRegression(config)
+        config.hidden_size = 1024
+        config.num_labels = 1
+        model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         data_collator = DefaultDataCollator()
         run_metric = None  # TODO implement regression metrics
     else:
