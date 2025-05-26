@@ -142,7 +142,7 @@ class PeptideTrainer(Trainer):
                 # Extract the logits for regression
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
-                train_metric_callback.append_batch_results(predictions=preds, labels=cpu_inputs)
+                train_metric_callback.append_batch_results(predictions=preds.squeeze(), labels=cpu_inputs)
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.

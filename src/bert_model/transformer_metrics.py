@@ -16,8 +16,8 @@ def regression_metrics(eval_preds) -> dict:
 
     predictions, labels = eval_preds
     # Get predicted labels from logits
-    preds = np.argmax(predictions, axis=-1)
 
+    preds = predictions.squeeze()
     mse = mean_squared_error(labels, preds)
     mae = mean_absolute_error(labels, preds)
     r2 = r2_score(labels, preds)
