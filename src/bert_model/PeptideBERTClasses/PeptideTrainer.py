@@ -1,6 +1,7 @@
 from typing import Union, Optional, Dict, Any
 from datasets import Dataset
 import torch
+import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
@@ -8,6 +9,7 @@ from transformers.utils.import_utils import is_datasets_available
 from transformers.trainer_utils import seed_worker
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.fine_tune_utils import format_logit_to_label
+
 
 
 class PeptideTrainer(Trainer):
@@ -73,6 +75,7 @@ class PeptideTrainer(Trainer):
                         logs['f1'] = round(callback.get_train_f1(), 4)
 
                     callback.clear_results_after_epoch()
+
         super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
