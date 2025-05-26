@@ -59,10 +59,10 @@ class PeptideTrainer(Trainer):
         if 'grad_norm' in logs.keys():
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
-                    # if self.args.model_class.startswith('regression'):
-                    #     logs['mse'] = round(callback.get_train_mse(), 4)
-                    #     logs['mae'] = round(callback.get_train_mae(), 4)
-                    #     logs['r2'] = round(callback.get_train_r2(), 4)
+                    if self.args.model_class.startswith('regression'):
+                        logs['mse'] = round(callback.get_train_mse(), 4)
+                        logs['mae'] = round(callback.get_train_mae(), 4)
+                        logs['r2'] = round(callback.get_train_r2(), 4)
                     if self.args.model_class.startswith('mlm'):
                         logs['accuracy'] = round(callback.get_train_accuracy(), 4)
                     if self.args.model_class.startswith('binary'):
@@ -135,11 +135,14 @@ class PeptideTrainer(Trainer):
                 # Calculate the accuracy
                 train_metric_callback.append_batch_results(predictions=masked_preds, labels=masked_labels)
 
-            elif self.args.model_class == 'custom':
+            elif self.args.model_class == 'regression':
                 """
                 Implement Regression Metrics here
                 """
-                ...
+                # Extract the logits for regression
+                preds = model(**inputs)[1].detach().cpu().numpy()
+                cpu_inputs = inputs["labels"].detach().cpu().numpy()
+                train_metric_callback.append_batch_results(predictions=preds, labels=cpu_inputs)
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.
