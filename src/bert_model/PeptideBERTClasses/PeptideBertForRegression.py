@@ -12,11 +12,15 @@ class PeptideBertForRegression(BertModel):
     I also need to implement a robust and consitent architecture for regression.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_path: str):
         config.return_dict = False
         super().__init__(config)
         # config.
-        self.bert = BertModel(config)
+        self.bert = BertModel.from_pretrained(model_path, config=config)
+
+        # # Freeze BERT model parameters
+        # for param in self.bert.parameters():
+        #     param.requires_grad = False
 
         # ----------------- Add regression head -----------------
         self.dropout = nn.Dropout(0.15)
