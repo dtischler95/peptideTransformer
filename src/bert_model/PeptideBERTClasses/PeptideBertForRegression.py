@@ -95,7 +95,7 @@ class PeptideBertForRegression(BertModel):
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
-            loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
+            loss_fct = nn.MSELoss()  # Use Binary Cross Entropy Loss
             loss = loss_fct(logits.view(-1), labels.view(-1).float())
 
         if return_pooler_output:
