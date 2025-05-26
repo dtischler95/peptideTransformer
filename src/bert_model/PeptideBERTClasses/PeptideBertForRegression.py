@@ -18,9 +18,9 @@ class PeptideBertForRegression(BertModel):
         # config.
         self.bert = BertModel.from_pretrained(model_path, config=config)
 
-        # # Freeze BERT model parameters
-        # for param in self.bert.parameters():
-        #     param.requires_grad = False
+        # Freeze BERT model parameters
+        for param in self.bert.parameters():
+            param.requires_grad = False
 
         # ----------------- Add regression head -----------------
         self.dropout = nn.Dropout(0.15)
@@ -76,17 +76,19 @@ class PeptideBertForRegression(BertModel):
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        outputs = self.bert(
-            input_ids,
-            attention_mask=attention_mask,
-            token_type_ids=token_type_ids,
-            position_ids=position_ids,
-            head_mask=head_mask,
-            inputs_embeds=inputs_embeds,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
+
+        with torch.no_grad():
+            outputs = self.bert(
+                input_ids,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids,
+                position_ids=position_ids,
+                head_mask=head_mask,
+                inputs_embeds=inputs_embeds,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+                return_dict=return_dict,
+            )
 
         #------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
