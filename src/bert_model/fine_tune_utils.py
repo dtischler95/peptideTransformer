@@ -568,7 +568,9 @@ def init_model(tokenizer, train_dataset, training_args):
         # raise NotImplementedError("Custom task not implemented yet")
         config.hidden_size = 1024
         config.num_labels = 1
-        model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        #model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        model = PeptideBertForRegression(config,
+                                         model_path=training_args.model_path)
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics  # TODO implement regression metrics
     else:
