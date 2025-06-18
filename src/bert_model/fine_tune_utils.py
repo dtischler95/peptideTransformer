@@ -7,6 +7,12 @@ import yaml
 import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
+from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
+from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, BertForSequenceClassification
 
 
 # from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
@@ -52,7 +58,7 @@ def prepare_datasets(binary_or_mlm: str,
     # Load the data
     df_train = pd.read_csv(train_file, sep=';')
 
-    df_train = df_train.sample(frac=1)[:50] if cut_df_for_faster_debug else df_train
+    df_train = df_train.sample(frac=1)[:100] if cut_df_for_faster_debug else df_train
 
     # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
     # Those id's are later used to load the Dataframes with the corresponding sequences
@@ -83,9 +89,9 @@ def prepare_datasets(binary_or_mlm: str,
         val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
-    label_data_train = train_sequences['label'].values if binary_or_mlm.startswith('binary') else None
-    label_data_val = val_sequences['label'].values if binary_or_mlm.startswith('binary') else None
-    label_data_test = test_sequences['label'].values if binary_or_mlm.startswith('binary') else None
+    label_data_train = None if binary_or_mlm.startswith('mlm') else train_sequences['label'].values
+    label_data_val = None if binary_or_mlm.startswith('mlm') else val_sequences['label'].values
+    label_data_test = None if binary_or_mlm.startswith('mlm') else test_sequences['label'].values
 
     concentration_data_train = train_sequences['hemo_concentration'].values if use_concentration else None
     concentration_data_val = val_sequences['hemo_concentration'].values if use_concentration else None
@@ -136,10 +142,10 @@ def get_encoding(tokenizer: BertTokenizer):
         print(f"{i}: {character}")
 
 
-def dummy_data_loader(train_file: str, number_of_data_to_use: int = 1000) -> tuple[
+def dummy_data_loader_DEPRECATED(train_file: str, number_of_data_to_use: int = 1000) -> tuple[
     PeptideDataset, PeptideDataset, PeptideDataset]:
     """
-    Creates a dummy data loader for testing purposes.
+    Creates a dummy data loader for testing purposes. DEPRECATED
 
     :param train_file: Path to the training data
     :param number_of_data_to_use: Number of data to use.
@@ -240,7 +246,7 @@ def data_leakage_wrapper():
     Just a wrapper for testing the data leakage check.
     """
 
-    train_data_loader, val_data_loader, test_data_loader = dummy_data_loader(
+    train_data_loader, val_data_loader, test_data_loader = dummy_data_loader_DEPRECATED(
         train_file='../../data/train_data/our_hemo_labeled.csv',
         number_of_data_to_use=1000)
 
@@ -281,6 +287,7 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
 def prepare_label_debug_datasets(tokenizer, training_args):
     """
     Load and prepare the negative and positive datasets for predictions.
+    NOT sure whats this for.
     """
     # Load datasets
     negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')[:10000]
@@ -508,6 +515,69 @@ def get_bce_label_weight(labels):
     label_0 = np.count_nonzero(labels == 0)
     label_1 = np.count_nonzero(labels == 1)
     return torch.tensor([label_0 / label_1])
+
+
+def init_model(tokenizer, train_dataset, training_args):
+    config = BertConfig.from_pretrained(training_args.model_path)
+    if training_args.model_class == 'binary_conv':
+
+        # ('GrimSqueaker/proteinBERT')
+        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        model = PeptideBertForConvBinaryClassification(config,
+                                                       model_path=training_args.model_path,
+                                                       loss_function=training_args.loss_function,
+                                                       bce_logit_weight=get_bce_label_weight(
+                                                           labels=train_dataset.labels).to(training_args.device))
+        data_collator = DefaultDataCollator()
+        run_metric = binary_metrics
+
+    elif training_args.model_class == 'binary_dense':
+
+        # ('GrimSqueaker/proteinBERT')
+        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        model = PeptideBertForBinaryClassification(config,
+                                                   model_path=training_args.model_path,
+                                                   extra_feature=training_args.use_concentration,
+                                                   loss_function=training_args.loss_function,
+                                                   bce_logit_weight=get_bce_label_weight(
+                                                       labels=train_dataset.labels).to(training_args.device))
+        data_collator = DefaultDataCollator()
+        run_metric = binary_metrics
+
+
+
+    # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
+    # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
+    # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
+    # first.
+    elif training_args.model_class == 'mlm':
+
+        model = BertForMaskedLM.from_pretrained(training_args.model_path, config=config)
+        # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
+        #                                               initial_prob=training_args.mlm_probability,
+        #                                               increase_step=training_args.mlm_curriculum_increase_step,
+        #                                               max_prob=training_args.mlm_curriculum_max_prob)
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
+                                                        mlm_probability=training_args.mlm_probability)
+
+        # Add Curriculum Learning Callback if enabled
+        # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
+        # callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
+        run_metric = mlm_metrics
+    elif training_args.model_class == 'regression':
+        # raise NotImplementedError("Custom task not implemented yet")
+        config.hidden_size = 1024
+        config.num_labels = 1
+        #model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        model = PeptideBertForRegression(config,
+                                         model_path=training_args.model_path)
+        data_collator = DefaultDataCollator()
+        run_metric = regression_metrics  # TODO implement regression metrics
+    else:
+        raise ValueError(
+            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
+    return data_collator, model, run_metric
+
 
 
 if __name__ == '__main__':

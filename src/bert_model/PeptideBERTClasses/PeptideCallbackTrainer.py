@@ -1,6 +1,6 @@
 import os
 
-from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 import matplotlib.pyplot as plt
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -33,34 +33,35 @@ class LearningCurveCallback(TrainerCallback):
         # scraping the metrics from the logs
         # eval metrics are always the last ones while the third last are the train metrics
         # scraping them every epoch to update the learning curves by storing the values
+        metric_to_get = "accuracy" if args.model_class.startswith('binary') else "r2"
         if "eval_loss" in logs[-1]:
-
-            self.eval_accuracy_metrics.append(logs[-1].get("eval_accuracy"))
+            self.eval_accuracy_metrics.append(logs[-1].get(f"eval_{metric_to_get}"))
             self.eval_loss_metric.append(logs[-1].get("eval_loss"))
-            self.plot_learning_curves(args=args)
+            self.plot_learning_curves(args=args, axis_label=metric_to_get)
         else:
+            self.train_accuracy_metric.append(logs[-1].get(metric_to_get))
             self.train_loss_metric.append(logs[-1].get("loss"))
-            self.train_accuracy_metric.append(logs[-1].get("accuracy"))
 
-    def plot_learning_curves(self, args: PeptideTrainingArguments):
+    def plot_learning_curves(self, args: PeptideTrainingArguments, axis_label: str):
         """
         Plots a learning curve for the accuracy and loss metrics on every logging step
         """
         epochs = range(1, len(self.eval_accuracy_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
+
         # Plot accuracy on the primary y-axis
-        plt.plot(epochs, self.eval_accuracy_metrics, label='Accuracy', color='blue')
-        plt.plot(epochs, self.train_accuracy_metric, label='Train Accuracy', color='yellow')
+        plt.plot(epochs, self.eval_accuracy_metrics, label=f"Eval_{axis_label}", color='blue')
+        plt.plot(epochs, self.train_accuracy_metric, label=f"Train_{axis_label}", color='yellow')
         plt.xlabel('Epochs')
-        plt.ylabel('Eval Accuracy', color='blue')
+        plt.ylabel(f"Eval_{axis_label}", color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
         # Create a second y-axis for loss
         ax2 = plt.gca().twinx()  # Get the current axes and create a twin y-axis
-        ax2.plot(epochs, self.eval_loss_metric, label='Eval Loss', color='red')
-        ax2.plot(epochs, self.train_loss_metric, label='Train Loss', color='green')
-        ax2.set_ylabel('Loss', color='red')
+        ax2.plot(epochs, self.eval_loss_metric, label='Eval_loss', color='red')
+        ax2.plot(epochs, self.train_loss_metric, label='Train_loss', color='green')
+        ax2.set_ylabel('Eval_loss', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
         plt.xticks(epochs)
@@ -215,6 +216,14 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def get_train_f1(self):
         return evaluate.load("f1").compute(predictions=self.collected_predictions, references=self.collected_labels)["f1"]
 
+    def get_train_mse(self):
+        return mean_squared_error(self.collected_labels, self.collected_predictions)
+
+    def get_train_mae(self):
+        return mean_absolute_error(self.collected_labels, self.collected_predictions)
+
+    def get_train_r2(self):
+        return r2_score(self.collected_labels, self.collected_predictions)
 
 class CurriculumLearningCallback(TrainerCallback):
     """

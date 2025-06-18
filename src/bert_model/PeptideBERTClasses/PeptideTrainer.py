@@ -1,6 +1,7 @@
 from typing import Union, Optional, Dict, Any
 from datasets import Dataset
 import torch
+import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
@@ -8,6 +9,7 @@ from transformers.utils.import_utils import is_datasets_available
 from transformers.trainer_utils import seed_worker
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.fine_tune_utils import format_logit_to_label
+
 
 
 class PeptideTrainer(Trainer):
@@ -59,14 +61,21 @@ class PeptideTrainer(Trainer):
         if 'grad_norm' in logs.keys():
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
-                    logs['accuracy'] = round(callback.get_train_accuracy(), 4)
+                    if self.args.model_class.startswith('regression'):
+                        logs['mse'] = round(callback.get_train_mse(), 4)
+                        logs['mae'] = round(callback.get_train_mae(), 4)
+                        logs['r2'] = round(callback.get_train_r2(), 4)
+                    if self.args.model_class.startswith('mlm'):
+                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
                     if self.args.model_class.startswith('binary'):
+                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
                         logs['precision'] = round(callback.get_train_precision(), 4)
                         logs['mcc'] = round(callback.get_train_mcc(), 4)
                         logs['recall'] = round(callback.get_train_recall(), 4)
                         logs['f1'] = round(callback.get_train_f1(), 4)
 
                     callback.clear_results_after_epoch()
+
         super().log(logs, start_time)
 
     def training_step(self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]],
@@ -129,11 +138,14 @@ class PeptideTrainer(Trainer):
                 # Calculate the accuracy
                 train_metric_callback.append_batch_results(predictions=masked_preds, labels=masked_labels)
 
-            elif self.args.model_class == 'custom':
+            elif self.args.model_class == 'regression':
                 """
                 Implement Regression Metrics here
                 """
-                ...
+                # Extract the logits for regression
+                preds = model(**inputs)[1].detach().cpu().numpy()
+                cpu_inputs = inputs["labels"].detach().cpu().numpy()
+                train_metric_callback.append_batch_results(predictions=preds.squeeze(), labels=cpu_inputs)
 
         # Apply gradient norm clipping in case of exploding gradients.
         # Observed while training mlm with large train data points.
