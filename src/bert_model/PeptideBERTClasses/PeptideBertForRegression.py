@@ -12,11 +12,15 @@ class PeptideBertForRegression(BertModel):
     I also need to implement a robust and consitent architecture for regression.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_path: str):
         config.return_dict = False
         super().__init__(config)
         # config.
-        self.bert = BertModel(config)
+        self.bert = BertModel.from_pretrained(model_path, config=config)
+
+        # Freeze BERT model parameters
+        # for param in self.bert.parameters():
+        #     param.requires_grad = False
 
         # ----------------- Add regression head -----------------
         self.dropout = nn.Dropout(0.15)
@@ -72,6 +76,8 @@ class PeptideBertForRegression(BertModel):
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+
+        #with torch.no_grad():
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
@@ -82,7 +88,7 @@ class PeptideBertForRegression(BertModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-        )
+            )
 
         #------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
@@ -95,8 +101,8 @@ class PeptideBertForRegression(BertModel):
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
-            loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
-            loss = loss_fct(logits.view(-1), labels.view(-1).float())
+            loss_fct = nn.MSELoss()  # Use Binary Cross Entropy Loss
+            loss = loss_fct(logits.view(-1), labels.view(-1))
 
         if return_pooler_output:
             return pooled_output  # Return pooled output for visualization

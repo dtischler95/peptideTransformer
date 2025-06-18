@@ -2,19 +2,16 @@ import sys
 import warnings
 
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
+
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import logging
-from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics
+
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, get_bce_label_weight
+    prepare_fisher_exact, init_model
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     CurriculumLearningCallback, PlotMetricsCallback, CollectBatchWiseTrainMetrics
-from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
-from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
+
 
 # this line should be included in the TrainingArguments
 logger = logging.getLogger(__name__)
@@ -93,60 +90,7 @@ def fine_tune(config_path: str):
         PlotMetricsCallback()
     ]
 
-    config = BertConfig.from_pretrained(training_args.model_path)
-
-    if training_args.model_class == 'binary_conv':
-
-         # ('GrimSqueaker/proteinBERT')
-        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
-        model = PeptideBertForConvBinaryClassification(config,
-                                                   model_path=training_args.model_path,
-                                                   loss_function=training_args.loss_function,
-                                                   bce_logit_weight=get_bce_label_weight(
-                                                       labels=train_dataset.labels).to(training_args.device))
-        data_collator = DefaultDataCollator()
-        run_metric = binary_metrics
-
-    elif training_args.model_class == 'binary_dense':
-
-         # ('GrimSqueaker/proteinBERT')
-        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
-        model = PeptideBertForBinaryClassification(config,
-                                                   model_path=training_args.model_path,
-                                                   extra_feature=training_args.use_concentration,
-                                                   loss_function=training_args.loss_function,
-                                                   bce_logit_weight=get_bce_label_weight(
-                                                       labels=train_dataset.labels).to(training_args.device))
-        data_collator = DefaultDataCollator()
-        run_metric = binary_metrics
-
-
-
-    # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
-    # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
-    # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
-    # first.
-    elif training_args.model_class == 'mlm':
-
-        model = BertForMaskedLM.from_pretrained(training_args.model_path, config=config)
-        # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
-        #                                               initial_prob=training_args.mlm_probability,
-        #                                               increase_step=training_args.mlm_curriculum_increase_step,
-        #                                               max_prob=training_args.mlm_curriculum_max_prob)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
-                                                        mlm_probability=training_args.mlm_probability)
-
-        # Add Curriculum Learning Callback if enabled
-        # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
-        # callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
-        run_metric = mlm_metrics
-    elif training_args.model_class == 'custom':
-        # raise NotImplementedError("Custom task not implemented yet")
-        model = PeptideBertForRegression(config)
-        data_collator = DefaultDataCollator()
-        run_metric = None  # TODO implement regression metrics
-    else:
-        raise ValueError(f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
+    data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args)
 
     # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
     # configured PeptideTrainingArguments class is provided
@@ -201,5 +145,6 @@ def fine_tune(config_path: str):
         #     test_binary_label_bias(tokenizer, trainer, training_args)
 
 
+
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_mlmBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
