@@ -122,16 +122,32 @@ def main():
         eval_dataset=eval_data,  # Hier sollte dein Evaluationsdatensatz eingefügt werden
         data_collator=data_collator, # Hier sollte dein Data Collator eingefügt werden
         compute_metrics=compute_metrics,  # Hier sollte deine Metrik-Funktion eingefügt werden
-        callbacks=[...] # Hier sollten deine Callbacks eingefügt werden *OPTIONAL*
+        #callbacks=[...] # Hier sollten deine Callbacks eingefügt werden *OPTIONAL*
     )
-    trainer.train()
+    #trainer.train()
 
 
-    predict_file = "./data/test_data/tutorial_predict.csv"
+    predict_file = "./data/train_data/tutorial_predict.csv"
     test_df = pd.read_csv(predict_file, sep=';')
     test_dataset = TutorialDataset(test_df['sequence'].tolist(), tokenizer)
 
-    trainer.predict(test_dataset=test_dataset)
+    preds = trainer.predict(test_dataset=test_dataset)
+
+
+    import numpy as np
+
+    # Returned den Index des Tokens mit der höchsten Wahrscheinlichkeit
+    pred_token_ids = np.argmax(preds.predictions, axis=-1)
+
+    # Tokenizer benötigt die Token IDs nicht die Logits, wie sie das BERT Modell zurückgibt
+    decoded_sequences = [
+        tokenizer.decode(token_ids, skip_special_tokens=True)
+        for token_ids in pred_token_ids
+    ]
+
+
+
+
 
 
 if __name__ == '__main__':
