@@ -127,5 +127,12 @@ def main():
     trainer.train()
 
 
+    predict_file = "./data/test_data/tutorial_predict.csv"
+    test_df = pd.read_csv(predict_file, sep=';')
+    test_dataset = TutorialDataset(test_df['sequence'].tolist(), tokenizer)
+
+    trainer.predict(test_dataset=test_dataset)
+
+
 if __name__ == '__main__':
     main()
