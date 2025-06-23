@@ -121,7 +121,7 @@ def main():
         eval_dataset=eval_data,  # Hier sollte dein Evaluationsdatensatz eingefügt werden
         data_collator=data_collator, # Hier sollte dein Data Collator eingefügt werden
         compute_metrics=compute_metrics,  # Hier sollte deine Metrik-Funktion eingefügt werden
-        callbacks=[...]
+        callbacks=[...] # Hier sollten deine Callbacks eingefügt werden *OPTIONAL*
     )
     trainer.train()
 
