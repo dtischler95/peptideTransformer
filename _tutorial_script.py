@@ -1,6 +1,5 @@
 from torch.utils.data import Dataset
 
-
 class TutorialDataset(Dataset):
     def __init__(self, peptides, tokenizer, max_length=36):
         self.peptides = [' '.join(seq) for seq in peptides]
@@ -107,7 +106,9 @@ def main():
 
     train_file = "./data/train_data/tutorial.csv"
     df = pd.read_csv(train_file, sep=';')
+    # Data Split und Preprocessing hängt von Trainingsaufgabe ab. Stark individuell!
     df_train, df_eval = train_test_split(df, test_size=0.2, random_state=42)
+
     train_data = TutorialDataset(df_train['sequence'].tolist(), tokenizer)
     eval_data = TutorialDataset(df_eval['sequence'].tolist(), tokenizer)
 
