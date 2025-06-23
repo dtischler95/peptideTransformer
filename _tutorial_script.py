@@ -116,7 +116,7 @@ def main():
     from transformers import Trainer
     trainer = Trainer(
         model=model,  # Hier sollte dein Modell eingefügt werden
-        args=training_args,
+        args=training_args, # Hier sollten deine Trainingsargumente eingefügt werden
         train_dataset=train_data,  # Hier sollte dein Trainingsdatensatz eingefügt werden
         eval_dataset=eval_data,  # Hier sollte dein Evaluationsdatensatz eingefügt werden
         data_collator=data_collator, # Hier sollte dein Data Collator eingefügt werden
