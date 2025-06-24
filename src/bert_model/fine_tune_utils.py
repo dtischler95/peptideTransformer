@@ -583,7 +583,7 @@ def init_model(tokenizer, train_dataset, training_args):
         run_metric = binary_metrics
     else:
         raise ValueError(
-            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm' o 'esm'. You provided: '{training_args.model_class}'")
+            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm' or 'esm'. You provided: '{training_args.model_class}'")
     return data_collator, model, run_metric
 
 
