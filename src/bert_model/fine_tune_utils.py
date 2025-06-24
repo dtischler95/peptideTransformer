@@ -573,6 +573,14 @@ def init_model(tokenizer, train_dataset, training_args):
                                          model_path=training_args.model_path)
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics  # TODO implement regression metrics
+
+    elif training_args.model_class == 'esm':
+        from transformers import EsmForSequenceClassification, EsmConfig
+        config = EsmConfig.from_pretrained('facebook/esm2_t33_650M_UR50D')
+        config.num_labels = 1
+        model = EsmForSequenceClassification.from_pretrained('facebook/esm2_t33_650M_UR50D', config=config)
+        data_collator = DefaultDataCollator()
+        run_metric = binary_metrics
     else:
         raise ValueError(
             f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
