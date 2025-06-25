@@ -11,7 +11,7 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import
 from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
-from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics
+from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics, esm_metrics
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, BertForSequenceClassification
 
 
@@ -98,7 +98,11 @@ def prepare_datasets(binary_or_mlm: str,
     concentration_data_test = test_sequences['hemo_concentration'].values if use_concentration else None
 
     # Load the tokenizer
-    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
+    if not binary_or_mlm.startswith('esm'):
+        tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)#
+    else:
+        from transformers import EsmTokenizer
+        tokenizer = EsmTokenizer.from_pretrained(model_path, do_lower_case=False)
 
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
                                    concentrations=concentration_data_train,
@@ -574,13 +578,21 @@ def init_model(tokenizer, train_dataset, training_args):
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics  # TODO implement regression metrics
 
-    elif training_args.model_class == 'esm':
+    elif training_args.model_class.startswith('esm'):
         from transformers import EsmForSequenceClassification, EsmConfig
-        config = EsmConfig.from_pretrained('facebook/esm2_t33_650M_UR50D')
-        config.num_labels = 1
-        model = EsmForSequenceClassification.from_pretrained('facebook/esm2_t33_650M_UR50D', config=config)
+        config = EsmConfig.from_pretrained(training_args.model_path)
+        if training_args.model_class.endswith('_reg'):
+            config.num_labels = 1
+            run_metric = regression_metrics
+        elif training_args.model_class.endswith('_binary'):
+            config.num_labels = 2
+            run_metric = esm_metrics
+        else:
+            raise ValueError(f"Invalid model class for ESM: {training_args.model_class}. "
+                             f"Expected 'esm_binary' or 'esm_reg', got '{training_args.model_class}'.")
+        model = EsmForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         data_collator = DefaultDataCollator()
-        run_metric = binary_metrics
+
     else:
         raise ValueError(
             f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm' or 'esm'. You provided: '{training_args.model_class}'")
