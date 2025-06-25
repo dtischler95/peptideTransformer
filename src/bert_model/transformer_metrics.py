@@ -1,7 +1,41 @@
 import numpy as np
 import evaluate
 from sklearn.metrics import matthews_corrcoef
+import torch
 
+
+def esm_metrics(eval_preds) -> dict:
+    """
+    Taken and adapted from:
+    https://github.com/huggingface/transformers/blob/main/examples/pytorch/token-classification/run_ner.py
+
+    :param eval_preds: predictions and labels
+    :param debug_print: if the predictions should be printed for debugging purposes
+
+    :return: dictionary with the metrics
+    """
+    from src.bert_model.fine_tune_utils import format_logit_to_label
+    accuracy = evaluate.load("accuracy")
+
+    logits, labels = eval_preds
+    predictions = torch.argmax(torch.Tensor(logits), dim=1) # Apply the threshold to convert probabilities to binary predictions
+
+    labels = torch.argmax(torch.Tensor(labels), dim=1) # we need to do this, since esm model wants label as one-hot encoded
+
+    mcc = matthews_corrcoef(y_true=labels, y_pred=predictions)
+    precision = evaluate.load("precision").compute(predictions=predictions, references=labels, zero_division=0)["precision"]
+    f1 = evaluate.load("f1").compute(predictions=predictions, references=labels)["f1"]
+    recall = evaluate.load("recall").compute(predictions=predictions, references=labels)["recall"]
+    # ----- Added for debugging purposes -----
+    # Save check for Prediction Bias towards one label
+
+    return {
+        "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
+        "mcc": round(mcc, 4),
+        "precision": round(precision, 4),
+        "f1": round(f1, 4),
+        "recall": round(recall, 4)
+    }
 
 def regression_metrics(eval_preds) -> dict:
     """
