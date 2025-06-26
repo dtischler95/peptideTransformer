@@ -1,24 +1,26 @@
+import logging
+
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from transformers import BertTokenizer
-from sklearn.model_selection import train_test_split
 import yaml
-import logging
-from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from matplotlib import pyplot as plt
+from sklearn.model_selection import train_test_split
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
+from transformers import BertTokenizer
+
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import PeptideBertForConvBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import \
+    PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
-from src.bert_model.PeptideBERTClasses.PeptideDataCollator import PeptideCurriculumDataCollator
+from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics, esm_metrics
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, BertForSequenceClassification
 
 
 # from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
 
 
-def prepare_datasets(binary_or_mlm: str,
+def prepare_datasets(model_class: str,
                      model_path: str,
                      show_encoding: bool,
                      train_file: str,
@@ -38,7 +40,7 @@ def prepare_datasets(binary_or_mlm: str,
     Update the Dataset class if you want to use a different model or a different task so the Dataset class fits the
     data and the task.
 
-    :param binary_or_mlm: If the model should be fine-tuned for binary classification or masked language modeling
+    :param model_class: If the model should be fine-tuned for binary classification or masked language modeling
                           Is used for your task, update this flag if you want to use a different model or a different task
     :param model_path: path to the pretrained model
     :param show_encoding: if the encoding of the vocabulary should be shown
@@ -89,17 +91,17 @@ def prepare_datasets(binary_or_mlm: str,
         val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
-    label_data_train = None if binary_or_mlm.startswith('mlm') else train_sequences['label'].values
-    label_data_val = None if binary_or_mlm.startswith('mlm') else val_sequences['label'].values
-    label_data_test = None if binary_or_mlm.startswith('mlm') else test_sequences['label'].values
+    label_data_train = None if model_class.startswith('mlm') else train_sequences['label'].values
+    label_data_val = None if model_class.startswith('mlm') else val_sequences['label'].values
+    label_data_test = None if model_class.startswith('mlm') else test_sequences['label'].values
 
     concentration_data_train = train_sequences['hemo_concentration'].values if use_concentration else None
     concentration_data_val = val_sequences['hemo_concentration'].values if use_concentration else None
     concentration_data_test = test_sequences['hemo_concentration'].values if use_concentration else None
 
     # Load the tokenizer
-    if not binary_or_mlm.startswith('esm'):
-        tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)#
+    if not model_class.startswith('esm'):
+        tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)  #
     else:
         from transformers import EsmTokenizer
         tokenizer = EsmTokenizer.from_pretrained(model_path, do_lower_case=False)
@@ -108,17 +110,20 @@ def prepare_datasets(binary_or_mlm: str,
                                    concentrations=concentration_data_train,
                                    tokenizer=tokenizer,
                                    labels=label_data_train,
-                                   max_length=max_length)
+                                   max_length=max_length,
+                                   model_class=model_class)
     val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
                                  concentrations=concentration_data_val,
                                  tokenizer=tokenizer,
                                  labels=label_data_val,
-                                 max_length=max_length)
+                                 max_length=max_length,
+                                 model_class=model_class)
     test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
                                   concentrations=concentration_data_test,
                                   tokenizer=tokenizer,
                                   labels=label_data_test,
-                                  max_length=max_length)
+                                  max_length=max_length,
+                                  model_class=model_class)
 
     # print out the encoding of the vocabulary used by the tokenizer if wanted
     get_encoding(tokenizer=tokenizer) if show_encoding else None
@@ -572,7 +577,7 @@ def init_model(tokenizer, train_dataset, training_args):
         # raise NotImplementedError("Custom task not implemented yet")
         config.hidden_size = 1024
         config.num_labels = 1
-        #model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        # model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         model = PeptideBertForRegression(config,
                                          model_path=training_args.model_path)
         data_collator = DefaultDataCollator()
@@ -597,7 +602,6 @@ def init_model(tokenizer, train_dataset, training_args):
         raise ValueError(
             f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm' or 'esm'. You provided: '{training_args.model_class}'")
     return data_collator, model, run_metric
-
 
 
 if __name__ == '__main__':
