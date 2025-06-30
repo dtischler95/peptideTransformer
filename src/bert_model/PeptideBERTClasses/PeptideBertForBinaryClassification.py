@@ -133,3 +133,4 @@ class PeptideBertForBinaryClassification(BertModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
