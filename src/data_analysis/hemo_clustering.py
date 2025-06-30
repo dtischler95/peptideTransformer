@@ -9,6 +9,10 @@ from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
 from warnings import filterwarnings
 from transformers import BertTokenizer, BertModel
+from transformers import EsmForSequenceClassification, EsmConfig
+from src.bert_model.fine_tune_utils import esm_metrics
+from transformers import EsmTokenizer
+from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 
 """
 This code is an to my usecase adapted version of the code from Lukas Bayerle 
@@ -50,7 +54,8 @@ def seperate_points(data, labels):
             positive.append(data[label])
         else:
             negative.append(data[label])
-    return np.array(positive), np.array(negative)
+    #return np.array(positive), np.array(negative)
+    return np.array(positive).reshape(-1, 2), np.array(negative).reshape(-1, 2)
 
 
 def plot_pca(pca, pca_fit, labels, plot_path=""):
@@ -246,6 +251,7 @@ def perform_clustering(embedded_sequences,
                 f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
             print(f"Unique labels: {unique_labels}")
             silhouette_score = None
+            return
         else:
             silhouette_score = metrics.silhouette_score(
                 data, cluster_labels, sample_size=10, random_state=42
@@ -329,11 +335,13 @@ def perform_clustering(embedded_sequences,
 def encode_peptides(sequence_file,
                     device,
                     plot_path: str,
+                    model_class: str,
                     sequence_max_length: int,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
-                    batch_size: int = 32) -> [np.ndarray, list]:
+                    batch_size: int = 32
+                    ) -> [np.ndarray, list]:
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
         tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False,
@@ -371,7 +379,15 @@ def encode_peptides(sequence_file,
 
         enc = {key: value.to(device) for key, value in enc.items()}
 
-        outputs = model(**enc, return_pooler_output=True)
+        if model_class.startswith("esm"):
+            outputs = model(**enc, output_hidden_states=True)
+            last_hidden_state = outputs.hidden_states[-1]
+            # Use the mean of the last hidden state as the embedding for a pooler-like output
+            outputs = last_hidden_state.mean(dim=1)
+        else:
+            outputs = model(**enc, return_pooler_output=True)
+
+
 
         embeddings.append(outputs.cpu().detach().numpy())
         progress += len(batch_peptides)
@@ -387,6 +403,7 @@ def cluster_model_embedding(file_path,
                             batch_size: int,
                             plot_path: str,
                             device,
+                            model_class: str,
                             sequence_max_length: int,
                             data_tag: str = "test_run",
                             label_0_cluster_data: int = 500,
@@ -420,7 +437,8 @@ def cluster_model_embedding(file_path,
                                         sequence_max_length=sequence_max_length,
                                         label_0_cluster_data=label_0_cluster_data,
                                         label_1_cluster_data=label_1_cluster_data,
-                                        plot_path=plot_path)
+                                        plot_path=plot_path,
+                                        model_class=model_class)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
                        tag=data_tag,
@@ -454,13 +472,34 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';',
                      index=False)  # TODO maybe make this optional?
 
+
     return result_df
 
 
 if __name__ == "__main__":
+
+
+    tokenizer = EsmTokenizer.from_pretrained('facebook/esm2_t33_650M_UR50D', do_lower_case=False)
+    config = EsmConfig.from_pretrained('facebook/esm2_t33_650M_UR50D')
+    config.num_labels = 2
+    run_metric = esm_metrics
+    model = EsmForSequenceClassification.from_pretrained('facebook/esm2_t33_650M_UR50D', config=config)
     filterwarnings("ignore", category=UserWarning)
-    cluster_model_embedding(file_path="../../data/train_data/whitelab_hemo_data.csv",
-                            batch_size=64,
+    device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
+    df = pd.read_csv("../../data/train_data/whitelab_hemo_data.csv", sep=';')
+    df = df[:50]
+
+    train_dataset = PeptideDataset(peptides=df['sequence'].to_list(),
+                                   concentrations=None,
+                                   tokenizer=tokenizer,
+                                   labels=df['label'].to_list(),
+                                   max_length=36,
+                                   model_class='esm_binary')
+
+    cluster_model_embedding(file_path=train_dataset,
+                            batch_size=16,
                             plot_path="../../plots",
                             tokenizer_and_model=None,
-                            device=None)
+                            device=None,
+                            sequence_max_length=36,
+                            model_class='binary_dense')

@@ -61,7 +61,7 @@ def fine_tune(config_path: str):
 
     # Prepare tokenizer and datasets
 
-    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(binary_or_mlm=training_args.model_class,
+    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(model_class=training_args.model_class,
                                                                            model_path=training_args.model_path,
                                                                            show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
@@ -116,7 +116,7 @@ def fine_tune(config_path: str):
 
     if training_args.do_eval:
 
-        if training_args.model_class.startswith('binary'):
+        if training_args.model_class.startswith('binary') or training_args.model_class == 'esm_binary':
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
             cluster_model_embedding(file_path=test_dataset,
@@ -127,7 +127,8 @@ def fine_tune(config_path: str):
                                     device=training_args.device,
                                     sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data
+                                    label_1_cluster_data=training_args.label_1_cluster_data,
+                                    model_class=training_args.model_class
                                     )
 
             prepare_fisher_exact(test_dataset=test_dataset,
@@ -147,4 +148,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/esm_bin.yaml')  # Path to the config file
