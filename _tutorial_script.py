@@ -171,5 +171,24 @@ def main():
     print(decoded_sequences)
 
 
+def predict():
+    """
+    Diese Funktion ist ein Beispiel für eine Vorhersagefunktion, die auf der Huggingface Pipeline basiert.
+    """
+    from transformers import pipeline
+
+    # Pfad zum Hugging Face model repository
+    model_repository_path = "Rostlab/prot_bert_bfd"
+    # Vortrainierte Modelle haben idr einen vordefinierten Task, dieser muss dann in der Pipeline nicht angegeben werden.
+    # Sonst lässt sich die Pipeline auch mit dem Task-Argument initialisieren, z.B. pipeline(task="fill-mask", model=model_repository_path)
+    # wobei der model repository_path hier optional ist.
+    pipe = pipeline(model=model_repository_path)
+    sequences = ["K A K C [MASK] C", "A L [MASK] V V K"]
+
+    predictions = pipe(sequences)
+
+    print(predictions)
+
 if __name__ == '__main__':
-    main()
+    #main()
+    predict()
