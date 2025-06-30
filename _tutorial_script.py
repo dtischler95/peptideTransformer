@@ -4,10 +4,8 @@ import pandas as pd
 import yaml
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
-from transformers import BertForMaskedLM, BertTokenizer, BertConfig
-from transformers import DataCollatorForLanguageModeling
-from transformers import Trainer
-from transformers import TrainingArguments
+from transformers import BertForMaskedLM, BertTokenizer, BertConfig, DataCollatorForLanguageModeling, Trainer, \
+    TrainingArguments, pipeline
 
 """
 Dies ist ein Tutorial-Skript, welches als Beispielhafte Implementierung für das Training eines BERT-Modells auf einem
@@ -175,7 +173,6 @@ def predict():
     """
     Diese Funktion ist ein Beispiel für eine Vorhersagefunktion, die auf der Huggingface Pipeline basiert.
     """
-    from transformers import pipeline
 
     # Pfad zum Hugging Face model repository
     model_repository_path = "Rostlab/prot_bert_bfd"
@@ -189,6 +186,7 @@ def predict():
 
     print(predictions)
 
+
 if __name__ == '__main__':
-    #main()
+    # main()
     predict()
