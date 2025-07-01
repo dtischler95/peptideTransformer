@@ -3,8 +3,8 @@ do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
 num_train_epochs: 50          # Number of epochs to train the model
-per_device_train_batch_size: 256  # Batch size for training
-per_device_eval_batch_size: 64    # Batch size for evaluation
+per_device_train_batch_size: 2  # Batch size for training
+per_device_eval_batch_size: 2    # Batch size for evaluation
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 
@@ -26,5 +26,5 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: false                  # Use CPU for training
+use_cpu: true                  # Use CPU for training
 
