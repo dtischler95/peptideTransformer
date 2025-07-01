@@ -73,6 +73,12 @@ class PeptideTrainer(Trainer):
                         logs['mcc'] = round(callback.get_train_mcc(), 4)
                         logs['recall'] = round(callback.get_train_recall(), 4)
                         logs['f1'] = round(callback.get_train_f1(), 4)
+                    if self.args.model_class.startswith('esm'):
+                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
+                        logs['precision'] = round(callback.get_train_precision(), 4)
+                        logs['mcc'] = round(callback.get_train_mcc(), 4)
+                        logs['recall'] = round(callback.get_train_recall(), 4)
+                        logs['f1'] = round(callback.get_train_f1(), 4)
 
                     callback.clear_results_after_epoch()
 
