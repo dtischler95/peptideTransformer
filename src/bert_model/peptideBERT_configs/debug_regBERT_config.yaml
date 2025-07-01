@@ -1,9 +1,9 @@
 # Training and Evaluation Settings
-model_class: 'esm'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
+model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
-num_train_epochs: 50           # Number of epochs to train the model
+num_train_epochs: 1           # Number of epochs to train the model
 per_device_train_batch_size: 124  # Batch size for training
 per_device_eval_batch_size: 64    # Batch size for evaluation
 early_stopping_patience: 5       # Patience for early stopping
@@ -25,7 +25,7 @@ max_length: 36                    # Maximum input sequence length
 
 # Dataset and File Paths
 data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
-train_file: '../../data/regression_data/escherichia_coli_for_regression_prepared_for_train_new_train.csv'  # Path to training data
+train_file: '../../data/train_data/happen_style_unvoted.csv'  # Path to training data
 val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './test'                             # Path to save the model
@@ -53,5 +53,5 @@ use_cpu: true                  # Use CPU for training
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
-fast_debug_mode: false                  # Developer mode for pipeline testing
+fast_debug_mode: true                  # Developer mode for pipeline testing
 run_verbose: true                      # Show more information during training, like encoding or configs
