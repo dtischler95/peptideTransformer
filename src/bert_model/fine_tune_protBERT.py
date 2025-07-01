@@ -148,4 +148,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/esm_bin.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
