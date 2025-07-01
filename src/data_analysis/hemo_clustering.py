@@ -499,7 +499,7 @@ if __name__ == "__main__":
     cluster_model_embedding(file_path=train_dataset,
                             batch_size=16,
                             plot_path="../../plots",
-                            tokenizer_and_model=None,
+                            tokenizer_and_model=(tokenizer, model),
                             device=None,
                             sequence_max_length=36,
-                            model_class='binary_dense')
+                            model_class='esm_binary')
