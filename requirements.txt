@@ -8,6 +8,6 @@ scikit-learn~=1.6.1
 transformers~=4.50.3
 yaml~=0.2.5
 pyyaml~=6.0.2
-evaluate~=0.4.3
+evaluate~=0.4.4
 peptides~=0.3.4
 pytorch~=2.4.0
