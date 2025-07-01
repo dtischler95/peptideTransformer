@@ -49,7 +49,7 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: true                  # Use CPU for training
+use_cpu: false                  # Use CPU for training
 
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
