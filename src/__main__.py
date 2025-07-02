@@ -17,20 +17,30 @@ def reproduce_our_work_steps():
 def main():
     args, parser = parse_inputs()
 
+    # Check if bert_model flags are proper set
+    if args.config_path and args.pipe_configs:
+        parser.error("Please provide either --config_path or --pipe_configs, not both.")
+    if not args.config_path and not args.pipe_configs:
+        parser.error("Please provide either --config_path or --pipe_configs.")
+
     if args.command == 'bert_model':
         # If we have configs in our config dir we can just pass the config name.
+        if args.command == 'pipe_configs':
+
+            # If no path provides use a default path
+
+            for file in os.listdir(args.pipe_configs):
+                if file.endswith('.yaml'):
+                    tmp_config = os.path.join(args.pipe_configs, file)
+                    fine_tune(config_path=tmp_config)
+            return
         if '/' not in args.config_path:
             args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
         # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
         fine_tune(
             config_path=args.config_path
         )
-    elif args.command == 'pipe_configs':
 
-        for file in os.listdir(args.config_path):
-            if file.endswith('.yaml'):
-                config_path = os.path.join(args.config_path, file)
-                fine_tune(config_path=config_path)
 
     elif args.command == 'data_preprocess':
         # Call your data_preprocess function here
@@ -59,8 +69,8 @@ def parse_inputs():
     subparsers = parser.add_subparsers(dest='command')
     # Subparser for bert_model
     fine_tune_parser = subparsers.add_parser('bert_model', help='Fine-tune the model')
-    fine_tune_parser.add_argument('--config_path', type=str, required=True, help='Path to the config file')
-    fine_tune_parser.add_argument('--pipe_configs', type=str, required=True, help='Path to the Directory containing config files. Will use every config inside this dir.')
+    fine_tune_parser.add_argument('--config_path', type=str, required=False, help='Path to the config file')
+    fine_tune_parser.add_argument('--pipe_configs', type=str, required=False, help='Path to the Directory containing config files. Will use every config inside this dir.')
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_preprocess', help='Preprocess the data')
     # Add arguments for data_preprocess here
