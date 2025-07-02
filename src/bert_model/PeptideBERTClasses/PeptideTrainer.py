@@ -127,7 +127,7 @@ class PeptideTrainer(Trainer):
                 pred_labels = format_logit_to_label(logits=preds)
                 train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs)
 
-            elif self.args.model_class.startswith('esm'):
+            elif self.args.model_class.startswith('esm_binary'):
 
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
