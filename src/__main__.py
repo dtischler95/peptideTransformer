@@ -25,6 +25,12 @@ def main():
         fine_tune(
             config_path=args.config_path
         )
+    elif args.command == 'pipe_configs':
+
+        for file in os.listdir(args.config_path):
+            if file.endswith('.yaml'):
+                config_path = os.path.join(args.config_path, file)
+                fine_tune(config_path=config_path)
 
     elif args.command == 'data_preprocess':
         # Call your data_preprocess function here
@@ -54,6 +60,7 @@ def parse_inputs():
     # Subparser for bert_model
     fine_tune_parser = subparsers.add_parser('bert_model', help='Fine-tune the model')
     fine_tune_parser.add_argument('--config_path', type=str, required=True, help='Path to the config file')
+    fine_tune_parser.add_argument('--pipe_configs', type=str, required=True, help='Path to the Directory containing config files. Will use every config inside this dir.')
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_preprocess', help='Preprocess the data')
     # Add arguments for data_preprocess here
