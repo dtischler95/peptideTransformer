@@ -343,6 +343,12 @@ def format_logit_to_label(logits):
     return (logits > 0.5).astype(int).flatten()
 
 
+def format_one_hot_to_label(one_hot_tensor):
+    """
+    Format the given one-hot encoded tensor to a list of labels.
+    """
+    return np.argmax(one_hot_tensor, axis=1).flatten()
+
 def calculate_abundance(predictions):
     """
     Calculate the abundance of 0s and 1s in the predictions.
