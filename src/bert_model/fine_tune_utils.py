@@ -532,11 +532,11 @@ def get_bce_label_weight(labels):
 
 
 def init_model(tokenizer, train_dataset, training_args):
-    config = BertConfig.from_pretrained(training_args.model_path)
+
     if training_args.model_class == 'binary_conv':
 
         # ('GrimSqueaker/proteinBERT')
-        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForConvBinaryClassification(config,
                                                        model_path=training_args.model_path,
                                                        loss_function=training_args.loss_function,
@@ -548,7 +548,7 @@ def init_model(tokenizer, train_dataset, training_args):
     elif training_args.model_class == 'binary_dense':
 
         # ('GrimSqueaker/proteinBERT')
-        # config2 = BertConfig.from_pretrained('Rostlab/prot_bert_bfd')#(training_args.model_path) 'Rostlab/prot_bert_bfd' 'GrimSqueaker/proteinBERT'
+        config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config,
                                                    model_path=training_args.model_path,
                                                    extra_feature=training_args.use_concentration,
@@ -565,7 +565,7 @@ def init_model(tokenizer, train_dataset, training_args):
     # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
     # first.
     elif training_args.model_class == 'mlm':
-
+        config = BertConfig.from_pretrained(training_args.model_path)
         model = BertForMaskedLM.from_pretrained(training_args.model_path, config=config)
         # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
         #                                               initial_prob=training_args.mlm_probability,
@@ -580,6 +580,7 @@ def init_model(tokenizer, train_dataset, training_args):
         run_metric = mlm_metrics
     elif training_args.model_class == 'regression':
         # raise NotImplementedError("Custom task not implemented yet")
+        config = BertConfig.from_pretrained(training_args.model_path)
         config.hidden_size = 1024
         config.num_labels = 1
         # model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
