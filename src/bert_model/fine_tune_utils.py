@@ -601,7 +601,10 @@ def init_model(tokenizer, train_dataset, training_args):
         else:
             raise ValueError(f"Invalid model class for ESM: {training_args.model_class}. "
                              f"Expected 'esm_binary' or 'esm_reg', got '{training_args.model_class}'.")
-        model = EsmForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        #model = EsmForSequenceClassification.from_pretrained(training_args.model_path, config=config)
+        from src.bert_model.PeptideBERTClasses.PeptideEsm import PeptideEsm
+        model = PeptideEsm(config=config, use_conc=training_args.use_concentration)
+
         data_collator = DefaultDataCollator()
 
     else:

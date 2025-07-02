@@ -25,10 +25,10 @@ max_length: 36                    # Maximum input sequence length
 label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
-use_concentration: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+use_concentration: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Dataset and File Paths
-train_file: './data/train_data/happen_style_unvoted.csv'  # Path to training data
+train_file: '../../data/train_data/happen_style_unvoted.csv'  # Path to training data
 model_path: 'facebook/esm2_t33_650M_UR50D'                               # Path to pretrained model
 model_save_path: './feature_BERT'             # Path to save the model
 plot_path: './feature_plots'                                   # Path to save the plots
@@ -49,10 +49,10 @@ eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this l
 seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
-use_cpu: false                  # Use CPU for training
+use_cpu: true                  # Use CPU for training
 
 # Miscellaneous Settings
 classification_weighted_labels: false  # Use weighted labels for classification
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
 run_verbose: true                      # Show more information during training, like encoding or configs
-fast_debug_mode: false                  # Developer mode for pipeline testing
+fast_debug_mode: true                  # Developer mode for pipeline testing
