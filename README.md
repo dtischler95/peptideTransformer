@@ -14,6 +14,15 @@
 - [ ] Controll everything and remove redundant code
   - [ ] use the huggingface base classes instead of own ones?
 
+### To-Do Runs
+
+-[ ] Make configs for BERT_dense runs. 
+  - [ ] Binary Hemotoxicity without additional Features
+  - [ ] Binary Hemotoxicity with additional Features
+  - [ ] Regression MIC activity on every organism alone
+  - [ ] Regression MIC activity with one Trainset for all organisms and organism as feature
+- [ ] Repeat the BERT runs with ESM when its finished with development
+
 ### Content
 
 - This repository contains the code to fine-tune ProtBERT for peptide tasks. The code is based on the Huggingface Transformers library and the ProtBERT model. This Repository is structured as follows:  
