@@ -592,7 +592,7 @@ def init_model(tokenizer, train_dataset, training_args):
     elif training_args.model_class.startswith('esm'):
         from transformers import EsmForSequenceClassification, EsmConfig
         config = EsmConfig.from_pretrained(training_args.model_path)
-        if training_args.model_class.endswith('_reg'):
+        if training_args.model_class.endswith('_regression'):
             config.num_labels = 1
             run_metric = regression_metrics
         elif training_args.model_class.endswith('_binary'):
@@ -600,7 +600,7 @@ def init_model(tokenizer, train_dataset, training_args):
             run_metric = esm_metrics
         else:
             raise ValueError(f"Invalid model class for ESM: {training_args.model_class}. "
-                             f"Expected 'esm_binary' or 'esm_reg', got '{training_args.model_class}'.")
+                             f"Expected 'esm_binary' or 'esm_regression', got '{training_args.model_class}'.")
         #model = EsmForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         from src.bert_model.PeptideBERTClasses.PeptideEsm import PeptideEsm
         model = PeptideEsm(config=config, use_conc=training_args.use_concentration)

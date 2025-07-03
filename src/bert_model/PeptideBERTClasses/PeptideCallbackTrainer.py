@@ -33,7 +33,7 @@ class LearningCurveCallback(TrainerCallback):
         # scraping the metrics from the logs
         # eval metrics are always the last ones while the third last are the train metrics
         # scraping them every epoch to update the learning curves by storing the values
-        metric_to_get = "accuracy" if args.model_class.startswith('binary') else "r2"
+        metric_to_get = "r2" if args.model_class.endswith('regression') else "accuracy"
         if "eval_loss" in logs[-1]:
             self.eval_accuracy_metrics.append(logs[-1].get(f"eval_{metric_to_get}"))
             self.eval_loss_metric.append(logs[-1].get("eval_loss"))
