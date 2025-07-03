@@ -11,7 +11,7 @@
 - [ ] Make cross validation in \_\_main\_\_.py for individual runs
 - [ ] Add Feature calculation for esm models
 - [ ] Finish regression head
-- [ ] Controll everything and remove redundant code
+- [ ] Control everything and remove redundant code
   - [ ] use the huggingface base classes instead of own ones?
 
 ### To-Do Runs
