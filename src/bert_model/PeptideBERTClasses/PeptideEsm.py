@@ -21,7 +21,7 @@ class PeptideEsm(EsmPreTrainedModel):
         self.config = config
 
         self.esm = EsmModel(config, add_pooling_layer=False)
-        self.classifier = EsmClassificationHead(config, use_conc)
+        self.classifier = EsmClassificationHead(config)
 
         self.init_weights()
 
@@ -29,7 +29,6 @@ class PeptideEsm(EsmPreTrainedModel):
         self,
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
-        concentration: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
@@ -57,15 +56,6 @@ class PeptideEsm(EsmPreTrainedModel):
             return_dict=return_dict,
         )
         sequence_output = outputs[0]
-        if concentration is not None:
-            # if concentration is provided, we concatenate it to the sequence output
-
-            # If concentration is a 1D tensor, we need to unsqueeze it to match the sequence output shape
-            batch_size, seq_length, hidden_size = sequence_output.size()
-
-            concentration = concentration.unsqueeze(1).repeat(1, seq_length).unsqueeze(-1)
-
-            sequence_output = torch.cat((sequence_output, concentration), dim=-1)
 
         logits = self.classifier(sequence_output)
 
@@ -113,9 +103,9 @@ class EsmClassificationHead(nn.Module):
     This head is used to classify the output of the ESM model into binary classes.
     """
 
-    def __init__(self, config, use_conc: bool = True):
+    def __init__(self, config):
         super().__init__()
-        hidden_size = config.hidden_size + (1 if use_conc else 0)
+        hidden_size = config.hidden_size
         self.dense = nn.Linear(hidden_size, hidden_size)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.out_proj = nn.Linear(hidden_size, config.num_labels)
