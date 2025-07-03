@@ -5,7 +5,7 @@ import pandas as pd
 import yaml
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, EsmTokenizer
 from transformers import BertTokenizer
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import \
@@ -21,10 +21,10 @@ from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regr
 
 def prepare_datasets(model_class: str,
                      model_path: str,
-                     show_encoding: bool,
                      train_file: str,
                      val_file: str,
                      logger: logging.Logger,
+                     show_encoding: bool = False,
                      ignore_leakage: bool = False,
                      max_length: int = 36,
                      cut_df_for_faster_debug: bool = False,
@@ -57,82 +57,65 @@ def prepare_datasets(model_class: str,
     :return: tokenizer, train_dataset, val_dataset, test_dataset
     """
     # Load the data
-    df_train = pd.read_csv(train_file, sep=';')
+    def load_and_sample_data(file, sample=False):
+        df = pd.read_csv(file, sep=';')
+        return df.sample(frac=1)[:200] if sample else df
 
-    df_train = df_train.sample(frac=1)[:200] if cut_df_for_faster_debug else df_train
+    def split_sequences(data, test_size, shuffle=True):
+        return train_test_split(data, test_size=test_size, shuffle=shuffle)
 
-    # Get unique sequence id for train/test split. We create our split data with the IDs to avoid data Leakage
-    # Those id's are later used to load the Dataframes with the corresponding sequences
-    if ignore_leakage:
-        df_to_split = df_train
-    else:
-        df_to_split = df_train['sequence'].unique()
+    def get_labels_and_concentrations(data, use_concentration):
+        labels = None if model_class.startswith('mlm') else data['label'].values
+        concentrations = data['hemo_concentration'].values if use_concentration else None
+        return labels, concentrations
 
-    # Cut the dataframe for faster debugging if enabled. shuffle the df to ensure labels are mixed
-    # TODO add stratified args for train_test_split
-
-    # Split the data into training, validation and test sets
+    # Load and preprocess data
+    df_train = load_and_sample_data(train_file, cut_df_for_faster_debug)
+    df_to_split = df_train if ignore_leakage else df_train['sequence'].unique()
 
     if random_data_shuffle:
-        train_sequences, df_val_handler = train_test_split(df_to_split, test_size=validation_data_size, shuffle=True)
-        val_sequences, test_sequences = train_test_split(df_val_handler, test_size=test_data_size, shuffle=True)
+        train_sequences, val_handler = split_sequences(df_to_split, validation_data_size)
+        val_sequences, test_sequences = split_sequences(val_handler, test_data_size)
         all_sequence_df = df_train
     else:
         train_sequences = df_to_split
-        df_val = pd.read_csv(val_file, sep=';')
-        df_val_to_split = df_val['sequence'].unique()
-        val_sequences, test_sequences = train_test_split(df_val_to_split, test_size=test_data_size, shuffle=True)
+        df_val = load_and_sample_data(val_file)
+        val_sequences, test_sequences = split_sequences(df_val['sequence'].unique(), test_data_size)
         all_sequence_df = pd.concat([df_train, df_val], ignore_index=True)
 
     if not ignore_leakage:
-        # Assigning the given train/val/test task to a given sequence id ensuring there's no Leakage
         train_sequences = all_sequence_df[all_sequence_df['sequence'].isin(train_sequences)]
         val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
-    label_data_train = None if model_class.startswith('mlm') else train_sequences['label'].values
-    label_data_val = None if model_class.startswith('mlm') else val_sequences['label'].values
-    label_data_test = None if model_class.startswith('mlm') else test_sequences['label'].values
+    # Extract labels and concentrations
+    label_data_train, concentration_data_train = get_labels_and_concentrations(train_sequences, use_concentration)
+    label_data_val, concentration_data_val = get_labels_and_concentrations(val_sequences, use_concentration)
+    label_data_test, concentration_data_test = get_labels_and_concentrations(test_sequences, use_concentration)
 
-    concentration_data_train = train_sequences['hemo_concentration'].values if use_concentration else None
-    concentration_data_val = val_sequences['hemo_concentration'].values if use_concentration else None
-    concentration_data_test = test_sequences['hemo_concentration'].values if use_concentration else None
+    # Load tokenizer
+    tokenizer = (BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
+                 if not model_class.startswith('esm') else
+                 EsmTokenizer.from_pretrained(model_path, do_lower_case=False))
 
-    # Load the tokenizer
-    if not model_class.startswith('esm'):
-        tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)  #
-    else:
-        from transformers import EsmTokenizer
-        tokenizer = EsmTokenizer.from_pretrained(model_path, do_lower_case=False)
-
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
-                                   concentrations=concentration_data_train,
-                                   tokenizer=tokenizer,
-                                   labels=label_data_train,
-                                   max_length=max_length,
+    # Create datasets
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], concentrations=concentration_data_train,
+                                   tokenizer=tokenizer, labels=label_data_train, max_length=max_length,
                                    model_class=model_class)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
-                                 concentrations=concentration_data_val,
-                                 tokenizer=tokenizer,
-                                 labels=label_data_val,
-                                 max_length=max_length,
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], concentrations=concentration_data_val,
+                                 tokenizer=tokenizer, labels=label_data_val, max_length=max_length,
                                  model_class=model_class)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
-                                  concentrations=concentration_data_test,
-                                  tokenizer=tokenizer,
-                                  labels=label_data_test,
-                                  max_length=max_length,
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], concentrations=concentration_data_test,
+                                  tokenizer=tokenizer, labels=label_data_test, max_length=max_length,
                                   model_class=model_class)
 
-    # print out the encoding of the vocabulary used by the tokenizer if wanted
-    get_encoding(tokenizer=tokenizer) if show_encoding else None
+    # Optional: Show encoding
+    if show_encoding:
+        get_encoding(tokenizer)
 
-    # Important Data Leakage Check
-    check_data_loader_for_leakage(train_data_loader=train_dataset,
-                                  val_data_loader=val_dataset,
-                                  test_data_loader=test_dataset,
-                                  ignore_leakage=ignore_leakage,
-                                  logger=logger)
+    # Check for data leakage
+    check_data_loader_for_leakage(train_data_loader=train_dataset, val_data_loader=val_dataset,
+                                  test_data_loader=test_dataset, ignore_leakage=ignore_leakage, logger=logger)
 
     return tokenizer, train_dataset, val_dataset, test_dataset
 

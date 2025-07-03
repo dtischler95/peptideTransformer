@@ -63,7 +63,6 @@ def fine_tune(config_path: str):
 
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(model_class=training_args.model_class,
                                                                            model_path=training_args.model_path,
-                                                                           show_encoding=training_args.run_verbose,
                                                                            train_file=training_args.train_file,
                                                                            val_file=training_args.val_file,
                                                                            ignore_leakage=training_args.ignore_leakage,

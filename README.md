@@ -5,32 +5,9 @@
 - This Repository contains the code to fine-tune ProtBERT for peptide tasks. The code is based on the Huggingface Transformers library and the ProtBERT model.
 - The Idea is to first fine tune the BERT-Transformer for Peptides Tasks with MLM, afterward the model should be use-able for other downstream tasks. This Project focuses on the binary classification of toxicity of peptides for Human Blood Cells.
 
-### To-Do data_analysis
-- [ ] Clean up files and sort functions
-- [ ] Add some plots to view datasets
-  - [ ] May include some for regression/multilabel task for mic later on
-- [ ] Use CD-Hit and prepare dataset with GO-Annotations
-
 ### To-Do
-- [ ] Do I need any special metric for rising the masking percentage of the data collator?
-- [x] Figure out learning curve metrics!
-  - [ ] Tensorboard seems like a simple and easy way to do this
-- [ ] FIX PATH IN MAIN. IT SHOULD ALWAYS SET WORKING PATH TO SRC PATH
-- [ ] Implement Mathews Correlation Coefficient
-- [ ] Implement Fisher Test
-- [ ] Trainer/reformat_metrics if i want to make a prettier print of the metrics
-- [ ] Add regression metrics
-- [ ] Add better regression head
-- [ ] Make a preprocessing pipeline for regression data
-- [ ] Don't track accuracy but loss in learning curve
 
-
-#### Preprocessing
-- [ ] Flesh out get_overall_stats function with more graphs and stats. *binary task* [low prio]
-- [ ] Check notebook for spelling and grammar mistakes, this is just disgusting xD
-- [ ] Think of removing Peptides that scores too similar with scoring tools for Peptide Sequences
-  - [ ] Research Scoring Tools for Peptides. CD-HIT and stuff
-    
+- [ ] Remove run_verbose from training-args
 
 ### Content
 

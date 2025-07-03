@@ -29,7 +29,6 @@ class PeptideTrainingArguments(TrainingArguments):
                  classification_weighted_labels: bool = False,
                  label_0_cluster_data: int = 500,
                  label_1_cluster_data: int = 500,
-                 run_verbose: bool = False,
                  mlm_curriculum_learning: bool = False,
                  mlm_curriculum_increase_step: int = 0.1,
                  mlm_curriculum_max_prob: float = 0.9,
@@ -61,7 +60,6 @@ class PeptideTrainingArguments(TrainingArguments):
         :param classification_weighted_labels: Use weighted labels for classification tasks
         :param label_0_cluster_data: Number of samples to cluster for label 0
         :param label_1_cluster_data: Number of samples to cluster for label 1
-        :param run_verbose: Show encoding of the vocabulary
         :param mlm_curriculum_learning: Use curriculum learning for MLM
         :param mlm_curriculum_increase_step: Increase step for the curriculum learning
         :param mlm_curriculum_max_prob: Maximum probability for the curriculum learning
@@ -93,7 +91,6 @@ class PeptideTrainingArguments(TrainingArguments):
         self.classification_weighted_labels = classification_weighted_labels
         self.label_0_cluster_data = label_0_cluster_data
         self.label_1_cluster_data = label_1_cluster_data
-        self.run_verbose = run_verbose
         self.mlm_curriculum_learning = mlm_curriculum_learning
         self.mlm_curriculum_increase_step = mlm_curriculum_increase_step
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
