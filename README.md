@@ -16,7 +16,7 @@
 
 ### To-Do Runs
 
--[ ] Make configs for BERT_dense runs. 
+- [ ] Make configs for BERT_dense runs. 
   - [ ] Binary Hemotoxicity without additional Features
   - [ ] Binary Hemotoxicity with additional Features
   - [ ] Regression MIC activity on every organism alone
