@@ -258,10 +258,10 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
 
     logger.info("Logger wont log this anymore :(")
     # more logging, we all love logging
-    if config['run_verbose']:
-        print("Set Parameters for this training run:")
-        for k, v in config.items():
-            print(f"  {k}: {v}")
+
+    print("Set Parameters for this training run:")
+    for k, v in config.items():
+        print(f"  {k}: {v}")
 
     if config['plot_path'] is None:
         config.plot_path = './plots'
@@ -476,7 +476,6 @@ use_cpu: false                                         # Use CPU for training
 classification_weighted_labels: false                  # Use weighted labels for classification
 ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
 fast_debug: false                                      # Use fast debug mode (only if certain)
-run_verbose: true                                      # Verbose output
 """
 
     try:
