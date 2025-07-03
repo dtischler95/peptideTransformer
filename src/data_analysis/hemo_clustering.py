@@ -428,7 +428,7 @@ def cluster_model_embedding(file_path,
     # Generating a tag for output files to be unique
 
     if device is None:
-        device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     embedding, labels = encode_peptides(sequence_file=file_path,
                                         batch_size=batch_size,
@@ -478,28 +478,28 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
 
 if __name__ == "__main__":
 
-
-    tokenizer = EsmTokenizer.from_pretrained('facebook/esm2_t33_650M_UR50D', do_lower_case=False)
-    config = EsmConfig.from_pretrained('facebook/esm2_t33_650M_UR50D')
+    from src.bert_model.PeptideBERTClasses.PeptideEsm import PeptideEsm
+    tokenizer = EsmTokenizer.from_pretrained('./esm_bin_model', do_lower_case=False)
+    config = EsmConfig.from_pretrained('./esm_bin_model')
     config.num_labels = 2
     run_metric = esm_metrics
-    model = EsmForSequenceClassification.from_pretrained('facebook/esm2_t33_650M_UR50D', config=config)
+    model = PeptideEsm.from_pretrained('./esm_bin_model', config=config)
     filterwarnings("ignore", category=UserWarning)
     device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
-    df = pd.read_csv("../../data/train_data/whitelab_hemo_data.csv", sep=';')
-    df = df[:50]
+    df = pd.read_csv("../../data/train_data/happen_style_unvoted.csv", sep=';')
+    df = df[:1000]
 
-    train_dataset = PeptideDataset(peptides=df['sequence'].to_list(),
-                                   concentrations=None,
-                                   tokenizer=tokenizer,
-                                   labels=df['label'].to_list(),
-                                   max_length=36,
-                                   model_class='esm_binary')
+    test_dataset = PeptideDataset(peptides=df['sequence'].to_list(),
+                                  concentrations=None,
+                                  tokenizer=tokenizer,
+                                  labels=df['label'].to_list(),
+                                  max_length=36,
+                                  model_class='esm_binary')
 
-    cluster_model_embedding(file_path=train_dataset,
+    cluster_model_embedding(file_path=test_dataset,
                             batch_size=16,
                             plot_path="../../plots",
                             tokenizer_and_model=(tokenizer, model),
-                            device=None,
+                            device=device,
                             sequence_max_length=36,
                             model_class='esm_binary')
