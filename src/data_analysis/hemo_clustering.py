@@ -1,3 +1,4 @@
+import logging
 import torch
 import umap
 import numpy as np
@@ -230,6 +231,7 @@ def perform_clustering(embedded_sequences,
     :param embedded_sequences: data points
     :param sequence_labels: labels of the data points. Needs to be index paired with the data points
     :param plot_path: path to sav{plot_path
+    :param logger: logger for logging messages
     :param tag: tag for the output files
     """
 
@@ -337,6 +339,7 @@ def encode_peptides(sequence_file,
                     plot_path: str,
                     model_class: str,
                     sequence_max_length: int,
+                    logger: logging.Logger or None = None,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
@@ -391,7 +394,10 @@ def encode_peptides(sequence_file,
 
         embeddings.append(outputs.cpu().detach().numpy())
         progress += len(batch_peptides)
-        print(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
+        if logger:
+            logger.info(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
+        else:
+            print(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
 
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
@@ -408,6 +414,7 @@ def cluster_model_embedding(file_path,
                             data_tag: str = "test_run",
                             label_0_cluster_data: int = 500,
                             label_1_cluster_data: int = 500,
+                            logger: logging.Logger or None = None,
                             tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
     """
     Standalone Wrapper for clustering analysis if you run this file directly.
