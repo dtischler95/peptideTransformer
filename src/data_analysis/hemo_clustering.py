@@ -315,9 +315,9 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    if logger:
-        logger.info("[Clustering] Starting clustering analysis PCA")
-    pca, pca_fit = run_pca(embedded_sequences)
+    # if logger:
+    #     logger.info("[Clustering] Starting clustering analysis PCA")
+    # pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -327,8 +327,8 @@ def perform_clustering(embedded_sequences,
         logger.info("[Clustering] Starting clustering analysis UMAP")
     umap_fit = run_umap(embedded_sequences)
 
-    print("[Clustering] Running KMeans for PCA")
-    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    # print("[Clustering] Running KMeans for PCA")
+    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
