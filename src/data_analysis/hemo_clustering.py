@@ -444,6 +444,7 @@ def cluster_model_embedding(file_path,
                                         sequence_max_length=sequence_max_length,
                                         label_0_cluster_data=label_0_cluster_data,
                                         label_1_cluster_data=label_1_cluster_data,
+                                        logger=logger,
                                         plot_path=plot_path,
                                         model_class=model_class)
     perform_clustering(embedded_sequences=embedding,
