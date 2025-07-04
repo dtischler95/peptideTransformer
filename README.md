@@ -13,6 +13,8 @@
 - [ ] Finish regression head
 - [ ] Control everything and remove redundant code
   - [ ] use the huggingface base classes instead of own ones?
+- [ ] y-axis should be the same range for all plots
+  - [ ] check for maximum on biggest metricdifference and use this als scale for all plots
 
 ### To-Do Runs
 

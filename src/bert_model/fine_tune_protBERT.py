@@ -128,7 +128,8 @@ def fine_tune(config_path: str):
                                     sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data,
-                                    model_class=training_args.model_class
+                                    model_class=training_args.model_class,
+                                    logger=logger
                                     )
 
             prepare_fisher_exact(test_dataset=test_dataset,
