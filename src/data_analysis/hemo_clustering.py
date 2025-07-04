@@ -223,6 +223,7 @@ def plot_umap(data, labels, plot_path=""):
 def perform_clustering(embedded_sequences,
                        sequence_labels,
                        plot_path: str,
+                       logger: logging.Logger or None = None,
                        tag: str = ""):
     """
     Perform clustering analysis on the data points.
@@ -244,6 +245,7 @@ def perform_clustering(embedded_sequences,
         :param cluster_labels: predicted labels
         :param cluster_tag: tag for prints
         """
+
         print(
             f"[Clustering]: Positive class: {list(cluster_labels).count(1)} Negative class: {list(cluster_labels).count(0)}"
         )
@@ -313,9 +315,16 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
+    if logger:
+        logger.info("[Clustering] Starting clustering analysis PCA")
     pca, pca_fit = run_pca(embedded_sequences)
 
+    if logger:
+        logger.info("[Clustering] Starting clustering analysis TSNE")
     tsne_fit = run_tsne(embedded_sequences)
+
+    if logger:
+        logger.info("[Clustering] Starting clustering analysis UMAP")
     umap_fit = run_umap(embedded_sequences)
 
     print("[Clustering] Running KMeans for PCA")
@@ -449,6 +458,7 @@ def cluster_model_embedding(file_path,
                                         model_class=model_class)
     perform_clustering(embedded_sequences=embedding,
                        sequence_labels=labels,
+                       logger=logger,
                        tag=data_tag,
                        plot_path=plot_path)
 
