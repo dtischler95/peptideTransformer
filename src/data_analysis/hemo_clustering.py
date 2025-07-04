@@ -334,8 +334,8 @@ def perform_clustering(embedded_sequences,
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-
-    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+    #
+    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
