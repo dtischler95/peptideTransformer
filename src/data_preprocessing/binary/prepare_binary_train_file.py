@@ -126,12 +126,14 @@ def split_measure_type(x):
     return percent, concentration, unit
 
 
-def _process_units(final, verbose: bool = False):
+def process_units(final, verbose: bool = False, hemo_or_mic : str = "hemo"):
     """
     Function from Lukas Beyerle
     Calculates µM value for each datapoint based on the given unit and concentration.
     """
     print("Processing units")
+
+    row_to_look = "hemo_concentration" if hemo_or_mic == "hemo" else "value"
 
     # Replace dictionary for initial unit replacements
     replace_units = {
@@ -194,11 +196,11 @@ def _process_units(final, verbose: bool = False):
         print("VOR Umrechnung der Einheiten")
         print(final.groupby("unit").agg(
             count=('unit', 'size'),
-            min=('hemo_concentration', 'min'),
-            max=('hemo_concentration', 'max'),
-            mean=('hemo_concentration', 'mean'),
-            std=('hemo_concentration', 'std'),
-            median=('hemo_concentration', lambda x: np.median(x)),
+            min=(row_to_look, 'min'),
+            max=(row_to_look, 'max'),
+            mean=(row_to_look, 'mean'),
+            std=(row_to_look, 'std'),
+            median=(row_to_look, lambda x: np.median(x)),
             units=('unit', 'unique'),
         ).sort_values(by='count', ascending=False))
 
@@ -212,44 +214,44 @@ def _process_units(final, verbose: bool = False):
     # Apply conversions based on units
     def convert_values(row):
         if row['unit'] == 'µg/ml':
-            return row['hemo_concentration'] * 10 ** 3 / row['mol_weight']
+            return row[row_to_look] * 10 ** 3 / row['mol_weight']
         elif row['unit'] == 'mg/ml':
-            return row['hemo_concentration'] * 10 ** 6 / row['mol_weight']
+            return row[row_to_look] * 10 ** 6 / row['mol_weight']
         elif row['unit'] == 'nM':
-            return row['hemo_concentration'] / 10 ** 3
+            return row[row_to_look] / 10 ** 3
         elif row['unit'] == 'nM/ml':
-            return row['hemo_concentration'] * 10 ** 12
+            return row[row_to_look] * 10 ** 12
         elif row['unit'] == 'mM':
-            return row['hemo_concentration'] * 10 ** 3
+            return row[row_to_look] * 10 ** 3
         elif row['unit'] == 'mM/l':
-            return row['hemo_concentration'] * 10 ** 3
+            return row[row_to_look] * 10 ** 3
         elif row['unit'] == 'M':
-            return row['hemo_concentration'] * 10 ** 6
+            return row[row_to_look] * 10 ** 6
         elif row['unit'] == 'pM':
-            return row['hemo_concentration'] * 10 ** 6
+            return row[row_to_look] * 10 ** 6
         elif row['unit'] == 'pM/ml':
-            return row['hemo_concentration'] * 10 ** 15
+            return row[row_to_look] * 10 ** 15
         elif row['unit'] == 'µg/µl':
-            return row['hemo_concentration'] * 10 ** 6 / row['mol_weight']
+            return row[row_to_look] * 10 ** 6 / row['mol_weight']
         elif row['unit'] == 'M/l':
-            return row['hemo_concentration'] * 10 ** 6
+            return row[row_to_look] * 10 ** 6
         elif row['unit'] == 'g/l':
-            return row['hemo_concentration'] * 10 ** 6 / row['mol_weight']
+            return row[row_to_look] * 10 ** 6 / row['mol_weight']
         elif row['unit'] == 'g/ml':
-            return row['hemo_concentration'] * 10 ** 9 / row['mol_weight']
+            return row[row_to_look] * 10 ** 9 / row['mol_weight']
         elif row['unit'] == 'mg/l':
-            return row['hemo_concentration'] * 10 ** 3 / row['mol_weight']
+            return row[row_to_look] * 10 ** 3 / row['mol_weight']
         elif row['unit'] == 'µg/l':
-            return row['hemo_concentration'] / row['mol_weight']
+            return row[row_to_look] / row['mol_weight']
         elif row['unit'] == 'ng/ml':
-            return row['hemo_concentration'] / row['mol_weight']
+            return row[row_to_look] / row['mol_weight']
         elif row['unit'] == 'µg/nl':
-            return row['hemo_concentration'] * 10 ** 9 / row['mol_weight']
+            return row[row_to_look] * 10 ** 9 / row['mol_weight']
         else:
-            return row['hemo_concentration']
+            return row[row_to_look]
 
 
-    final.loc[:, 'hemo_concentration'] = final.apply(convert_values, axis=1)
+    final.loc[:, row_to_look] = final.apply(convert_values, axis=1)
 
     # Drop the temporary molecular weight column
     final = final.drop(columns=["mol_weight"])
@@ -262,11 +264,11 @@ def _process_units(final, verbose: bool = False):
         print("NACH Umrechnung der Einheiten")
         print(final.groupby("unit").agg(
             count=('unit', 'size'),
-            min=('hemo_concentration', 'min'),
-            max=('hemo_concentration', 'max'),
-            mean=('hemo_concentration', 'mean'),
-            std=('hemo_concentration', 'std'),
-            median=('hemo_concentration', lambda x: np.median(x)),
+            min=(row_to_look, 'min'),
+            max=(row_to_look, 'max'),
+            mean=(row_to_look, 'mean'),
+            std=(row_to_look, 'std'),
+            median=(row_to_look, lambda x: np.median(x)),
             units=('unit', 'unique'),
         ).sort_values(by='count', ascending=False))
         print(f"\nUNITS before: {units_before} -> after: {units_after}\n")
@@ -347,7 +349,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "why2"]
 
     # Process units
-    df_raw_hemo = _process_units(df_raw_hemo, verbose=True)
+    df_raw_hemo = process_units(df_raw_hemo, verbose=True)
 
     if filter_sequences:
         seq_to_filter = 100
