@@ -1,16 +1,17 @@
 import os
 
+import evaluate
+import matplotlib.pyplot as plt
 from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
-import matplotlib.pyplot as plt
+
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-import evaluate
 
 
 class LearningCurveCallback(TrainerCallback):
     """
     Custom Callback class for pretty logging and creating learning curves for accuracy and loss metrics during training and evaluation.
-    logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
+    Logging_steps and plotting steps are synced to ensure that every point is updated when plotted to avoid straight lines in curves.
     This is just for combining some metrics in one graph. Every single graph will be plotted in a separate callback.
     """
 
@@ -48,7 +49,6 @@ class LearningCurveCallback(TrainerCallback):
         """
         epochs = range(1, len(self.eval_accuracy_metrics) + 1)
         plt.figure(figsize=(10, 5))
-
 
         # Plot accuracy on the primary y-axis
         plt.plot(epochs, self.eval_accuracy_metrics, label=f"Eval_{axis_label}", color='blue')
@@ -95,7 +95,7 @@ class PlotMetricsCallback(TrainerCallback):
         logs = state.log_history
 
         # ---------------------------------------------------------------------------------------------------
-        # This whil be only executed once to initialize all data storages for the metrics
+        # This will be only executed once to initialize all data storages for the metrics
         # Initialize the metrics to plot based on the first log
         if not self.metrics_to_plot:
             self.metrics_to_plot = [metric for metric in logs[0] if metric != "epoch" and metric != "step"]
@@ -149,7 +149,6 @@ class EarlyStoppingCallback(TrainerCallback):
     def on_evaluate(self, args: PeptideTrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         """
         Needs to be on_evaluate since there will be the calculations of those metrics.
-        BUG -> It seems that early_stop_warmup affects updates of eval_metrics somehow.... Idk
         """
 
         if state.epoch < args.early_stop_warm_up:
@@ -180,9 +179,9 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     Needed so the Trainer calculates the metrics on the training dataset as well.
     Solution taken from:
     https://discuss.huggingface.co/t/metrics-for-training-set-in-trainer/2461/4
-    But instead of overwriting the compute_metrics function, i overwrote train_step and passed all the
+    But instead of overwriting the compute_metrics function, I overwrote train_step and passed all the
     necessary metrics to this callback.
-    This Callback is absolutly Needed for this script to work. Since Learning Curves and value passing
+    This Callback is absolutely Needed for this script to work. Since Learning Curves and value passing
     rely on this callback.
     A batch_wise_mean method is NEEDED to reset epoch counter for mean calculation.
     This method NEEDS to be called in the log Function of the PeptideTrainer subclass.
@@ -191,7 +190,6 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def __init__(self) -> None:
         self.collected_predictions = []
         self.collected_labels = []
-
 
     def append_batch_results(self, predictions, labels):
         self.collected_predictions.extend(predictions)
@@ -205,16 +203,23 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
         return matthews_corrcoef(y_true=self.collected_labels, y_pred=self.collected_predictions)
 
     def get_train_accuracy(self):
-        return evaluate.load("accuracy").compute(predictions=self.collected_predictions, references=self.collected_labels)["accuracy"]
+        return \
+        evaluate.load("accuracy").compute(predictions=self.collected_predictions, references=self.collected_labels)[
+            "accuracy"]
 
     def get_train_precision(self):
-        return evaluate.load("precision").compute(predictions=self.collected_predictions, references=self.collected_labels)["precision"]
+        return \
+        evaluate.load("precision").compute(predictions=self.collected_predictions, references=self.collected_labels)[
+            "precision"]
 
     def get_train_recall(self):
-        return evaluate.load("recall").compute(predictions=self.collected_predictions, references=self.collected_labels)["recall"]
+        return \
+        evaluate.load("recall").compute(predictions=self.collected_predictions, references=self.collected_labels)[
+            "recall"]
 
     def get_train_f1(self):
-        return evaluate.load("f1").compute(predictions=self.collected_predictions, references=self.collected_labels)["f1"]
+        return evaluate.load("f1").compute(predictions=self.collected_predictions, references=self.collected_labels)[
+            "f1"]
 
     def get_train_mse(self):
         return mean_squared_error(self.collected_labels, self.collected_predictions)
@@ -225,10 +230,11 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def get_train_r2(self):
         return r2_score(self.collected_labels, self.collected_predictions)
 
+
 class CurriculumLearningCallback(TrainerCallback):
     """
     Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
-    A curriculum step is not defined for me so far. It could be something like every 10 Epochs. Need to do some more research on this.
+    A curriculum step is not defined for me so far. It could be something like every 10 Epochs. I need to do some more research on this.
     """
 
     def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):

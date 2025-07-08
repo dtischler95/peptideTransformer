@@ -72,12 +72,6 @@ class PeptideTrainer(Trainer):
                         logs['mcc'] = round(callback.get_train_mcc(), 4)
                         logs['recall'] = round(callback.get_train_recall(), 4)
                         logs['f1'] = round(callback.get_train_f1(), 4)
-                    if self.args.model_class.startswith('esm'):
-                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
-                        logs['precision'] = round(callback.get_train_precision(), 4)
-                        logs['mcc'] = round(callback.get_train_mcc(), 4)
-                        logs['recall'] = round(callback.get_train_recall(), 4)
-                        logs['f1'] = round(callback.get_train_f1(), 4)
 
                     callback.clear_results_after_epoch()
 
@@ -126,14 +120,6 @@ class PeptideTrainer(Trainer):
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
                 pred_labels = format_logit_to_label(logits=preds)
                 train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs)
-
-            elif self.args.model_class.startswith('esm_binary'):
-
-                preds = model(**inputs)[1].detach().cpu().numpy()
-                cpu_inputs = inputs["labels"].detach().cpu().numpy()
-                pred_labels = format_one_hot_to_label(one_hot_tensor=preds)# TODO CHANGE FORMATER FROM ONEHOT!
-                cpu_input_labels = format_one_hot_to_label(one_hot_tensor=cpu_inputs)
-                train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_input_labels)
 
             elif self.args.model_class == 'mlm':
                 # Extract the logits for the masked tokens

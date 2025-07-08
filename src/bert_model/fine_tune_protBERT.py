@@ -10,8 +10,7 @@ from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_fisher_exact, init_model
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
-    CurriculumLearningCallback, PlotMetricsCallback, CollectBatchWiseTrainMetrics
-
+    PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
 # this line should be included in the TrainingArguments
 logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ def fine_tune(config_path: str):
     on PeptideBERTs train algorithm, and it seems like the model is affected by data leakage]
 
 
-    :param config_path: path to the config file
+    :param config_path: Path to the config file
     """
 
     # --------------------- Setup logging and configs ---------------------
@@ -41,7 +40,7 @@ def fine_tune(config_path: str):
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
-    # load training params into PeptideTrainingArguments class. Adjust if we need other params
+    # Load training params into PeptideTrainingArguments class. Adjust if we need other params
     training_args = load_training_arguments(config_file=config_path,
                                             logger=logger)
 
@@ -115,8 +114,7 @@ def fine_tune(config_path: str):
 
     if training_args.do_eval:
 
-        if training_args.model_class.startswith('binary') or training_args.model_class == 'esm_binary':
-            print("EVERYTHING IS WORKING")
+        if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
             cluster_model_embedding(file_path=test_dataset,
@@ -136,16 +134,15 @@ def fine_tune(config_path: str):
                                  trainer=trainer,
                                  plot_path=training_args.plot_path)
 
-    # not really needed for my case I guess
+    # not really needed for my case, I guess
     if training_args.do_predict:
         ...
-        # Test dataset not used so far. May remove it completely?
+        # Test dataset is not used so far. May remove it completely?
         """
         This part is only for debugging purposes.        
         """
         # if training_args.model_class == 'binary':
         #     test_binary_label_bias(tokenizer, trainer, training_args)
-
 
 
 if __name__ == '__main__':

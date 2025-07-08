@@ -1,15 +1,16 @@
-from transformers import BertModel
-import torch.nn as nn
 from typing import Optional, Union, Tuple, List
+
 import torch
+import torch.nn as nn
+from transformers import BertModel
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
 class PeptideBertForRegression(BertModel):
     """
     Naive implementation of a regression model using the BertModel as a base.
-    For better testing i still need to prepare my regression dataset properly.
-    I also need to implement a robust and consitent architecture for regression.
+    For better testing, I still need to prepare my regression dataset properly.
+    I also need to implement a robust and consistent architecture for regression.
     """
 
     def __init__(self, config, model_path: str):
@@ -76,8 +77,7 @@ class PeptideBertForRegression(BertModel):
         """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-
-        #with torch.no_grad():
+        # with torch.no_grad():
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
@@ -88,15 +88,13 @@ class PeptideBertForRegression(BertModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-            )
+        )
 
-        #------- ADJUST IF REGRESSION HEAD IS CHANGED -------
+        # ------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
         pooled_output = self.dropout(pooled_output)
         logits = self.regression(pooled_output)
-        #--------------------------------------------------
-
-
+        # --------------------------------------------------
 
         # If labels are provided, compute the loss
         loss = None

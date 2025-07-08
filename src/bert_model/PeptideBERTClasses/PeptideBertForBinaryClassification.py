@@ -1,7 +1,8 @@
 from typing import Optional, Union, Tuple, List
+
 import torch
-from transformers import BertModel
 import torch.nn as nn
+from transformers import BertModel
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
@@ -12,9 +13,7 @@ class PeptideBertForBinaryClassification(BertModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config,model_path: str, extra_feature,  bce_logit_weight, loss_function: str = 'bce'):
-        config.num_hidden_layers = 8
-        config.classifier_dropout = 0.15
+    def __init__(self, config, model_path: str, extra_feature, bce_logit_weight, loss_function: str = 'bce'):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.return_dict = False
         super().__init__(config)
@@ -103,7 +102,6 @@ class PeptideBertForBinaryClassification(BertModel):
         # Apply the classifier to the concatenated output
         logits = self.classifier(pooled_output)
 
-
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
@@ -114,15 +112,14 @@ class PeptideBertForBinaryClassification(BertModel):
                 loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
             elif self.loss_function == 'bce_logit_loss':
-                loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.bce_logit_weight)  # Use Binary Cross Entropy Loss with logits
+                loss_fct = nn.BCEWithLogitsLoss(
+                    pos_weight=self.bce_logit_weight)  # Use Binary Cross Entropy Loss with logits
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
                 # this is done after loss calculation because bce_with_logit loss arleady implemented sigmoid
                 # For further calculations we still need to apply sigmoid to the logits here since the loss function wont return the sigmoided logits
                 logits = self.sigmoid(logits)  # Apply sigmoid activation for binary classification
             else:
                 raise ValueError(f"Loss function {self.loss_function} not supported. Use 'bce' or 'bce_logit_loss'")
-
-
 
         if not return_dict:
             return (loss, logits) if loss is not None else logits
@@ -133,4 +130,3 @@ class PeptideBertForBinaryClassification(BertModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-

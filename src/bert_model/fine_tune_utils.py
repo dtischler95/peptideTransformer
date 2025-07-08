@@ -1,22 +1,21 @@
 import logging
 import os
+
 import numpy as np
 import pandas as pd
 import yaml
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling, EsmTokenizer
+from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
 from transformers import BertTokenizer
+
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import \
     PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics, esm_metrics
-
-
-# from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer # TODO FIX CIRCULAR IMPORT FOR FISHER EXACT
+from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics
 
 
 def prepare_datasets(model_class: str,
@@ -39,14 +38,13 @@ def prepare_datasets(model_class: str,
     Update the Dataset class if you want to use a different model or a different task so the Dataset class fits the
     data and the task.
 
-    :param model_class: If the model should be fine-tuned for binary classification or masked language modeling
-                          Is used for your task, update this flag if you want to use a different model or a different task
-    :param model_path: path to the pretrained model
-    :param show_encoding: if the encoding of the vocabulary should be shown
-    :param train_file: path to the training data
-    :param val_file: path to the validation data
-    :param logger: logger for logging
-    :param ignore_leakage: if data leakage should be ignored or cause an error to stop training
+    :param model_class: Model class to use, either 'binary_dense', 'binary_conv', 'mlm' or 'regression'
+    :param model_path: Path to the pretrained model
+    :param show_encoding: If the encoding of the vocabulary should be shown
+    :param train_file: Path to the training data
+    :param val_file: Path to the validation data
+    :param logger: Logger for logging
+    :param ignore_leakage: If data leakage should be ignored or cause an error to stop training
     :param max_length: Maximum length for padding/truncation.
     :param cut_df_for_faster_debug: If the dataframe should be cut for faster debugging. Default is False.
     :param validation_data_size: Size of the validation data. Default is 0.2.
@@ -54,8 +52,9 @@ def prepare_datasets(model_class: str,
     :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
     :param use_concentration: If the concentration data should be used for training. Default is False.
 
-    :return: tokenizer, train_dataset, val_dataset, test_dataset
+    :return: Tokenizer, train_dataset, val_dataset, test_dataset
     """
+
     # Load the data
     def load_and_sample_data(file, sample=False):
         df = pd.read_csv(file, sep=';')
@@ -64,9 +63,9 @@ def prepare_datasets(model_class: str,
     def split_sequences(data, test_size, shuffle=True):
         return train_test_split(data, test_size=test_size, shuffle=shuffle)
 
-    def get_labels_and_concentrations(data, use_concentration):
+    def get_labels_and_concentrations(data, concentration):
         labels = None if model_class.startswith('mlm') else data['label'].values
-        concentrations = data['hemo_concentration'].values if use_concentration else None
+        concentrations = data['hemo_concentration'].values if concentration else None
         return labels, concentrations
 
     # Load and preprocess data
@@ -94,9 +93,7 @@ def prepare_datasets(model_class: str,
     label_data_test, concentration_data_test = get_labels_and_concentrations(test_sequences, use_concentration)
 
     # Load tokenizer
-    tokenizer = (BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
-                 if not model_class.startswith('esm') else
-                 EsmTokenizer.from_pretrained(model_path, do_lower_case=False))
+    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
     # Create datasets
     train_dataset = PeptideDataset(peptides=train_sequences['sequence'], concentrations=concentration_data_train,
@@ -131,43 +128,6 @@ def get_encoding(tokenizer: BertTokenizer):
     for i in range(tokenizer.vocab_size):
         character = tokenizer.decode(i)
         print(f"{i}: {character}")
-
-
-def dummy_data_loader_DEPRECATED(train_file: str, number_of_data_to_use: int = 1000) -> tuple[
-    PeptideDataset, PeptideDataset, PeptideDataset]:
-    """
-    Creates a dummy data loader for testing purposes. DEPRECATED
-
-    :param train_file: Path to the training data
-    :param number_of_data_to_use: Number of data to use.
-                                  Needs to be reasonably high for provoking data leakage and low enough
-                                  for better handling for data viewing.
-
-    """
-    # Load the data
-    # Extract to method if I want to pipe binary and mlm fine-tuning
-    df = pd.read_csv(train_file, sep=';')[:number_of_data_to_use]
-
-    # Split the data into training, validation and test sets
-    df_train, df_val_handler = train_test_split(df, test_size=0.2)
-    df_val, df_test = train_test_split(df_val_handler, test_size=0.5)
-
-    sequence_data_train = df_train['sequence'].values
-    sequence_data_val = df_val['sequence'].values
-    sequence_data_test = df_test['sequence'].values
-
-    # None bc of Testing Usage here. We only need sequences for testing for leakage
-    label_data_train = None
-    label_data_val = None
-    label_data_test = None
-
-    tokenizer = None
-
-    train_dataset = PeptideDataset(peptides=sequence_data_train, tokenizer=tokenizer, labels=label_data_train)
-    val_dataset = PeptideDataset(peptides=sequence_data_val, tokenizer=tokenizer, labels=label_data_val)
-    test_dataset = PeptideDataset(peptides=sequence_data_test, tokenizer=tokenizer, labels=label_data_test)
-
-    return train_dataset, val_dataset, test_dataset
 
 
 def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
@@ -231,22 +191,6 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
         logger.info("\n-------------- No Data Leakage Detected --------------\n")
 
 
-def data_leakage_wrapper():
-    """
-    cleaner dummy data use for testing data leakage.
-    Just a wrapper for testing the data leakage check.
-    """
-
-    train_data_loader, val_data_loader, test_data_loader = dummy_data_loader_DEPRECATED(
-        train_file='../../data/train_data/our_hemo_labeled.csv',
-        number_of_data_to_use=1000)
-
-    check_data_loader_for_leakage(train_data_loader=None,
-                                  val_data_loader=val_data_loader,
-                                  test_data_loader=test_data_loader,
-                                  logger=logging.Logger(name="debug_logger"))
-
-
 def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
     """
     Function to load the training arguments from a config file for the given training type.
@@ -267,55 +211,11 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
         config.plot_path = './plots'
         logger.info(f"Plot path not set. Using default path: {config.plot_path}")
 
-
     if not os.path.exists(config['plot_path']):
         os.makedirs(config['plot_path'])
         logger.info(f"Created directory: {config['plot_path']}")
 
     return PeptideTrainingArguments(**config)
-
-
-def prepare_label_debug_datasets(tokenizer, training_args):
-    """
-    Load and prepare the negative and positive datasets for predictions.
-    NOT sure whats this for.
-    """
-    # Load datasets
-    negative_df = pd.read_csv("./data/train_data/mlm_train_data.csv", sep=';')[:10000]
-    bioactive_df = pd.read_csv("./data/train_data/our_hemo_labeled_filtered.csv", sep=';')
-
-    # Filter out sequences in positive_df from negative_df
-    negative_df = negative_df[~negative_df["sequence"].isin(bioactive_df['sequence'])]
-
-    # Prepare positive dataset
-    positive_df = bioactive_df[bioactive_df["label"] == 1]
-
-    # df for containing non-hemolytic but bioactive peptides
-    positive_negative_df = bioactive_df[bioactive_df["label"] == 0]
-
-    # Create PeptideDataset instances
-    negative_dataset = PeptideDataset(
-        peptides=negative_df['sequence'],
-        tokenizer=tokenizer,
-        labels=[0] * len(negative_df),
-        max_length=training_args.max_length
-    )
-
-    positive_dataset = PeptideDataset(
-        peptides=positive_df['sequence'].values,
-        tokenizer=tokenizer,
-        labels=positive_df['label'].values,
-        max_length=training_args.max_length
-    )
-
-    positive_negative_dataset = PeptideDataset(
-        peptides=positive_negative_df['sequence'].values,
-        tokenizer=tokenizer,
-        labels=positive_negative_df['label'].values,
-        max_length=training_args.max_length
-    )
-
-    return negative_dataset, positive_dataset, positive_negative_dataset
 
 
 def format_logit_to_label(logits):
@@ -332,9 +232,10 @@ def format_one_hot_to_label(one_hot_tensor):
     """
     return np.argmax(one_hot_tensor, axis=1).flatten()
 
+
 def calculate_abundance(predictions):
     """
-    Calculate the abundance of 0s and 1s in the predictions.
+    Calculate the abundance of 0's and 1's in the predictions.
     """
     abundance = {
         0: np.count_nonzero(predictions == 0),
@@ -403,7 +304,7 @@ def generate_custom_yaml_file(config_name: str,
                               file_path: str = './bert_model/peptideBERT_configs/'):
     """
     Generates a custom-formatted YAML file with grouped settings and comments.
-    This is for more easier configuration and readability of the YAML file for new runs.
+    This is for much easier configuration and readability of the YAML file for new runs.
 
     Parameters:
     - config_name (str): Name of the current setup for easier identification.
@@ -514,7 +415,6 @@ def get_bce_label_weight(labels):
 
 
 def init_model(tokenizer, train_dataset, training_args):
-
     if training_args.model_class == 'binary_conv':
 
         # ('GrimSqueaker/proteinBERT')
@@ -543,7 +443,7 @@ def init_model(tokenizer, train_dataset, training_args):
 
 
     # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
-    # Our Idea is to fine tune the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
+    # Our Idea is to 'fine tune' the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
     # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
     # first.
     elif training_args.model_class == 'mlm':
@@ -571,27 +471,9 @@ def init_model(tokenizer, train_dataset, training_args):
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics  # TODO implement regression metrics
 
-    elif training_args.model_class.startswith('esm'):
-        from transformers import EsmForSequenceClassification, EsmConfig
-        config = EsmConfig.from_pretrained(training_args.model_path)
-        if training_args.model_class.endswith('_regression'):
-            config.num_labels = 1
-            run_metric = regression_metrics
-        elif training_args.model_class.endswith('_binary'):
-            config.num_labels = 2
-            run_metric = esm_metrics
-        else:
-            raise ValueError(f"Invalid model class for ESM: {training_args.model_class}. "
-                             f"Expected 'esm_binary' or 'esm_regression', got '{training_args.model_class}'.")
-        #model = EsmForSequenceClassification.from_pretrained(training_args.model_path, config=config)
-        from src.bert_model.PeptideBERTClasses.PeptideEsm import PeptideEsm
-        model = PeptideEsm(config=config, use_conc=training_args.use_concentration)
-
-        data_collator = DefaultDataCollator()
-
     else:
         raise ValueError(
-            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm' or 'esm'. You provided: '{training_args.model_class}'")
+            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
     return data_collator, model, run_metric
 
 
