@@ -1,6 +1,7 @@
-from typing import Literal
-from transformers import TrainingArguments
 from pathlib import Path
+from typing import Literal
+
+from transformers import TrainingArguments
 
 
 class PeptideTrainingArguments(TrainingArguments):
@@ -75,7 +76,7 @@ class PeptideTrainingArguments(TrainingArguments):
         self.model_path = model_path
         self.model_save_path = model_save_path
         self.plot_path = plot_path
-        # Create the model and plot save path if it does not exist
+        # Create the model and plot_save_path if it does not exist
         Path(self.model_save_path).mkdir(parents=True, exist_ok=True)
         Path(self.plot_path).mkdir(parents=True, exist_ok=True)
         self.ignore_leakage = ignore_leakage
@@ -106,4 +107,3 @@ class PeptideTrainingArguments(TrainingArguments):
             # TODO may raise an error here and make a different inference function
             print(
                 f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")
-

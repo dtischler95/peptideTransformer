@@ -1,19 +1,18 @@
 import logging
+from typing import Any
+
 import torch
 import umap
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+from numpy import ndarray, dtype
 from sklearn.decomposition import PCA
 from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
-from warnings import filterwarnings
 from transformers import BertTokenizer, BertModel
-from transformers import EsmForSequenceClassification, EsmConfig
-from src.bert_model.fine_tune_utils import esm_metrics
-from transformers import EsmTokenizer
-from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
+
 
 """
 This code is an to my usecase adapted version of the code from Lukas Bayerle 
@@ -353,7 +352,7 @@ def encode_peptides(sequence_file,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
                     batch_size: int = 32
-                    ) -> [np.ndarray, list]:
+                    ) -> tuple[ndarray[Any, dtype[Any]], Any]:
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
         tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False,
@@ -391,13 +390,7 @@ def encode_peptides(sequence_file,
 
         enc = {key: value.to(device) for key, value in enc.items()}
 
-        if model_class.startswith("esm"):
-            outputs = model(**enc, output_hidden_states=True)
-            last_hidden_state = outputs.hidden_states[-1]
-            # Use the mean of the last hidden state as the embedding for a pooler-like output
-            outputs = last_hidden_state.mean(dim=1)
-        else:
-            outputs = model(**enc, return_pooler_output=True)
+        outputs = model(**enc, return_pooler_output=True)
 
 
 
@@ -496,28 +489,4 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
 
 if __name__ == "__main__":
 
-    from src.bert_model.PeptideBERTClasses.PeptideEsm import PeptideEsm
-    tokenizer = EsmTokenizer.from_pretrained('./esm_bin_model', do_lower_case=False)
-    config = EsmConfig.from_pretrained('./esm_bin_model')
-    config.num_labels = 2
-    run_metric = esm_metrics
-    model = PeptideEsm.from_pretrained('./esm_bin_model', config=config)
-    filterwarnings("ignore", category=UserWarning)
-    device = torch.device('cpu') if torch.cuda.is_available() else torch.device('cpu')
-    df = pd.read_csv("../../data/train_data/happen_style_unvoted.csv", sep=';')
-    df = df[:1000]
-
-    test_dataset = PeptideDataset(peptides=df['sequence'].to_list(),
-                                  concentrations=None,
-                                  tokenizer=tokenizer,
-                                  labels=df['label'].to_list(),
-                                  max_length=36,
-                                  model_class='esm_binary')
-
-    cluster_model_embedding(file_path=test_dataset,
-                            batch_size=16,
-                            plot_path="../../plots",
-                            tokenizer_and_model=(tokenizer, model),
-                            device=device,
-                            sequence_max_length=36,
-                            model_class='esm_binary')
+    ...

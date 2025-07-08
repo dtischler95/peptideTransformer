@@ -121,8 +121,8 @@ class PeptideBertForConvBinaryClassification(BertModel):
             elif self.loss_function == 'bce_logit_loss':
                 loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.bce_logit_weight)  # Use Binary Cross Entropy Loss with logits
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
-                # this is done after loss calculation because bce_with_logit loss arleady implemented sigmoid
-                # For further calculations we still need to apply sigmoid to the logits here since the loss function wont return the sigmoided logits
+                # this is done after loss calculation because bce_with_logit loss already implemented sigmoid
+                # For further calculations we still need to apply sigmoid to the logits here since the loss function won't return the sigmoidal logits
                 logits = self.sigmoid(logits)  # Apply sigmoid activation for binary classification
             else:
                 raise ValueError(f"Loss function {self.loss_function} not supported. Use 'bce' or 'bce_logit_loss'")

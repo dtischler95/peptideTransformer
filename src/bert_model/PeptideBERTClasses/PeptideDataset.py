@@ -52,11 +52,7 @@ class PeptideDataset(Dataset):
         if self.concentrations is not None:
             item['concentration'] = torch.tensor(self.concentrations[idx], dtype=torch.float)
         if self.labels is not None:
-            if self.model_class.startswith('esm'):
-                import torch.nn.functional as F
-                item['labels'] = F.one_hot(torch.tensor(self.labels[idx], dtype=torch.long), num_classes=2).float()
-            else:
-                item['labels'] = torch.tensor(self.labels[idx], dtype=torch.float)
+            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.float)
 
 
         return item
