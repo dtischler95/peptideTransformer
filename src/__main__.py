@@ -35,7 +35,7 @@ def main():
                     tmp_config = os.path.join(path, file)
                     fine_tune(config_path=tmp_config)
             return
-        if '/' not in args.config_path:
+        elif '/' not in args.config_path:
             args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
         # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
         fine_tune(
