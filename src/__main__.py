@@ -25,8 +25,7 @@ def main():
 
     if args.command == 'bert_model':
         # If we have configs in our config dir we can just pass the config name.
-        if args.command == 'pipe_configs':
-
+        if args.pipe_configs:
             # If no path provides use a default path
             path = './src/bert_model/peptideBERT_configs/config_pipe_dir/' if args.pipe_configs == 'default' else args.pipe_configs
 
