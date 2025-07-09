@@ -141,7 +141,8 @@ def fine_tune(config_path: str):
 
             from src.bert_model.fine_tune_utils import format_logit_to_label
             y_preds = y_preds.predictions.flatten()
-            regression_plot(y_true=y_true, y_pred=y_preds, logger=logger, path=training_args.plot_path)
+            sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
+            regression_plot(y_true=y_true, y_pred=y_preds, logger=logger, path=training_args.plot_path, sequence_data=sequences)
 
     # not really needed for my case, I guess
     if training_args.do_predict:

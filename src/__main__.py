@@ -28,10 +28,11 @@ def main():
         if args.command == 'pipe_configs':
 
             # If no path provides use a default path
+            path = './src/bert_model/peptideBERT_configs/config_pipe_dir/' if args.pipe_configs == 'default' else args.pipe_configs
 
-            for file in os.listdir(args.pipe_configs):
+            for file in os.listdir(path):
                 if file.endswith('.yaml'):
-                    tmp_config = os.path.join(args.pipe_configs, file)
+                    tmp_config = os.path.join(path, file)
                     fine_tune(config_path=tmp_config)
             return
         if '/' not in args.config_path:
