@@ -480,7 +480,7 @@ def init_model(tokenizer, train_dataset, training_args):
 
 
 
-def regression_plot(y_true, y_pred, path, logger):
+def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
 
     # Regression part
@@ -491,6 +491,22 @@ def regression_plot(y_true, y_pred, path, logger):
     residuals = y_true - y_pred
     std_residuals = np.std(residuals)
 
+    if sequence_data is not None:
+        # Sort out the highest residuals and print them
+        joined_info = zip(sequence_data, residuals)
+        positive_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=True)[:30]
+        joined_info = zip(sequence_data, residuals)
+        negative_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=False)[:30]
+        #highest_sequences = sorted_peptides[:50]
+        # print the sequences to file
+        with open(f"{path}/highest_residuals.csv", "w") as f:
+            f.write("sequence;residual\n")
+            for sequence in positive_extreme_peptides:
+                f.write(f"{sequence[0]};{sequence[1]}\n")
+            for sequence in negative_extreme_peptides:
+                f.write(f"{sequence[0]};{sequence[1]}\n")
+
+        print(1)
     logger.info(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM)")
 
     # generating residual plot
@@ -533,7 +549,7 @@ def regression_plot(y_true, y_pred, path, logger):
 
     fig.suptitle("Regressions -und Residuenplot")
     plt.tight_layout()
-    plt.savefig(path)
+    plt.savefig(f"{path}/regression_plot.png")
     plt.close()
     plt.clf()
 
