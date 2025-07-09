@@ -3,6 +3,8 @@ import os
 
 import numpy as np
 import pandas as pd
+from scipy.stats import linregress
+import seaborn as sns
 import yaml
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -476,6 +478,64 @@ def init_model(tokenizer, train_dataset, training_args):
             f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
     return data_collator, model, run_metric
 
+
+
+def regression_plot(y_true, y_pred, path, logger):
+    fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
+
+    # Regression part
+    slope, intercept, r_value, p_value, std_err = linregress(y_pred, y_true)
+    # reg_equation = "y = {:.2f}x".format(slope)
+
+    # calculate the residuals
+    residuals = y_true - y_pred
+    std_residuals = np.std(residuals)
+
+    logger.info(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM)")
+
+    # generating residual plot
+    sns.residplot(x=y_pred, y=residuals, ax=axs[1])
+    axs[1].set_title(
+        "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
+    axs[1].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
+    axs[1].set_ylabel("Residuum MHK/log(µM)")
+
+    # Plot two red horizontal lines representing positive and negative standard deviations
+    axs[1].axhline(std_residuals, color='red', linestyle='--')
+    axs[1].axhline(-std_residuals, color='red', linestyle='--')
+
+    # Plot manually added regression line with confidence interval
+    y_pred_sorted = np.sort(y_pred)
+
+    # generate scatter plot
+    sns.regplot(x=y_pred, y=y_true, ax=axs[0], fit_reg=False)
+
+    # plot the fitted line through the origin and also a line with slope 1 for comparison
+    # axs[0].plot(y_pred_sorted, slope * y_pred_sorted, color='red')
+    # standarf f(x) function for getting slope=1
+    axs[0].plot([-1, 4], [-1, 4], linestyle='--', color='green', label='45-degree Line')
+
+    # Calculate bounds for lines parallel to the regression line
+    lower_bound = 1 * y_pred_sorted - std_residuals
+    upper_bound = 1 * y_pred_sorted + std_residuals
+
+    # reg_equation2 = f"y = {slope:.2f}x + {intercept:.2f}"
+    # axs[0].text(0.05, 0.95, reg_equation2, transform=axs[0].transAxes, fontsize=12,
+    #            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
+
+    # Plot two lines parallel to the regression line representing positive and negative standard deviations
+    axs[0].plot(y_pred_sorted, lower_bound, color='red', linestyle='--')
+    axs[0].plot(y_pred_sorted, upper_bound, color='red', linestyle='--')
+
+    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MHK/log(µM)")
+    axs[0].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
+    axs[0].set_ylabel("Tatsächlicher Wert MHK/log(µM)")
+
+    fig.suptitle("Regressions -und Residuenplot")
+    plt.tight_layout()
+    plt.savefig(path)
+    plt.close()
+    plt.clf()
 
 if __name__ == '__main__':
     # data_leakage_wrapper()

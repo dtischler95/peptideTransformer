@@ -8,7 +8,7 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, init_model
+    prepare_fisher_exact, init_model, regression_plot, format_logit_to_label
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -133,6 +133,15 @@ def fine_tune(config_path: str):
             prepare_fisher_exact(test_dataset=test_dataset,
                                  trainer=trainer,
                                  plot_path=training_args.plot_path)
+
+        elif training_args.model_class.startswith('regression'):
+
+            y_preds = trainer.predict(test_dataset=test_dataset)
+            y_true = test_dataset.labels
+
+            from src.bert_model.fine_tune_utils import format_logit_to_label
+            y_preds = y_preds.predictions.flatten()
+            regression_plot(y_true=y_true, y_pred=y_preds, logger=logger, path=training_args.plot_path)
 
     # not really needed for my case, I guess
     if training_args.do_predict:

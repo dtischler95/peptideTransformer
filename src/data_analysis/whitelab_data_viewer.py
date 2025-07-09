@@ -258,9 +258,9 @@ def print_set_to_file(sequences: set, dataset_info: str, file_tag: str, out_path
 
 
 if __name__ == '__main__':
-    get_overall_stats(our_negative_path='../../data/data_for_data_viewer/our_negative.csv',
-                      our_positive_path='../../data/data_for_data_viewer/our_positive.csv',
-                      negative_to_compare_path='../../data/data_for_data_viewer/whitelab_data_negative_formatted.csv',
-                      positive_to_compare_path='../../data/data_for_data_viewer/whitelab_data_positive_formatted.csv',
+    get_overall_stats(our_negative_path='../../data/data_for_data_viewer/first_looks/our_negative.csv',
+                      our_positive_path='../../data/data_for_data_viewer/first_looks/our_positive.csv',
+                      negative_to_compare_path='../../data/data_for_data_viewer/first_looks/whitelab_data_negative_formatted.csv',
+                      positive_to_compare_path='../../data/data_for_data_viewer/first_looks/whitelab_data_positive_formatted.csv',
                       plot_path='../../plots/',
                       out_path='../../data/sequence_analysis/')
