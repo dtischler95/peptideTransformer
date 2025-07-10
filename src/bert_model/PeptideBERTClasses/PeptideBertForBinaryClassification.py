@@ -15,6 +15,7 @@ class PeptideBertForBinaryClassification(BertModel):
 
     def __init__(self, config, model_path: str, extra_feature, bce_logit_weight, loss_function: str = 'bce'):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
+        config.classifier_dropout = 0.15
         config.return_dict = False
         super().__init__(config)
         self.config = config
