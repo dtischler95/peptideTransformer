@@ -93,15 +93,16 @@ class PeptideBertForBinaryClassification(BertModel):
         )
 
         pooled_output = outputs[1]  # Use pooled output
+        if concentration is not None:
+            concentration = concentration.unsqueeze(-1)
+            # Concatenate pooled output and concentration
+            pooled_output = torch.cat((pooled_output, concentration), dim=1)
         pooled_output = self.norm(pooled_output)
         pooled_output = self.dropout(pooled_output)
         if return_pooler_output:
             return pooled_output  # Return pooled output for visualization
 
-        if concentration is not None:
-            concentration = concentration.unsqueeze(-1)
-            # Concatenate pooled output and concentration
-            pooled_output = torch.cat((pooled_output, concentration), dim=1)
+
         # Apply the classifier to the concatenated output
         logits = self.classifier(pooled_output)
 
