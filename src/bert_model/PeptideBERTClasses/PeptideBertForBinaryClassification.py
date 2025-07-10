@@ -23,6 +23,7 @@ class PeptideBertForBinaryClassification(BertModel):
         self.bce_logit_weight = bce_logit_weight
         self.bert = BertModel.from_pretrained(model_path, config=config)
         self.dropout = nn.Dropout(config.classifier_dropout)
+        self.norm = nn.LayerNorm(config.hidden_size + (1 if extra_feature else 0), eps=config.layer_norm_eps)
         self.classifier = nn.Linear(config.hidden_size + (1 if extra_feature else 0),
                                     config.num_labels)  # Output only one logit for binary classification
         self.sigmoid = nn.Sigmoid()  # Add sigmoid for binary classification
@@ -91,6 +92,7 @@ class PeptideBertForBinaryClassification(BertModel):
         )
 
         pooled_output = outputs[1]  # Use pooled output
+        pooled_output = self.norm(pooled_output)
         pooled_output = self.dropout(pooled_output)
         if return_pooler_output:
             return pooled_output  # Return pooled output for visualization

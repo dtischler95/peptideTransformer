@@ -24,6 +24,7 @@ class PeptideBertForRegression(BertModel):
         #     param.requires_grad = False
 
         # ----------------- Add regression head -----------------
+        self.norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(0.15)
         self.regression = nn.Linear(config.hidden_size, 1)
         # -------------------------------------------------------
@@ -92,6 +93,7 @@ class PeptideBertForRegression(BertModel):
 
         # ------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
+        pooled_output = self.norm(pooled_output)
         pooled_output = self.dropout(pooled_output)
         logits = self.regression(pooled_output)
         # --------------------------------------------------
