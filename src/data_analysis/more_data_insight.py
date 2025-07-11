@@ -22,8 +22,8 @@ eskape_organisms = [
 
 def inspect_mic_sequences():
     #complete_amp_data_path = "../../data/data_for_data_viewer/complete_amp_inspection_data.csv"
-    complete_amp_data_path = "../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv"
-    #complete_amp_data_path = "../../data/data_from_database/complete_amp_data.csv"
+    #complete_amp_data_path = "../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv"
+    complete_amp_data_path = "../../data/data_from_database/complete_amp_data.csv"
 
 
 
@@ -143,11 +143,40 @@ def plot_error_bars_numeric(df, organism):
     plt.close()
     plt.clf()
 
+def search_mic_discrepancies():
+    """
+    Search for discrepancies in MIC values for the same sequence across different organisms.
+    """
+    df = pd.read_csv('../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv', sep=';')
+    df = df[df['measure_type'] == 'MIC']
+    df = df[['source', 'peptide_name','measure_type' , 'sequence', 'organism', 'strain', 'value', 'unit', 'PMID/Uniprot']]
+    difference_counter = 0
+    no_dif_counter = 0
+    for organism, organism_df in df.groupby('organism'):
+        for sequence, sequence_df in organism_df.groupby('sequence'):
+            if sequence_df.shape[0] > 1:
+
+                difference = sequence_df['value'].max() - sequence_df['value'].min()
+                if difference > 100.0:
+                    difference_counter += 1
+
+                elif difference == 0.0:
+                    no_dif_counter += 1
+            else:
+                print(0)
 
 
+    total_sequences = difference_counter + no_dif_counter
+    differences_in_percentage = (difference_counter / total_sequences) * 100
+    no_dif_in_percentage = (no_dif_counter / total_sequences) * 100
+
+
+    print(f"Number of sequences with a difference in MIC: {round(differences_in_percentage, 2)}")
+    print(f"Number of sequences with no difference in MIC: {round(no_dif_in_percentage, 2)}")
+    print(f"Total number of sequences: {difference_counter + no_dif_counter}")
 if __name__ == "__main__":
 
 
     hemolytik_path = "../../data/data_from_database/Hemolytik_scraped.csv"
 
-    inspect_mic_sequences()
+    search_mic_discrepancies()
