@@ -20,6 +20,23 @@ eskape_organisms = [
     "Staphylococcus epidermidis",
 ]
 
+def inspet_hemolytik_sequences():
+    hemolytik_path = "../../data/train_data/happen_style_unvoted.csv" # File for hemolytik sequences, with target human
+    df = pd.read_csv(hemolytik_path, sep=';')
+
+
+
+    for sequence, sequence_df in df.groupby('sequence'):
+        if sequence_df.shape[0] > 1:
+            percent_difference = sequence_df['hemo_percent'].max() - sequence_df['hemo_percent'].min()
+            conc_difference = sequence_df['hemo_concentration'].max() - sequence_df['hemo_concentration'].min()
+            if percent_difference > 0.1:
+                print(1)
+
+
+
+    print(1)
+
 def inspect_mic_sequences():
     #complete_amp_data_path = "../../data/data_for_data_viewer/complete_amp_inspection_data.csv"
     complete_amp_data_path = "../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv"
@@ -44,7 +61,7 @@ def inspect_mic_sequences():
 
     no_dif_sequences = []
 
-
+    df = df[df['measure_type'] == 'MIC']
 
     # Split for all Organisms and then for each sequence
     for organism, organism_df in df.groupby('organism'):
@@ -60,7 +77,7 @@ def inspect_mic_sequences():
         for sequence, sequence_df in organism_df.groupby('sequence'):
 
             difference = sequence_df['value'].max() - sequence_df['value'].min()
-            if difference > 0:
+            if difference > 300:
                 differences_for_plot.append((sequence ,difference))
                 summary_data.append({
                     'sequence': sequence,
@@ -76,9 +93,9 @@ def inspect_mic_sequences():
         summary_df = pd.DataFrame(summary_data)
         #summary_df.to_csv(f"../../data/data_for_data_viewer/mic_organisms/{organism}_summary_below_1000.csv", index=False, sep=';')
 
-        plot_box_aggregated(df=summary_df, organism=organism)
-        plot_scatter(df=summary_df, organism=organism)
-        plot_error_bars_numeric(df=summary_df, organism=organism)
+        # plot_box_aggregated(df=summary_df, organism=organism)
+        # plot_scatter(df=summary_df, organism=organism)
+        # plot_error_bars_numeric(df=summary_df, organism=organism)
 
 
 
@@ -148,6 +165,6 @@ def plot_error_bars_numeric(df, organism):
 if __name__ == "__main__":
 
 
-    hemolytik_path = "../../data/data_from_database/Hemolytik_scraped.csv"
 
-    inspect_mic_sequences()
+
+    inspet_hemolytik_sequences()
