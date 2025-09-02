@@ -151,7 +151,7 @@ def plot_error_bars_numeric(df, organism):
     plt.figure(figsize=(12, 8))
     plt.errorbar(range(len(bin_means)), bin_means, yerr=bin_stds, fmt='o', ecolor='red', capsize=5, label='Mean ± Std')
     plt.xlabel('Mean Value Bins')
-    plt.ylabel('MIC')
+    plt.ylabel('graph_maker')
     plt.title(f'Error Bars: Aggregated Mean and Standard Deviation ({organism})')
     plt.xticks(range(len(bin_means)), [str(bin) for bin in grouped.groups.keys()], rotation=45)
     plt.legend()
@@ -162,10 +162,10 @@ def plot_error_bars_numeric(df, organism):
 
 def search_mic_discrepancies():
     """
-    Search for discrepancies in MIC values for the same sequence across different organisms.
+    Search for discrepancies in graph_maker values for the same sequence across different organisms.
     """
     df = pd.read_csv('../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv', sep=';')
-    df = df[df['measure_type'] == 'MIC']
+    df = df[df['measure_type'] == 'graph_maker']
     df = df[['source', 'peptide_name','measure_type' , 'sequence', 'organism', 'strain', 'value', 'unit', 'PMID/Uniprot']]
     difference_counter = 0
     no_dif_counter = 0
@@ -188,8 +188,8 @@ def search_mic_discrepancies():
     no_dif_in_percentage = (no_dif_counter / total_sequences) * 100
 
 
-    print(f"Number of sequences with a difference in MIC: {round(differences_in_percentage, 2)}")
-    print(f"Number of sequences with no difference in MIC: {round(no_dif_in_percentage, 2)}")
+    print(f"Number of sequences with a difference in graph_maker: {round(differences_in_percentage, 2)}")
+    print(f"Number of sequences with no difference in graph_maker: {round(no_dif_in_percentage, 2)}")
     print(f"Total number of sequences: {difference_counter + no_dif_counter}")
 if __name__ == "__main__":
 

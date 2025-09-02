@@ -80,8 +80,8 @@ def plot_binary_label_distribution(df, plot_path):
     label_counts = df["label"].value_counts()
     plt.bar(label_counts.index, label_counts.values / df.shape[0] * 100)
     plt.xlabel("Label")
-    plt.ylabel("Count [%]")
-    plt.title("Label Distribution")
+    plt.ylabel("Häufigkeit [%]")
+    plt.title("Label Verteilung der Whitelab Daten")
     plt.xticks([0, 1], ["0", "1"])
     if plot_path is None:
         plt.show()
