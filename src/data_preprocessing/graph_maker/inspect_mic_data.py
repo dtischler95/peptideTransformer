@@ -47,17 +47,17 @@ def mic_distribution_histogram(mic_files: list[str]):
 
 def hist_plot_mic(df, organism):
     plt.figure(figsize=(10, 5))
-    plt.suptitle(f"Verteilung der graph_maker Werte für {organism}")
+    plt.suptitle(f"Verteilung der MIC Werte für {organism}")
     plt.subplot(1, 2, 1)
     plt.hist(df['value'], bins=50)
-    plt.title(f"Verteilung der graph_maker Werte")
-    plt.xlabel('graph_maker (µM)')
+    plt.title(f"Verteilung der MIC Werte")
+    plt.xlabel('MIC (µM)')
     plt.ylabel("Häufigkeit")
     plt.grid(True, axis='y')
     plt.subplot(1, 2, 2)
     plt.hist(df['mic_log10'], bins=30)
-    plt.title(f"Verteilung der graph_maker Werte (log10 transformiert)")
-    plt.xlabel('graph_maker (log10(µM))')
+    plt.title(f"Verteilung der MIC Werte (log10 transformiert)")
+    plt.xlabel('MIC (log10(µM))')
     plt.ylabel("Häufigkeit")
     plt.grid(True, axis='y')
     plt.tight_layout()
@@ -85,9 +85,9 @@ def violin_mic_distribution(mic_files: list[str]):
 
         sns.violinplot(y='mic_log10', data=df, ax=axes[i], width=0.5)
         axes[i].set_title(f"{organism}", size=18)
-        axes[i].set_ylabel('graph_maker (log10(µM))', size=12)
+        axes[i].set_ylabel('MIC (log10(µM))', size=12)
         axes[i].grid(True, axis='y')
-    fig.suptitle("Violin Plot der graph_maker Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("Violin Plot der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig(f"../../../final_plots/violin_mic_distribution.png")
     plt.close()
@@ -122,7 +122,7 @@ def mic_seq_length_distribution(mic_files: list[str]):
 
 def hist_mic_distribution(mic_files: list[str]):
     """
-    Shows a histogram of the log10 graph_maker values for each organism in a subplot grid.
+    Shows a histogram of the log10 MIC values for each organism in a subplot grid.
     """
     # Layout für Subplots
     n_rows = 4
@@ -138,18 +138,18 @@ def hist_mic_distribution(mic_files: list[str]):
 
         axes[i].hist(df['mic_log10'], bins=50)
         axes[i].set_title(f"{organism}", size=18)
-        axes[i].set_xlabel('graph_maker (log10(µM))', size=12)
+        axes[i].set_xlabel('MIC (log10(µM))', size=12)
         axes[i].set_ylabel('Häufigkeit', size=12)
         axes[i].grid(True, axis='y')
 
-    fig.suptitle("Histogramm der graph_maker Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig("../../../final_plots/hist_mic_distribution.png")
     plt.close()
 
 def hist_mic_log_comparison(mic_files: list[str]):
     """
-    Shows a histogram of the log10 graph_maker values for each organism in a subplot grid.
+    Shows a histogram of the log10 MIC values for each organism in a subplot grid.
     """
     # Layout für Subplots
     n_rows = 6
@@ -168,16 +168,16 @@ def hist_mic_log_comparison(mic_files: list[str]):
 
         ax_left.hist(df['value'], bins=50)
         ax_left.set_title(f"{organism}", size=18)
-        ax_left.set_xlabel('graph_maker (µM)', size=12)
+        ax_left.set_xlabel('MIC (µM)', size=12)
         ax_left.set_ylabel('Häufigkeit', size=12)
         ax_left.grid(True, axis='y')
         ax_right.hist(df['mic_log10'], bins=50)
         ax_right.set_title(f"{organism}", size=18)
-        ax_right.set_xlabel('graph_maker (log10(µM))', size=12)
+        ax_right.set_xlabel('MIC (log10(µM))', size=12)
         ax_right.set_ylabel('Häufigkeit', size=12)
         ax_right.grid(True, axis='y')
 
-    fig.suptitle("Histogramm der graph_maker Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig("../../../final_plots/hist_mic_distribution.png")
     plt.close()
@@ -197,7 +197,7 @@ def combined_hist_plot(mic_files: list[str]):
 def hist_mic_log_nested(mic_files: list[str]):
     """
     12 Subplots (für 12 Organismen), jeder enthält 2 kleine Subplots:
-    links = graph_maker Rohwerte, rechts = graph_maker log10-transformiert
+    links = MIC Rohwerte, rechts = MIC log10-transformiert
     """
     n_rows, n_cols = 6, 2  # 12 Organismen = 4x3 Grid
     fig = plt.figure(figsize=(10, 11))
@@ -236,7 +236,7 @@ def hist_mic_log_nested(mic_files: list[str]):
                  ax_left.get_position().y1 + 0.01,
                  organism, ha="center", va="bottom", fontsize=10, fontweight="bold")
 
-    fig.suptitle("Histogramme der graph_maker-Werte pro Organismus", fontsize=14)
+    fig.suptitle("Histogramme der MIC-Werte pro Organismus", fontsize=14)
     plt.savefig("../../../final_plots/hist_mic_nested.png", dpi=300, bbox_inches="tight")
     plt.close()
 
