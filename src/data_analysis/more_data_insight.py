@@ -61,7 +61,7 @@ def inspect_mic_sequences():
 
     no_dif_sequences = []
 
-    df = df[df['measure_type'] == 'MIC']
+
 
     # Split for all Organisms and then for each sequence
     for organism, organism_df in df.groupby('organism'):
@@ -77,7 +77,7 @@ def inspect_mic_sequences():
         for sequence, sequence_df in organism_df.groupby('sequence'):
 
             difference = sequence_df['value'].max() - sequence_df['value'].min()
-            if difference > 300:
+            if difference > 0:
                 differences_for_plot.append((sequence ,difference))
                 summary_data.append({
                     'sequence': sequence,
@@ -93,9 +93,9 @@ def inspect_mic_sequences():
         summary_df = pd.DataFrame(summary_data)
         #summary_df.to_csv(f"../../data/data_for_data_viewer/mic_organisms/{organism}_summary_below_1000.csv", index=False, sep=';')
 
-        # plot_box_aggregated(df=summary_df, organism=organism)
-        # plot_scatter(df=summary_df, organism=organism)
-        # plot_error_bars_numeric(df=summary_df, organism=organism)
+        plot_box_aggregated(df=summary_df, organism=organism)
+        plot_scatter(df=summary_df, organism=organism)
+        plot_error_bars_numeric(df=summary_df, organism=organism)
 
 
 
@@ -160,11 +160,40 @@ def plot_error_bars_numeric(df, organism):
     plt.close()
     plt.clf()
 
+def search_mic_discrepancies():
+    """
+    Search for discrepancies in MIC values for the same sequence across different organisms.
+    """
+    df = pd.read_csv('../../data/data_for_data_viewer/complete_amp_inspection_data_filtered_value_below_1000.csv', sep=';')
+    df = df[df['measure_type'] == 'MIC']
+    df = df[['source', 'peptide_name','measure_type' , 'sequence', 'organism', 'strain', 'value', 'unit', 'PMID/Uniprot']]
+    difference_counter = 0
+    no_dif_counter = 0
+    for organism, organism_df in df.groupby('organism'):
+        for sequence, sequence_df in organism_df.groupby('sequence'):
+            if sequence_df.shape[0] > 1:
+
+                difference = sequence_df['value'].max() - sequence_df['value'].min()
+                if difference > 100.0:
+                    difference_counter += 1
+
+                elif difference == 0.0:
+                    no_dif_counter += 1
+            else:
+                print(0)
 
 
+    total_sequences = difference_counter + no_dif_counter
+    differences_in_percentage = (difference_counter / total_sequences) * 100
+    no_dif_in_percentage = (no_dif_counter / total_sequences) * 100
+
+
+    print(f"Number of sequences with a difference in MIC: {round(differences_in_percentage, 2)}")
+    print(f"Number of sequences with no difference in MIC: {round(no_dif_in_percentage, 2)}")
+    print(f"Total number of sequences: {difference_counter + no_dif_counter}")
 if __name__ == "__main__":
 
 
+    hemolytik_path = "../../data/data_from_database/Hemolytik_scraped.csv"
 
-
-    inspet_hemolytik_sequences()
+    inspect_mic_sequences()
