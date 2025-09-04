@@ -241,7 +241,10 @@ def hist_mic_log_nested(mic_files: list[str]):
     plt.close()
 
 
-def amino_acid_frequency_comparison(
+
+
+
+def mic_amino_frequency_comparison(
         mic_list
 ):
 
@@ -250,38 +253,58 @@ def amino_acid_frequency_comparison(
         for seq in sequences:
             counts += Counter(seq)
         return counts
-    n_rows = 4
-    n_cols = 3
+    n_rows = 6
+    n_cols = 2
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(9, 9))
-    axes = axes.flatten()
+    fig = plt.figure(figsize=(18,20))
+    outer = fig.add_gridspec(n_rows, n_cols, wspace=0.25, hspace=0.5)
+
     for i, file in enumerate(mic_list):
         df = pd.read_csv(file, sep=';')
 
-        sequences_list = df['sequence'].tolist()
+        inner = outer[i].subgridspec(1, 2, wspace=0.4, hspace=0.5)
+        organism = get_pretty_organism_name(file)
+        ax_left = fig.add_subplot(inner[0])
+        ax_right = fig.add_subplot(inner[1])
 
 
-        counts_0 = _tokenize(sequences_list)
+        sequences_0 = df[df['value'] <= 50.0]['sequence'].tolist()
+        sequences_1 = df[df['value'] > 50.0]['sequence'].tolist()
 
+        counts_0 = _tokenize(sequences_0)
+        counts_1 = _tokenize(sequences_1)
 
         tick_labels = sorted(set(counts_0.keys()))  # | set(counts_1.keys()))
         vec_0 = np.array([counts_0[k] for k in tick_labels])
         vec_0 = vec_0 / vec_0.sum()
 
+        vec_1 = np.array([counts_1[k] for k in tick_labels])
+        vec_1 = vec_1 / vec_1.sum()
 
         x = np.arange(len(tick_labels))
 
+        #fig2, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
+        fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=12)
+        ax_left.bar(x - 0.2, vec_0, 0.4, label="Inaktiv")
+        ax_left.bar(x + 0.2, vec_1, 0.4, label="Aktiv")
+        plt.xticks(x, tick_labels)
+        ax_left.set_ylabel("AS Häufigkeit", size=8)
+        ax_left.legend(fontsize=5)
+        ax_left.set_xticks(x, tick_labels)
+        ax_left.set_xlabel("Aminosäuren")
 
+        # Train - gen
+        ax_right.bar(x, vec_0 - vec_1, alpha=0.75)
+        ax_right.set_ylabel("Differenz in der Häufigkeit", size=8)
+        ax_right.set_xticks(x, tick_labels)
+        ax_right.set_xlabel("Aminosäuren")
+        fig.text((ax_left.get_position().x0 + ax_right.get_position().x1) / 2,
+                 ax_left.get_position().y1 + 0.01,
+                 organism, ha="center", va="bottom", fontsize=12, fontweight="bold")
 
-        axes[i].bar(x - 0.2, vec_0, 0.4)
-        axes[i].set_xticks(x, tick_labels)
-        axes[i].set_ylabel("AA Häufigkeit")
-        axes[i].set_xticks(x, tick_labels)
-        axes[i].set_xlabel("Aminosäuren")
-        axes[i].set_title(get_pretty_organism_name(file))
-    fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=12)
-    fig.tight_layout()
-    plt.savefig(f"../../../final_plots/all_aa_frequency_comparison.png", dpi=300)
+    fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=20)
+
+    plt.savefig(f"../../../final_plots/all_aa_frequency_comparison.png")
     plt.close()
 
 
@@ -298,7 +321,8 @@ def main():
     #mic_seq_length_distribution(mic_files)
     #hist_mic_log_comparison(mic_files=mic_files)
     #hist_mic_log_nested(mic_files)
-    amino_acid_frequency_comparison(mic_files)
+    #mic_amino_frequency_comparison(mic_files)
+
 
 
 
