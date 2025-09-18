@@ -24,6 +24,7 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
+logger.setLevel(logging.INFO)
 
 regressor_list = [('gb', GradientBoostingRegressor()),
                   ('xtra', ExtraTreesRegressor()),
