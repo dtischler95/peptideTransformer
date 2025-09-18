@@ -118,7 +118,7 @@ def run_all(
     output_root = Path(output_root)
 
     results = []
-
+    logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
 
     csv_files = sorted(data_dir.glob("*.csv"))
     for csv_path in csv_files:
