@@ -107,8 +107,8 @@ def check_label_col(label_col, data: pd.DataFrame):
     return data_df, target, features
 
 
-def print_regression_metrics(y_true, y_pred):
-    sys.stdout(f"Regression metrics: \n"
+def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
+    logger.info(f"Regression metrics: \n"
                 f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
@@ -119,10 +119,11 @@ def get_model_stats(model,
                     plot_dir: str,
                     feature_data,
                     target_data,
+                    logger: logging.Logger,
                     tag: str):
     pred_train = model.predict(feature_data)
 
-    r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train)
+    r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
 
     # plot regression train
     plot_utils.plot_with_seaborn(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
