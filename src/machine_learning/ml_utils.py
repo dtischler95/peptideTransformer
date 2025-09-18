@@ -1,5 +1,5 @@
 import sys
-
+import logging
 import pandas as pd
 import json
 import os
@@ -327,10 +327,10 @@ def encode_onehot_with_features(df, target_col="value"):
 
     return X_train, y_train, X_val, y_val
 
-def print_results_tabular(results: list[dict]):
-    import sys
+def print_results_tabular(results: list[dict], logger: logging.Logger):
+
     for results in results:
-        sys.stdout(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
+        logger.info(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
               f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 if __name__ == '__main__':

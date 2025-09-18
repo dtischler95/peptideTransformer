@@ -10,10 +10,20 @@ import sys
 import ml_utils
 import pandas as pd
 import config
+import logging
 
 from pathlib import Path
 from typing import Iterable, Any
 
+logger = logging.getLogger(__name__)
+
+# --------------------- Setup logging and configs ---------------------
+# Setup logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
 regressor_list = [('gb', GradientBoostingRegressor()),
                   ('xtra', ExtraTreesRegressor()),
@@ -57,7 +67,7 @@ def train_regressors(file_path: str,
         x_train, y_train = ml_utils.enocde_onehot_without_features(train_df, pad_len=36)
         x_val, y_val = ml_utils.enocde_onehot_without_features(val_df, pad_len=36)
 
-    sys.stdout(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
+    logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
           f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
 
     best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, './', 'test', param_grid,
@@ -65,8 +75,8 @@ def train_regressors(file_path: str,
                                                                     y_train)
 
     test_score = best_estimator.score(x_val, y_val)
-    sys.stdout(f"Test score of the best model: {test_score}")
-    sys.stdout(f"Best Params: {grid_search.best_params_}")
+    logger.info(f"Test score of the best model: {test_score}")
+    logger.info(f"Best Params: {grid_search.best_params_}")
 
     train_r2, train_mse = ml_utils.get_model_stats(model=best_estimator,
                              plot_dir=plot_path,
@@ -138,7 +148,7 @@ def run_all(
 
 
 
-    ml_utils.print_results_tabular(results)
+    ml_utils.print_results_tabular(results, logger=logger)
 
 
 
