@@ -112,8 +112,6 @@ def run_all(
 
     csv_files = sorted(data_dir.glob("*.csv"))
     for csv_path in csv_files:
-        if csv_path.stem.startswith("candida"):
-            break
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
         file_name = "_".join(parts[:2])# if len(parts) >= 2 else csv_path.stem
