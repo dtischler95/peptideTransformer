@@ -6,7 +6,7 @@ from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
-
+import sys
 import ml_utils
 import pandas as pd
 import config
@@ -57,7 +57,7 @@ def train_regressors(file_path: str,
         x_train, y_train = ml_utils.enocde_onehot_without_features(train_df, pad_len=36)
         x_val, y_val = ml_utils.enocde_onehot_without_features(val_df, pad_len=36)
 
-    print(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
+    sys.stdout(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
           f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
 
     best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, './', 'test', param_grid,
@@ -65,8 +65,8 @@ def train_regressors(file_path: str,
                                                                     y_train)
 
     test_score = best_estimator.score(x_val, y_val)
-    print(f"Test score of the best model: {test_score}")
-    print(f"Best Params: {grid_search.best_params_}")
+    sys.stdout(f"Test score of the best model: {test_score}")
+    sys.stdout(f"Best Params: {grid_search.best_params_}")
 
     train_r2, train_mse = ml_utils.get_model_stats(model=best_estimator,
                              plot_dir=plot_path,
