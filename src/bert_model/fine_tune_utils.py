@@ -63,7 +63,7 @@ def prepare_datasets(model_class: str,
         return df.sample(frac=1)[:200] if sample else df
 
     def split_sequences(data, test_size, shuffle=True):
-        return train_test_split(data, test_size=test_size, shuffle=shuffle)
+        return train_test_split(data, test_size=test_size, shuffle=shuffle, random_state=42)
 
     def get_labels_and_concentrations(data, concentration):
         labels = None if model_class.startswith('mlm') else data['label'].values
