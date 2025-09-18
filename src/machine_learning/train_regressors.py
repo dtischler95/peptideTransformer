@@ -15,18 +15,18 @@ from pathlib import Path
 from typing import Iterable, Any
 
 
-regressor_list = [('gb', GradientBoostingRegressor()),
-                  ('xtra', ExtraTreesRegressor()),
-                  ('xgb', XGBRegressor()),
+regressor_list = [#('gb', GradientBoostingRegressor()),
+                  #('xtra', ExtraTreesRegressor()),
+                  #('xgb', XGBRegressor()),
                   ('rf', RandomForestRegressor()),
-                  ('svr', SVR())
+                  #('svr', SVR())
                   ]
 
-param_grids = [config.gb_param_grid,
-               config.xtra_param_grid,
-               config.xgb_param_grid,
-               config.rf_param_grid,
-               config.svr_param_grid
+param_grids = [#config.gb_param_grid,
+               #config.xtra_param_grid,
+               #config.xgb_param_grid,
+               config.rf_test_param_grid,
+               #config.svr_param_grid
                ]
 
 
@@ -112,7 +112,8 @@ def run_all(
 
     csv_files = sorted(data_dir.glob("*.csv"))
     for csv_path in csv_files:
-
+        if csv_path.stem.startswith("candida"):
+            break
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
         file_name = "_".join(parts[:2])# if len(parts) >= 2 else csv_path.stem
@@ -138,7 +139,8 @@ def run_all(
             })
 
 
-    ml_utils.latex_metrics_table_console(rows=results)
+
+    ml_utils.print_results_tabular(results)
 
 
 

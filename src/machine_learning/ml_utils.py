@@ -325,58 +325,10 @@ def encode_onehot_with_features(df, target_col="value"):
 
     return X_train, y_train, X_val, y_val
 
-def latex_metrics_table_console(rows,  # list of dicts: name,r2_train,r2_test,mse_train,mse_test
-                               caption="Modellgüte (R$^2$ und MSE) für verschiedene Organismen im Training und Test.",
-                               label="tab:model_results",
-                               decimals=3,
-                               width_factor=0.5,
-                               italicize_names=True):
-    def fmt(x): return f"{x:.{decimals}f}"
-    def sanitize(s: str) -> str:
-        # Organismennamen hübsch machen; Unterstriche vermeiden
-        s = str(s).replace("_", " ")
-        for a,b in {"&":"\\&","%":"\\%","$":"\\$","#":"\\#","{":"\\{","}":"\\}",
-                    "~":"\\textasciitilde{}","^":"\\textasciicircum{}","\\":"\\textbackslash{}"}.items():
-            s = s.replace(a,b)
-        return s
-
-    # Reihenfolge der Spalten genau wie in deiner Tabelle:
-    keys = ["r2_train","r2_val","mse_train","mse_val"]
-    header = (r"\begin{table}[h!]\n\t\centering\n\t\caption{"+caption+r"}\n\t\label{"+label+r"}\n"
-              f"\t\\resizebox{{{width_factor}\\textwidth}}{{!}}{{\n"
-              "\t\t\\begin{tabular}{lcccc}\n"
-              "\t\t\t\\hline\n"
-              "\t\t\t\\textbf{Organismus} & \\textbf{R$^2$ Train} & \\textbf{R$^2$ Test} & "
-              "\\textbf{MSE Train} & \\textbf{MSE Test} \\\\\n"
-              "\t\t\t\\hline\n")
-    lines = [header]
-
-    # Datenzeilen + Sammeln für Stats
-    vals = []
-    for r in rows:
-        name = sanitize(r["name"])
-        if italicize_names:
-            name = f"\\textit{{{name}}}"
-        nums = [r[k] for k in keys]
-        vals.append(nums)
-        lines.append("\t\t\t" + name + " & " + " & ".join(fmt(x) for x in nums) + r" \\" + "\n")
-
-    # Stats
-    M = np.array(vals, dtype=float)
-    means = [fmt(x) for x in np.nanmean(M, axis=0)]
-    stds  = [fmt(x) for x in np.nanstd(M, axis=0, ddof=0)]
-
-    lines += [
-        "\t\t\t\\hline\n",
-        "\t\t\t\\textbf{Mittelwert}       & " + " & ".join(means) + r" \\" + "\n",
-        "\t\t\t\\textbf{Standardabw.}     & " + " & ".join(stds)  + r" \\" + "\n",
-        "\t\t\t\\hline\n",
-        "\t\t\\end{tabular}%\n\t}\n\\end{table}"
-    ]
-    table = "".join(lines)
-    print(table)
-    return table
-
+def print_results_tabular(results: list[dict]):
+    for results in results:
+        print(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
+              f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 if __name__ == '__main__':
     ...
