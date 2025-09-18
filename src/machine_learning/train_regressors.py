@@ -5,33 +5,28 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor
-from typing import Union
-from plot_utils import plot_permutation_importance_from_est, plot_feautre_importance_mdi
-from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split
-import os
+
 import ml_utils
 import pandas as pd
 import config
-import joblib
-import logging
+
 from pathlib import Path
 from typing import Iterable, Any
-from dataclasses import dataclass
-import traceback
 
-regressor_list = [#('gb', GradientBoostingRegressor()),
-                  #('xtra', ExtraTreesRegressor()),
-                  #('xgb', XGBRegressor()),
+
+regressor_list = [('gb', GradientBoostingRegressor()),
+                  ('xtra', ExtraTreesRegressor()),
+                  ('xgb', XGBRegressor()),
                   ('rf', RandomForestRegressor()),
-                  #('svr', SVR())
+                  ('svr', SVR())
                   ]
 
-param_grids = [#config.gb_param_grid,
-               #config.xtra_param_grid,
-               #config.xgb_param_grid,
-               config.rf_test_param_grid,
-               #config.svr_param_grid
+param_grids = [config.gb_param_grid,
+               config.xtra_param_grid,
+               config.xgb_param_grid,
+               config.rf_param_grid,
+               config.svr_param_grid
                ]
 
 
