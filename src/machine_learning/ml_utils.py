@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 import json
 import os
@@ -106,7 +108,7 @@ def check_label_col(label_col, data: pd.DataFrame):
 
 
 def print_regression_metrics(y_true, y_pred):
-    print(f"Regression metrics: \n"
+    sys.stdout(f"Regression metrics: \n"
                 f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
@@ -119,7 +121,7 @@ def get_model_stats(model,
                     target_data,
                     tag: str):
     pred_train = model.predict(feature_data)
-    print(tag)
+
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train)
 
     # plot regression train
@@ -143,7 +145,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
         # if svr is used, rename model to the appropriate pipeline model
         model = pipeline
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=True,
-                               n_jobs=-1, verbose=3, cv=2).fit(x_train, y_train)
+                               n_jobs=-1, verbose=3, cv=5).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
@@ -326,8 +328,9 @@ def encode_onehot_with_features(df, target_col="value"):
     return X_train, y_train, X_val, y_val
 
 def print_results_tabular(results: list[dict]):
+    import sys
     for results in results:
-        print(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
+        sys.stdout(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
               f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 if __name__ == '__main__':
