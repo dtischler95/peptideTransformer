@@ -1,4 +1,4 @@
-import sys
+
 import logging
 import pandas as pd
 import json
@@ -166,13 +166,12 @@ def log_encoded_sequences(sequence_encoder):
         )
         print(f"Sequence: {cat_formated}\tEncoded: {encoded_value}")
 
-def enocde_onehot_without_features(sequences: pd.DataFrame, pad_len: int):
-    padded = sequences['sequence'].str.pad(width=pad_len, side='right', fillchar='-').tolist()
+def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
     df = add_pos_columns(sequences, L=MAX_LEN)
     pos_cols = [f"pos{i + 1}" for i in range(MAX_LEN)]
     ohe = OneHotEncoder(categories=[CATEGORIES] * 36, handle_unknown="ignore", sparse_output=False)
     onehot = ohe.fit_transform(df[pos_cols])
-    label = sequences['mic_log10'].tolist()
+    label = sequences[target_col].tolist()
     return onehot, label
 
 def overall_stats(best_estimator, x_test, y_test, save_path):
@@ -333,6 +332,41 @@ def print_results_tabular(results: list[dict], logger: logging.Logger):
     for results in results:
         logger.info(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
               f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
+
+
+
+def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val):
+    train_r2, train_mse = ml_utils.get_model_stats(model=best_estimator,
+                                                   plot_dir=plot_path,
+                                                   feature_data=x_train,
+                                                   target_data=y_train,
+                                                   logger=logger,
+                                                   tag="Train")
+    val_r2, val_mse = ml_utils.get_model_stats(model=best_estimator,
+                                               plot_dir=plot_path,
+                                               feature_data=x_val,
+                                               target_data=y_val,
+                                               logger=logger,
+                                               tag="Test")
+    overall_stats(best_estimator=best_estimator, x_test=x_val, y_test=y_val, save_path=plot_path)
+    return train_mse, train_r2, val_mse, val_r2
+
+
+def prepare_df(file_path, task):
+    df = pd.read_csv(file_path, sep=';')
+    if task == 'mic':
+        df = df.drop(columns='value')
+        target_col = 'mic_log10'
+    elif task == 'hemo':
+        try:
+            df = df.drop(columns=['hemo_percent', 'hemo_concentration'])
+        except KeyError:
+            pass
+        target_col = 'label'
+    else:
+        raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
+    return df, target_col
+
 
 if __name__ == '__main__':
     ...

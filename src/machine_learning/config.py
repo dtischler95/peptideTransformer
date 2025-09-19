@@ -61,3 +61,56 @@ TOP_ORGANISMS = [
     "Enterobacter aerogenes",
     "Enterobacter sp."
 ]
+
+rf_cls_param_grid = {
+    'n_estimators': [300, 600, 1000],
+    'max_depth': [None, 8, 16, 24],
+    'max_features': ['sqrt', 'log2', 1.0],
+    'min_samples_split': [2, 4, 8],
+    'min_samples_leaf': [1, 2, 5],
+    'class_weight': [None, 'balanced'],
+}
+
+rf_cls_test_param_grid = {
+    'n_estimators': [300],
+    'min_samples_split': [2],
+    'min_samples_leaf': [1],
+}
+
+xtra_cls_param_grid = {
+    'n_estimators': [300, 600, 1000],
+    'max_depth': [None, 16, 24],
+    'max_features': ['sqrt', 'log2', 1.0],
+    'min_samples_split': [2, 4, 8],
+    'min_samples_leaf': [1, 2, 5],
+    'class_weight': [None, 'balanced'],
+}
+
+# Optional if you include GB:
+gb_cls_param_grid = {
+    'learning_rate': [0.01, 0.05, 0.1],
+    'n_estimators': [300, 600, 1000],
+    'max_depth': [2, 3, 4],
+    'subsample': [0.6, 0.8, 1.0],
+    'min_samples_leaf': [1, 2, 5],
+    'max_features': ['sqrt', 1.0],
+}
+
+xgb_cls_param_grid = {
+    'n_estimators': [400, 800, 1200],
+    'learning_rate': [0.01, 0.05, 0.1],
+    'max_depth': [3, 5, 7],
+    'min_child_weight': [1, 3, 5],
+    'subsample': [0.6, 0.8, 1.0],
+    'colsample_bytree': [0.6, 0.8, 1.0],
+    'reg_lambda': [1.0, 3.0, 10.0],
+    'reg_alpha': [0.0, 0.1, 1.0],
+    # If imbalanced: add scale_pos_weight later (see tips below)
+}
+
+svc_cls_param_grid = {
+    'svc__kernel': ['rbf'],
+    'svc__C': [0.1, 1, 10, 100],
+    'svc__gamma': ['scale', 'auto'],
+    'svc__class_weight': [None, 'balanced'],
+}
