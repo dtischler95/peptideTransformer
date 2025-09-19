@@ -26,14 +26,14 @@ logging.basicConfig(
 )
 logger.setLevel(logging.INFO)
 
-regressor_list = [('gb', GradientBoostingRegressor()),
+regressor_list = [#('gb', GradientBoostingRegressor()),
                   ('xtra', ExtraTreesRegressor()),
                   ('xgb', XGBRegressor()),
                   ('rf', RandomForestRegressor()),
                   ('svr', SVR())
                   ]
 
-param_grids = [config.gb_param_grid,
+param_grids = [#config.gb_param_grid,
                config.xtra_param_grid,
                config.xgb_param_grid,
                config.rf_param_grid,
