@@ -1,8 +1,8 @@
 svr_param_grid = {
-    'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
-    'epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    'gamma': ['scale', 'auto'],
-    'kernel': ['rbf', 'sigmoid']
+    'svr__C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
+    'svr__epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+    'svr__gamma': ['scale', 'auto'],
+    'svr__kernel': ['rbf', 'sigmoid']
 }
 
 rf_param_grid = {
