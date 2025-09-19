@@ -97,9 +97,11 @@ def train_regressors(file_path: str,
         return train_r2, train_mse, val_r2, val_mse
 
     elif task == 'hemo':
-        y_pred = best_estimator.predict(x_val)
+        #y_pred = best_estimator.predict(x_val)
 
         y_score = _get_scores(best_estimator, x_val)
+
+
 
         try:
             auc = roc_auc_score(y_val, y_score)
@@ -107,18 +109,6 @@ def train_regressors(file_path: str,
             auc = float('nan')
         ap = average_precision_score(y_val, y_score)
 
-        logger.info(f'AUROC: {auc:.4f}')
-        logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
-
-        logger.info("Cls report here")
-        logger.info(classification_report(y_val, y_pred, digits=3))
-
-        confusion_matrix = metrics.confusion_matrix(y_val, y_pred)
-        cm_display = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[0, 1])
-        cm_display.plot()
-        plt.savefig(f"{plot_path}/confusion_matrix.png")
-        plt.close()
-        plt.clf()
 
         # ROC curve
         try:
@@ -126,9 +116,9 @@ def train_regressors(file_path: str,
             plt.figure()
             plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
             plt.plot([0, 1], [0, 1], linestyle='--')
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate (Recall)')
-            plt.title('ROC curve (validation)')
+            plt.xlabel('Falsch-Positiven-Rate')
+            plt.ylabel('Richtig-Positiven-Rate (Recall)')
+            plt.title('ROC-Kurve (Validierung)')
             plt.legend(loc='lower right')
             plt.grid(True)
             roc_path = f'{plot_path}/{model_name}_roc.png'
@@ -144,9 +134,9 @@ def train_regressors(file_path: str,
             plt.figure()
             plt.plot(recall, precision, label=f'AP={ap:.3f}')
             plt.hlines(np.mean(y_val), 0, 1, linestyles='--')
-            plt.xlabel('Recall')
-            plt.ylabel('Precision')
-            plt.title('Precision–Recall curve (validation)')
+            plt.xlabel('Sensitivität')
+            plt.ylabel('Präzision')
+            plt.title('Präzisions-Sensivitäts-Kurve (Validierung)')
             plt.legend(loc='lower left')
             plt.grid(True)
             pr_path = f'{plot_path}/{model_name}_pr.png'
@@ -159,6 +149,23 @@ def train_regressors(file_path: str,
         thr, f1_best, p_best, r_best = _best_f1_threshold(y_val, y_score)
         logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
                     f'(P={p_best:.4f}, R={r_best:.4f})')
+
+        y_pred = (y_score >= thr).astype(int)
+
+        logger.info(f'AUROC: {auc:.4f}')
+        logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
+
+        logger.info("Cls report here")
+        logger.info(classification_report(y_val, y_pred, digits=3))
+
+        confusion_matrix = metrics.confusion_matrix(y_val, y_pred)
+        cm_display = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[0, 1])
+        cm_display.plot()
+        plt.savefig(f"{plot_path}/confusion_matrix.png")
+        plt.close()
+        plt.clf()
+
+
 
     return None
 
@@ -233,11 +240,11 @@ def run_all(
 if __name__ == "__main__":
     # train_regressors('../../data/regression_data/acinetobacter_baumannii_for_regression.csv',
     #                  calculate_features=False)
-
-    task = 'hemo' # 'hemo'
+    # TODO USE CONFIG FOR ALL THIS
+    task = 'hemo' # 'hemo' or 'mic'
 
     if task == 'mic':
-        data_dir = '../../data/regression_data/'
+        data_dir = './data/regression_data/'
         model_list = [  # ('gb', GradientBoostingRegressor()),
             ('xtra', ExtraTreesRegressor()),
             ('xgb', XGBRegressor()),
@@ -252,20 +259,20 @@ if __name__ == "__main__":
             config.svr_param_grid
         ]
     elif task =='hemo':
-        data_dir = '../../data/hemo_train/'
+        data_dir = './data/hemo_train/'
         model_list = [
-            #('xtra', ExtraTreesClassifier()),
-            #('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
+            ('xtra', ExtraTreesClassifier()),
+            ('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
             ('rf', RandomForestClassifier()),
-            #('svc', SVC(probability=True)),
-            # ('gb',   GradientBoostingClassifier()),
+            ('svc', SVC(probability=True)),
+            #('gb',   GradientBoostingClassifier()),
         ]
 
         param_grids = [  # config.gb_param_grid,
-            #config.xtra_cls_param_grid,
-            #config.xgb_cls_param_grid,
-            config.rf_cls_test_param_grid,
-            #config.svc_cls_param_grid
+            config.xtra_cls_param_grid,
+            config.xgb_cls_param_grid,
+            config.rf_cls_param_grid,
+            config.svc_cls_param_grid
         ]
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
