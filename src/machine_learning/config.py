@@ -1,14 +1,15 @@
 svr_param_grid = {
-    'C': [1e-7, 1e-4, 1e-3, 1e-2, 1, 10, 100, 1000],
-    'epsilon': [0.1, 0.2, 0.5, 0.3, 0.01, 0.001],
+    'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
+    'epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
     'gamma': ['scale', 'auto'],
     'kernel': ['rbf', 'sigmoid']
 }
 
 rf_param_grid = {
-    'n_estimators': [100, 200, 400, 500, 750, 1000],
-    'min_samples_split': [2, 3, 4, 5, 7, 10],
-    'min_samples_leaf': [1, 2, 5]
+    'n_estimators': [200, 400, 750, 1000],
+    'min_samples_split': [2, 4, 8],
+    'min_samples_leaf': [1, 2, 5],
+    'max_depth': [None, 8, 12, 20],
 }
 
 rf_test_param_grid = {
@@ -18,23 +19,30 @@ rf_test_param_grid = {
 }
 
 xtra_param_grid = {
-    'n_estimators': [100, 200, 300, 400, 500, 750, 1000],
-    'min_samples_split': [2, 3, 4, 5, 7, 10],
+    'n_estimators': [300, 500, 750, 1000],
+    'max_depth': [None, 12, 20],
+    'min_samples_split': [3, 4, 5, 7],
     'min_samples_leaf': [1, 2, 5]
 }
 
 gb_param_grid = {
-    'n_estimators': [100, 200, 300, 500, 750, 1000],
-    'min_samples_split': [2, 3, 4, 5],
+    'n_estimators': [300, 500, 800],
+    'max_depth': [2, 3, 4],
+    'subsample': [0.6, 0.8, 1.0],
+    'min_samples_split': [2, 4],
     'min_samples_leaf': [1, 2, 5],
-    'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
+    'learning_rate': [0.01, 0.05, 0.1],
 }
 
 xgb_param_grid = {
-    'n_estimators': [100, 200, 300, 500, 750, 1000],
-    'min_samples_split': [3, 5, 10],
-    'min_samples_leaf': [1, 2, 5],
-    'learning_rate': [0.01, 0.1, 0.2, 0.3],
+    'n_estimators': [400, 800, 1200],
+    'learning_rate': [0.01, 0.05, 0.1],
+    'max_depth': [3, 5, 7],
+    'min_child_weight': [1, 3, 5],
+    'subsample': [0.6, 0.8, 1.0],
+    'colsample_bytree': [0.6, 0.8, 1.0],
+    'reg_lambda': [1.0, 3.0, 10.0],
+    'reg_alpha': [0.0, 0.1, 1.0],
 }
 
 TOP_ORGANISMS = [

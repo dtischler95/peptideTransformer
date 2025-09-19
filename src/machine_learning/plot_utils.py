@@ -121,7 +121,7 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     sns.residplot(x=y_pred, y=residuals, ax=axs[1])
     axs[1].set_title(
         "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
-    axs[1].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
+    axs[1].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
     axs[1].set_ylabel("Residuum MHK/log(µM)")
 
     # Plot two red horizontal lines representing positive and negative standard deviations
@@ -151,9 +151,9 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     axs[0].plot(y_pred_sorted, lower_bound, color='red', linestyle='--')
     axs[0].plot(y_pred_sorted, upper_bound, color='red', linestyle='--')
 
-    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MHK/log(µM)")
-    axs[0].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
-    axs[0].set_ylabel("Tatsächlicher Wert MHK/log(µM)")
+    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MIC/log(µM)")
+    axs[0].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
+    axs[0].set_ylabel("Tatsächlicher Wert MIC/log(µM)")
 
     fig.suptitle("Regressions -und Residuenplot")
     plt.tight_layout()

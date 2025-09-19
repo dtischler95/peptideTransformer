@@ -45,6 +45,7 @@ def train_regressors(file_path: str,
                      regressor,
                      param_grid,
                      plot_path: str,
+                     model_name: str,
                      calculate_features: bool = True
                      ):
     df = pd.read_csv(file_path, sep=';')
@@ -70,7 +71,7 @@ def train_regressors(file_path: str,
     logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
 
-    best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, './', 'test', param_grid,
+    best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
                                                                     x_train,
                                                                     y_train)
 
@@ -98,8 +99,8 @@ def train_regressors(file_path: str,
 
 
 def run_all(
-        data_dir: str | Path = "./data/regression_data",
-        output_root: str | Path = "./final_plots/",
+        data_dir: str | Path = "../../data/regression_data",
+        output_root: str | Path = "../../final_plots/",
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
@@ -135,6 +136,7 @@ def run_all(
                 file_path=str(csv_path),
                 regressor=estimator,
                 param_grid=grid,
+                model_name=model_tag,
                 calculate_features=calculate_features,
                 plot_path=str(out_dir)
             )

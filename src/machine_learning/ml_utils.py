@@ -146,7 +146,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
         # if svr is used, rename model to the appropriate pipeline model
         model = pipeline
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=True,
-                               n_jobs=-1, verbose=3, cv=5).fit(x_train, y_train)
+                               n_jobs=-1, verbose=3, cv=5, scoring='r2').fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
