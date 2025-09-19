@@ -1,8 +1,8 @@
 svr_param_grid = {
-    'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
-    'epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    'gamma': ['scale', 'auto'],
-    'kernel': ['rbf', 'sigmoid']
+    'scr__C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
+    'scr__epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
+    'scr__gamma': ['scale', 'auto'],
+    'scr__kernel': ['rbf', 'sigmoid']
 }
 
 rf_param_grid = {
@@ -105,7 +105,6 @@ xgb_cls_param_grid = {
     'colsample_bytree': [0.6, 0.8, 1.0],
     'reg_lambda': [1.0, 3.0, 10.0],
     'reg_alpha': [0.0, 0.1, 1.0],
-    # If imbalanced: add scale_pos_weight later (see tips below)
 }
 
 svc_cls_param_grid = {
