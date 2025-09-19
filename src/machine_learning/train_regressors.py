@@ -99,8 +99,8 @@ def train_regressors(file_path: str,
 
 
 def run_all(
-        data_dir: str | Path = "../../data/regression_data",
-        output_root: str | Path = "../../final_plots/",
+        data_dir: str | Path = "./data/regression_data",
+        output_root: str | Path = "./final_plots/",
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
