@@ -143,7 +143,12 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
             ('scaler', StandardScaler()),
             ('svr', model)
         ])
-        # if svr is used, rename model to the appropriate pipeline model
+        model = pipeline
+    if model_name == 'svc':
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('svc', model)
+        ])
         model = pipeline
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=True,
                                n_jobs=-1, verbose=3, cv=5, scoring='r2').fit(x_train, y_train)

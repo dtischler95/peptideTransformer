@@ -241,7 +241,7 @@ if __name__ == "__main__":
     # train_regressors('../../data/regression_data/acinetobacter_baumannii_for_regression.csv',
     #                  calculate_features=False)
     # TODO USE CONFIG FOR ALL THIS
-    task = 'hemo' # 'hemo' or 'mic'
+    task = 'mic' # 'hemo' or 'mic'
 
     if task == 'mic':
         data_dir = './data/regression_data/'
