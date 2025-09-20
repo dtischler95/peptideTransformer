@@ -151,7 +151,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
         ])
         model = pipeline
 
-    if task == 'mic':
+    if task == 'hemo':
         scoring = {
             'roc_auc': 'roc_auc',
             'ap': 'average_precision',
@@ -159,7 +159,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
             'bal_acc': 'balanced_accuracy',
         }
         refit = 'roc_auc'
-    elif task == 'hemo':
+    elif task == 'mic':
         scoring = {
             'r2': 'r2',
             'neg_mse': 'neg_mean_squared_error',
@@ -169,7 +169,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
     else:
         raise NotImplementedError
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
-                               n_jobs=-1, verbose=3, cv=5, scoring=scoring).fit(x_train, y_train)
+                               n_jobs=-1, verbose=0, cv=5, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
@@ -358,14 +358,14 @@ def print_results_tabular(results: list[dict], logger: logging.Logger):
 
 
 
-def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val):
-    train_r2, train_mse = ml_utils.get_model_stats(model=best_estimator,
+def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger):
+    train_r2, train_mse = get_model_stats(model=best_estimator,
                                                    plot_dir=plot_path,
                                                    feature_data=x_train,
                                                    target_data=y_train,
                                                    logger=logger,
                                                    tag="Train")
-    val_r2, val_mse = ml_utils.get_model_stats(model=best_estimator,
+    val_r2, val_mse = get_model_stats(model=best_estimator,
                                                plot_dir=plot_path,
                                                feature_data=x_val,
                                                target_data=y_val,
