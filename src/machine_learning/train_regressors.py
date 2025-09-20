@@ -255,7 +255,7 @@ if __name__ == "__main__":
     # train_regressors('../../data/regression_data/acinetobacter_baumannii_for_regression.csv',
     #                  calculate_features=False)
     # TODO USE CONFIG FOR ALL THIS
-    task = 'hemo' # 'hemo' or 'mic'
+    task = 'mic' # 'hemo' or 'mic'
 
     if task == 'mic':
         data_dir = './data/regression_data/'
@@ -273,20 +273,20 @@ if __name__ == "__main__":
             config.svr_param_grid
         ]
     elif task =='hemo':
-        data_dir = '../../data/hemo_train/'
-        model_list = [
-            #('xtra', ExtraTreesClassifier()),
-            #('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
+        data_dir = './data/hemo_train/'
+        model_list = [#('gb',   GradientBoostingClassifier()),
+            ('xtra', ExtraTreesClassifier()),
+            ('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
             ('rf', RandomForestClassifier()),
-            #('svc', SVC(probability=True)),
-            #('gb',   GradientBoostingClassifier()),
+            ('svc', SVC(probability=True)),
+
         ]
 
         param_grids = [  # config.gb_param_grid,
-            #config.xtra_cls_param_grid,
-            #config.xgb_cls_param_grid,
-            config.rf_cls_test_param_grid,
-            #config.svc_cls_param_grid
+            config.xtra_cls_param_grid,
+            config.xgb_cls_param_grid,
+            config.rf_cls_param_grid,
+            config.svc_cls_param_grid
         ]
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
