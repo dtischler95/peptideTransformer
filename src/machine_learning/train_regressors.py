@@ -84,7 +84,8 @@ def train_regressors(file_path: str,
 
     best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
                                                                     x_train,
-                                                                    y_train)
+                                                                    y_train,
+                                                                    task)
 
     test_score = best_estimator.score(x_val, y_val)
     logger.info(f"Test score of the best model: {test_score}")
@@ -92,7 +93,7 @@ def train_regressors(file_path: str,
 
     if task == 'mic':
         train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train,
-                                                                   y_val)
+                                                                   y_val, logger)
 
         return train_r2, train_mse, val_r2, val_mse
 
@@ -276,7 +277,7 @@ if __name__ == "__main__":
         data_dir = './data/hemo_train/'
         model_list = [#('gb',   GradientBoostingClassifier()),
             ('xtra', ExtraTreesClassifier()),
-            ('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
+            ('xgb', XGBClassifier()),
             ('rf', RandomForestClassifier()),
             ('svc', SVC(probability=True)),
 
