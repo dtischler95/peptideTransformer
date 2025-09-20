@@ -159,11 +159,25 @@ def train_regressors(file_path: str,
         logger.info(classification_report(y_val, y_pred, digits=3))
 
         confusion_matrix = metrics.confusion_matrix(y_val, y_pred)
-        cm_display = ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[0, 1])
-        cm_display.plot()
-        plt.savefig(f"{plot_path}/confusion_matrix.png")
-        plt.close()
-        plt.clf()
+
+        with np.errstate(all='ignore'):
+            confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
+
+        titles_options = [
+            ("Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+            ("Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        ]
+
+        for title, matrix in titles_options:
+
+            cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
+            cm_display.plot()
+            plt.title(title)
+            plt.xlabel('Vorhergesagte Klasse')
+            plt.ylabel('Tatsächliche Klasse')
+            plt.savefig(f"{plot_path}/{title}.png")
+            plt.close()
+            plt.clf()
 
 
 
@@ -171,7 +185,7 @@ def train_regressors(file_path: str,
 
 
 def run_all(
-        data_dir: str | Path = "./data/regression_data",
+        data_dir: str | Path = "../../data/regression_data",
         output_root: str | Path = "./final_plots/",
         task: str = 'mic',
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
@@ -241,7 +255,7 @@ if __name__ == "__main__":
     # train_regressors('../../data/regression_data/acinetobacter_baumannii_for_regression.csv',
     #                  calculate_features=False)
     # TODO USE CONFIG FOR ALL THIS
-    task = 'mic' # 'hemo' or 'mic'
+    task = 'hemo' # 'hemo' or 'mic'
 
     if task == 'mic':
         data_dir = './data/regression_data/'
@@ -259,20 +273,20 @@ if __name__ == "__main__":
             config.svr_param_grid
         ]
     elif task =='hemo':
-        data_dir = './data/hemo_train/'
+        data_dir = '../../data/hemo_train/'
         model_list = [
-            ('xtra', ExtraTreesClassifier()),
-            ('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
+            #('xtra', ExtraTreesClassifier()),
+            #('xgb', XGBClassifier(tree_method='hist', eval_metric='logloss')),
             ('rf', RandomForestClassifier()),
-            ('svc', SVC(probability=True)),
+            #('svc', SVC(probability=True)),
             #('gb',   GradientBoostingClassifier()),
         ]
 
         param_grids = [  # config.gb_param_grid,
-            config.xtra_cls_param_grid,
-            config.xgb_cls_param_grid,
-            config.rf_cls_param_grid,
-            config.svc_cls_param_grid
+            #config.xtra_cls_param_grid,
+            #config.xgb_cls_param_grid,
+            config.rf_cls_test_param_grid,
+            #config.svc_cls_param_grid
         ]
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
