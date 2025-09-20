@@ -132,7 +132,7 @@ def get_model_stats(model,
     return r2, mse
 
 
-def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train):
+def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train, task):
     """
     Setup for the Gridsearch in machine learning logic
 
@@ -150,8 +150,26 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
             ('svc', model)
         ])
         model = pipeline
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=True,
-                               n_jobs=-1, verbose=3, cv=5, scoring='r2').fit(x_train, y_train)
+
+    if task == 'mic':
+        scoring = {
+            'roc_auc': 'roc_auc',
+            'ap': 'average_precision',
+            'f1': 'f1',
+            'bal_acc': 'balanced_accuracy',
+        }
+        refit = 'roc_auc'
+    elif task == 'hemo':
+        scoring = {
+            'r2': 'r2',
+            'neg_mse': 'neg_mean_squared_error',
+            'neg_mae': 'neg_mean_absolute_error'
+        }
+        refit = 'r2'
+    else:
+        raise NotImplementedError
+    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
+                               n_jobs=-1, verbose=3, cv=5, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
