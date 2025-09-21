@@ -610,7 +610,6 @@ def get_feature_importance(file_path: str,
         if key in ["n_features", "mean_test_score", "std_test_score"]
     }
     cv_results = pd.DataFrame(data)
-    cv_results = cv_results[:50]
     plt.figure()
     plt.xlabel("Anzahl der gewählten Features")
     plt.ylabel("Mittlere Testgenauigkeit")
