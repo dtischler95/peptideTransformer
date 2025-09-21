@@ -136,7 +136,7 @@ def run_all(
 
 if __name__ == "__main__":
 
-    data_dir = '../../data/regression_data/'
+    data_dir = './data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
         ('xtra', ExtraTreesRegressor()),
         ('xgb', XGBRegressor()),
