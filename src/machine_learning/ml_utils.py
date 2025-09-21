@@ -593,10 +593,7 @@ def get_feature_importance(file_path: str,
 
 
     desc_idx = [i for i, f in enumerate(feature_names) if f.startswith('desc__')]
-    svd_idx  = [i for i, f in enumerate(feature_names) if f.startswith('kmer_svd')]
-
     x_desc = x_train[:, desc_idx]
-    desc_names = [feature_names[i] for i in desc_idx]
 
     rfecv = RFECV(estimator=model,
                   cv=5,
@@ -609,7 +606,7 @@ def get_feature_importance(file_path: str,
         for key, value in rfecv.cv_results_.items()
         if key in ["n_features", "mean_test_score", "std_test_score"]
     }
-    cv_results = pd.DataFrame(data)
+    cv_results = pd.DataFrame(data[:50])
     plt.figure()
     plt.xlabel("Anzahl der gewählten Features")
     plt.ylabel("Mittlere Testgenauigkeit")
@@ -626,13 +623,6 @@ def get_feature_importance(file_path: str,
     # Auswahl der desc__ Features
     selected_desc_idx = [i for i, keep in zip(desc_idx, rfecv.support_) if keep]
     selected_names = [feature_names[i] for i in selected_desc_idx]
-
-    # Immer ALLE svd_kmer behalten
-    selected_idx = selected_desc_idx + svd_idx
-    final_names = selected_names + [feature_names[i] for i in svd_idx] # final feature selection
-
-
-
 
 
     return selected_names
