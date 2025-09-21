@@ -1,4 +1,3 @@
-
 import logging
 import pandas as pd
 import json
@@ -10,14 +9,21 @@ from matplotlib import pyplot as plt
 import peptides as pep
 import plot_utils
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_selection import RFECV
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.decomposition import TruncatedSVD
+from sklearn import metrics
 from sklearn.metrics import (r2_score,
                              mean_absolute_error,
                              explained_variance_score,
-                             mean_squared_error)
+                             mean_squared_error, precision_recall_curve, roc_auc_score, average_precision_score,
+                             roc_curve, classification_report, ConfusionMatrixDisplay)
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
+
 alphabet = {
     "-": 0,
     "A": 1,
@@ -78,6 +84,7 @@ def load_data(path: str, decimal: str) -> pd.DataFrame:
 
     return df
 
+
 def check_label_col(label_col, data: pd.DataFrame):
     # Check single target col
     # Check multiple target cols
@@ -114,6 +121,7 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
                 f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> VAR: {explained_variance_score(y_true=y_true, y_pred=y_pred):.5f}\n")
     return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
+
 
 def get_model_stats(model,
                     plot_dir: str,
@@ -189,6 +197,7 @@ def log_encoded_sequences(sequence_encoder):
         )
         print(f"Sequence: {cat_formated}\tEncoded: {encoded_value}")
 
+
 def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
     df = add_pos_columns(sequences, L=MAX_LEN)
     pos_cols = [f"pos{i + 1}" for i in range(MAX_LEN)]
@@ -197,8 +206,8 @@ def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
     label = sequences[target_col].tolist()
     return onehot, label
 
-def overall_stats(best_estimator, x_test, y_test, save_path):
 
+def overall_stats(best_estimator, x_test, y_test, save_path):
     # Make predictions on the test set
     predictions = best_estimator.predict(x_test)
 
@@ -240,47 +249,37 @@ def overall_stats(best_estimator, x_test, y_test, save_path):
     mse = np.mean((y_test - predictions) ** 2)
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
 
+
 def calculate_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates the features for a given sequence inside the DataFrame
     """
 
-
     peptide_df = pd.DataFrame()
 
-
-
     for sequence in df['sequence']:
-
         peptide_object = pep.Peptide(sequence)
 
-
-
-        tmp_peptide_df = pd.DataFrame([list(peptide_object.descriptors().values())], columns=list(peptide_object.descriptors().keys()))
+        tmp_peptide_df = pd.DataFrame([list(peptide_object.descriptors().values())],
+                                      columns=list(peptide_object.descriptors().keys()))
         tmp_peptide_df['sequence_checker_2'] = sequence
-
-
 
         peptide_df = pd.concat([peptide_df, tmp_peptide_df])
 
         # aa_dipeptide_composition_df = pd.concat([aa_dipeptide_composition_df, tmp_aa_dipeptide_composition_df])
 
-
     peptide_df.reset_index(drop=True, inplace=True)
-
-
 
     df = pd.concat([df, peptide_df], axis=1)
 
     df = df.drop(columns=['sequence_checker_2'])
-
 
     return df
 
 
 PAD = "-"
 MAX_LEN = 36
-AA = list("ACDEFGHIKLMNPQRSTVWY")         # Standard-20
+AA = list("ACDEFGHIKLMNPQRSTVWY")  # Standard-20
 CATEGORIES = AA + [PAD]
 
 
@@ -288,25 +287,28 @@ def pad_seq(seq, L=MAX_LEN, pad=PAD):
     seq = str(seq)
     return seq[:L] + pad * max(0, L - len(seq))
 
+
 def add_pos_columns(df, L=MAX_LEN, pad=PAD):
     # keine Inplace-Änderung am Slice; wir bauen neue Spalten und geben ein neues DF zurück
     seq_pad = (
         df["sequence"].astype(str)
-        .str.slice(0, L)            # trunkieren
-        .str.ljust(L, fillchar=pad) # rechts padden
+        .str.slice(0, L)  # trunkieren
+        .str.ljust(L, fillchar=pad)  # rechts padden
     )
     # Vektorisierter Bau der Positionsspalten
     pos_df = pd.DataFrame(
-        {f"pos{i+1}": seq_pad.str[i] for i in range(L)},
+        {f"pos{i + 1}": seq_pad.str[i] for i in range(L)},
         index=df.index
     )
     # neues DF zurückgeben
     return pd.concat([df.copy(), pos_df], axis=1)
 
+
 def compute_desc_row(sequence):
     p = pep.Peptide(sequence)
-    d = p.descriptors()                     # dict -> nur Zahlen
+    d = p.descriptors()  # dict -> nur Zahlen
     return {f"desc__{k}": float(v) for k, v in d.items()}
+
 
 def add_descriptors(df):
     desc_rows = [compute_desc_row(s) for s in df["sequence"]]
@@ -316,61 +318,60 @@ def add_descriptors(df):
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df
 
+
 # --- Build design matrix (OHE || Deskriptoren) + seq-basierter Split ---
 def encode_onehot_with_features(df, target_col="value"):
     df = df.copy()
     df = add_pos_columns(df, L=MAX_LEN)
     df = add_descriptors(df)
 
-    pos_cols  = [f"pos{i+1}" for i in range(MAX_LEN)]
+    pos_cols = [f"pos{i + 1}" for i in range(MAX_LEN)]
     desc_cols = [c for c in df.columns if c.startswith("desc__")]
 
     # Split ohne Leckage: nach einzigartigen Sequenzen
     uniq = df["sequence"].unique()
     tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2, random_state=42, shuffle=True)
     train_df = df[df["sequence"].isin(tr_seqs)].copy()
-    val_df   = df[df["sequence"].isin(va_seqs)].copy()
+    val_df = df[df["sequence"].isin(va_seqs)].copy()
 
     y_train = train_df[target_col].astype(float).to_numpy()
-    y_val   = val_df[target_col].astype(float).to_numpy()
+    y_val = val_df[target_col].astype(float).to_numpy()
 
-    # One-Hot nur auf TRAIN fitten, Kategorien fix (inkl. PAD)
-    ohe = OneHotEncoder(categories=[CATEGORIES]*len(pos_cols), handle_unknown="ignore", sparse_output=False)
-    X_pos_train = ohe.fit_transform(train_df[pos_cols])
-    X_pos_val   = ohe.transform(val_df[pos_cols])
+    ohe = OneHotEncoder(categories=[CATEGORIES] * len(pos_cols), handle_unknown="ignore", sparse_output=False)
+    x_pos_train = ohe.fit_transform(train_df[pos_cols])
+    x_pos_val = ohe.transform(val_df[pos_cols])
 
     # Numerische Features, robust gegen NaNs
     imp = SimpleImputer(strategy="median")
-    X_desc_train = imp.fit_transform(train_df[desc_cols])
-    X_desc_val   = imp.transform(val_df[desc_cols])
+    x_desc_train = imp.fit_transform(train_df[desc_cols])
+    x_desc_val = imp.transform(val_df[desc_cols])
 
     # Concatenate: [OHE | Deskriptoren]
-    X_train = np.hstack([X_pos_train, X_desc_train])
-    X_val   = np.hstack([X_pos_val,   X_desc_val])
+    x_train = np.hstack([x_pos_train, x_desc_train])
+    x_val = np.hstack([x_pos_val, x_desc_val])
 
-    return X_train, y_train, X_val, y_val
+    return x_train, y_train, x_val, y_val
+
 
 def print_results_tabular(results: list[dict], logger: logging.Logger):
-
     for results in results:
         logger.info(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
-              f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
-
+                    f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 
 def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger):
     train_r2, train_mse = get_model_stats(model=best_estimator,
-                                                   plot_dir=plot_path,
-                                                   feature_data=x_train,
-                                                   target_data=y_train,
-                                                   logger=logger,
-                                                   tag="Train")
+                                          plot_dir=plot_path,
+                                          feature_data=x_train,
+                                          target_data=y_train,
+                                          logger=logger,
+                                          tag="Train")
     val_r2, val_mse = get_model_stats(model=best_estimator,
-                                               plot_dir=plot_path,
-                                               feature_data=x_val,
-                                               target_data=y_val,
-                                               logger=logger,
-                                               tag="Test")
+                                      plot_dir=plot_path,
+                                      feature_data=x_val,
+                                      target_data=y_val,
+                                      logger=logger,
+                                      tag="Test")
     overall_stats(best_estimator=best_estimator, x_test=x_val, y_test=y_val, save_path=plot_path)
     return train_mse, train_r2, val_mse, val_r2
 
@@ -389,6 +390,252 @@ def prepare_df(file_path, task):
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
     return df, target_col
+
+
+def _get_scores(model, X):
+    if hasattr(model, 'predict_proba'):
+        return model.predict_proba(X)[:, 1]
+    if hasattr(model, 'decision_function'):
+        s = model.decision_function(X)
+        # Map to 0..1 for plotting consistency (ranking is what matters)
+        smin, smax = np.min(s), np.max(s)
+        return (s - smin) / (smax - smin + 1e-12)
+    # last resort – not ideal for curves
+    return model.predict(X).astype(float)
+
+
+def _best_f1_threshold(y_true, y_score):
+    p, r, thr = precision_recall_curve(y_true, y_score)
+    f1 = 2 * p * r / (p + r + 1e-12)
+    i = np.nanargmax(f1)
+    # thresholds has length = len(p)-1; clamp index
+    use_i = min(i, len(thr) - 1) if len(thr) > 0 else 0
+    return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
+
+
+def evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, logger):
+    y_score = _get_scores(best_estimator, x_val)
+    try:
+        auc = roc_auc_score(y_val, y_score)
+    except Exception:
+        auc = float('nan')
+    ap = average_precision_score(y_val, y_score)
+    # ROC curve
+    try:
+        fpr, tpr, _ = roc_curve(y_val, y_score)
+        plt.figure()
+        plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
+        plt.plot([0, 1], [0, 1], linestyle='--')
+        plt.xlabel('Falsch-Positiven-Rate')
+        plt.ylabel('Richtig-Positiven-Rate (Recall)')
+        plt.title('ROC-Kurve (Validierung)')
+        plt.legend(loc='lower right')
+        plt.grid(True)
+        roc_path = f'{plot_path}/{model_name}_roc.png'
+        plt.savefig(roc_path)
+        plt.close()
+    except Exception as e:
+        logger.warning(f'ROC plotting skipped: {e}')
+    # PR curve
+    try:
+        precision, recall, _ = precision_recall_curve(y_val, y_score)
+        plt.figure()
+        plt.plot(recall, precision, label=f'AP={ap:.3f}')
+        plt.hlines(np.mean(y_val), 0, 1, linestyles='--')
+        plt.xlabel('Sensitivität')
+        plt.ylabel('Präzision')
+        plt.title('Präzisions-Sensivitäts-Kurve (Validierung)')
+        plt.legend(loc='lower left')
+        plt.grid(True)
+        pr_path = f'{plot_path}/{model_name}_pr.png'
+        plt.savefig(pr_path)
+        plt.close()
+    except Exception as e:
+        logger.warning(f'PR plotting skipped: {e}')
+    # Threshold tuning for F1
+    thr, f1_best, p_best, r_best = _best_f1_threshold(y_val, y_score)
+    logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
+                f'(P={p_best:.4f}, R={r_best:.4f})')
+    y_pred = (y_score >= thr).astype(int)
+    logger.info(f'AUROC: {auc:.4f}')
+    logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
+    logger.info("Cls report here")
+    logger.info(classification_report(y_val, y_pred, digits=3))
+    confusion_matrix = metrics.confusion_matrix(y_val, y_pred)
+    with np.errstate(all='ignore'):
+        confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
+    titles_options = [
+        ("Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        ("Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+    ]
+    for title, matrix in titles_options:
+        cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
+        cm_display.plot()
+        plt.title(title)
+        plt.xlabel('Vorhergesagte Klasse')
+        plt.ylabel('Tatsächliche Klasse')
+        plt.savefig(f"{plot_path}/{title}.png")
+        plt.close()
+        plt.clf()
+
+
+def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_selection = None):
+    if calculate_features:
+        # x_train, y_train, x_val, y_val = encode_onehot_with_features(df, target_col=target_col)
+        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(df, target_col=target_col, feature_selection=feature_selection)
+
+        if out_dir is not None:
+            x_val_df = pd.DataFrame(x_val, columns=feature_names)
+
+            # y_val als DataFrame oder Series
+            y_val_df = pd.Series(y_val, name=target_col)  # oder DataFrame: pd.DataFrame(y_val, columns=[target_col])
+
+            # Kombinieren (falls du Features + Label in einem DF willst)
+            val_df = pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
+
+            val_df.to_csv(f"{out_dir}/val_data_features.csv", sep=';', index=False)
+
+        return x_train, x_val, y_train, y_val, feature_names
+    else:
+        df_to_split = df['sequence'].unique()
+
+        train, test = train_test_split(df_to_split,
+                                       train_size=0.8,
+                                       test_size=0.2,
+                                       shuffle=True,
+                                       random_state=42)
+
+        train_df = df[df['sequence'].isin(train)]
+        val_df = df[df['sequence'].isin(test)]
+
+        x_train, y_train = enocde_onehot_without_features(train_df, target_col=target_col)
+        x_val, y_val = enocde_onehot_without_features(val_df, target_col=target_col)
+
+        if out_dir is not None:
+            x_val_df = pd.DataFrame(x_val)
+
+            # y_val als DataFrame oder Series
+            y_val_df = pd.Series(y_val, name=target_col)  # oder DataFrame: pd.DataFrame(y_val, columns=[target_col])
+
+            # Kombinieren (falls du Features + Label in einem DF willst)
+            val_df = pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
+
+            val_df.to_csv(f"{out_dir}/val_data.csv", sep=';', index=False)
+
+        return x_train, x_val, y_train, y_val
+
+
+def encode_kmer_with_features(df, target_col, n_components=128, feature_selection = None):
+    # TODO WARUM n_component 128?? Funktion generell nochmal genauer anschauen
+    df = add_descriptors(df)  # <- deine Funktion für desc__*
+    df = df[feature_selection + ['sequence', target_col]] if feature_selection else df
+
+    desc_cols = [c for c in df.columns if c.startswith('desc__')]
+
+    # Split ohne Leckage: nach einzigartigen Sequenzen
+    uniq = df['sequence'].unique()
+    tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
+                                        random_state=42, shuffle=True)
+    train_df = df[df['sequence'].isin(tr_seqs)].copy()
+    val_df = df[df['sequence'].isin(va_seqs)].copy()
+
+    y_train = train_df[target_col].astype(float).to_numpy()
+    y_val = val_df[target_col].astype(float).to_numpy()
+
+    # --- k-mer TF-IDF ---
+    tfidf = TfidfVectorizer(analyzer='char',
+                            ngram_range=(3, 4),  # 3- und 4-mer
+                            min_df=2)  # ignoriert seltene
+    Xk_tr = tfidf.fit_transform(train_df['sequence'])
+    Xk_va = tfidf.transform(val_df['sequence'])
+
+    # --- Dimensionalität reduzieren ---
+    svd = TruncatedSVD(n_components=n_components, random_state=42)
+    Z_tr = svd.fit_transform(Xk_tr)
+    Z_va = svd.transform(Xk_va)
+
+    # --- Deskriptoren ---
+    imp = SimpleImputer(strategy='median')
+    D_tr = imp.fit_transform(train_df[desc_cols])
+    D_va = imp.transform(val_df[desc_cols])
+
+    # --- Concatenate ---
+    X_train = np.hstack([Z_tr, D_tr])
+    X_val = np.hstack([Z_va, D_va])
+
+    # Feature-Namen: SVD-Komp. + Deskriptoren
+    svd_names = [f'kmer_svd{i + 1}' for i in range(n_components)]
+    feature_names = svd_names + desc_cols
+
+    return X_train, y_train, X_val, y_val, feature_names
+
+
+def get_feature_importance(file_path: str,
+                           task,
+                           plot_path):
+    """
+    After
+    https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
+
+    """
+    if task == 'mic':
+        model = RandomForestRegressor(n_estimators=800,
+                                      max_depth=None,
+                                      max_features='sqrt',
+                                      min_samples_split=2,
+                                      random_state=42)
+
+    else:
+        ...
+    df, target_col = prepare_df(file_path, task)
+    #df = add_descriptors(df)
+    x_train, x_val, y_train, y_val, feature_names = prepare_train_val_data(calculate_features, df, target_col, None)
+
+
+    desc_idx = [i for i, f in enumerate(feature_names) if f.startswith('desc__')]
+    svd_idx  = [i for i, f in enumerate(feature_names) if f.startswith('kmer_svd')]
+
+    x_desc = x_train[:, desc_idx]
+    desc_names = [feature_names[i] for i in desc_idx]
+
+    rfecv = RFECV(estimator=model,
+                  cv=5,
+                  scoring='r2',
+                  n_jobs=-1)
+    rfecv.fit(x_desc, y_train)
+
+    data = {
+        key: value
+        for key, value in rfecv.cv_results_.items()
+        if key in ["n_features", "mean_test_score", "std_test_score"]
+    }
+    cv_results = pd.DataFrame(data)
+    plt.figure()
+    plt.xlabel("Anzahl der gewählten Features")
+    plt.ylabel("Mittlere Testgenauigkeit")
+    plt.errorbar(
+        x=cv_results["n_features"],
+        y=cv_results["mean_test_score"],
+        yerr=cv_results["std_test_score"],
+    )
+    plt.title("Rekursive Feature Elimination")
+    plt.savefig(plot_path + '/Feature_elimination.png')
+    plt.close()
+    plt.clf()
+
+    # Auswahl der desc__ Features
+    selected_desc_idx = [i for i, keep in zip(desc_idx, rfecv.support_) if keep]
+    selected_names = [feature_names[i] for i in selected_desc_idx]
+
+    # Immer ALLE svd_kmer behalten
+    selected_idx = selected_desc_idx + svd_idx
+    final_names = selected_names + [feature_names[i] for i in svd_idx] # final feature selection
+
+
+
+
+
+    return selected_names
 
 
 if __name__ == '__main__':
