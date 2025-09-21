@@ -585,7 +585,8 @@ def get_feature_importance(file_path: str,
                                       max_depth=None,
                                       max_features='sqrt',
                                       min_samples_split=2,
-                                      random_state=42)
+                                      random_state=42,
+                                      n_jobs=1)
 
     else:
         ...
