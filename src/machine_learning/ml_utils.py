@@ -606,7 +606,8 @@ def get_feature_importance(file_path: str,
         for key, value in rfecv.cv_results_.items()
         if key in ["n_features", "mean_test_score", "std_test_score"]
     }
-    cv_results = pd.DataFrame(data[:50])
+    cv_results = pd.DataFrame(data)
+    cv_results = cv_results[:50]
     plt.figure()
     plt.xlabel("Anzahl der gewählten Features")
     plt.ylabel("Mittlere Testgenauigkeit")
@@ -624,6 +625,9 @@ def get_feature_importance(file_path: str,
     selected_desc_idx = [i for i, keep in zip(desc_idx, rfecv.support_) if keep]
     selected_names = [feature_names[i] for i in selected_desc_idx]
 
+    with open(f"{plot_path}/feature_selection.txt", 'w', encoding='utf-8') as file:
+        for line in selected_names:
+            file.write(line + '\n')
 
     return selected_names
 
