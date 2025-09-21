@@ -522,7 +522,9 @@ def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_
 
             val_df.to_csv(f"{out_dir}/val_data.csv", sep=';', index=False)
 
-        return x_train, x_val, y_train, y_val
+
+
+        return x_train, x_val, y_train, y_val, None
 
 
 def encode_kmer_with_features(df, target_col, n_components=128, feature_selection = None):

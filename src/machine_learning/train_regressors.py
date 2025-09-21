@@ -37,7 +37,7 @@ def train_regressors(file_path: str,
                      ):
     df, target_col = ml_utils.prepare_df(file_path, 'mic')
 
-    x_train, x_val, y_train, y_val = ml_utils.prepare_train_val_data(calculate_features,
+    x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
                                                                         df,
                                                                         target_col,
                                                                         plot_path,
