@@ -60,7 +60,7 @@ TOP_ORGANISMS = [
 ]
 
 rf_cls_param_grid = {
-    'n_estimators': [300, 600, 1000],
+    'n_estimators': [100, 200, 300, 700],
     'max_depth': [None, 8, 16, 24],
     'max_features': ['sqrt', 'log2', 1.0],
     'min_samples_split': [2, 4, 8],
@@ -75,7 +75,7 @@ rf_cls_test_param_grid = {
 }
 
 xtra_cls_param_grid = {
-    'n_estimators': [300, 600, 1000],
+    'n_estimators': [100, 200, 300, 700],
     'max_depth': [None, 16, 24],
     'max_features': ['sqrt', 'log2', 1.0],
     'min_samples_split': [2, 4, 8],
@@ -94,14 +94,14 @@ gb_cls_param_grid = {
 }
 
 xgb_cls_param_grid = {
-    'n_estimators': [400, 800, 1200],
+    'n_estimators': [100, 200, 300, 700],
     'learning_rate': [0.01, 0.05, 0.1],
     'max_depth': [3, 5, 7],
-    'min_child_weight': [1, 3, 5],
-    'subsample': [0.6, 0.8, 1.0],
-    'colsample_bytree': [0.6, 0.8, 1.0],
-    'reg_lambda': [1.0, 3.0, 10.0],
-    'reg_alpha': [0.0, 0.1, 1.0],
+    # 'min_child_weight': [1, 3, 5],
+    # 'subsample': [0.6, 0.8, 1.0],
+    # 'colsample_bytree': [0.6, 0.8, 1.0],
+    # 'reg_lambda': [1.0, 3.0, 10.0],
+    # 'reg_alpha': [0.0, 0.1, 1.0],
 }
 
 svc_cls_param_grid = {
