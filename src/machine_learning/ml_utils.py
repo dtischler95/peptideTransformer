@@ -185,6 +185,8 @@ def overall_stats(best_estimator, x_test, y_test, save_path):
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + '/target_distribution.pdf')
+    plt.close()
+    plt.clf()
 
     # 2. Calculate variance of the target feature in the test set
     target_variance = np.var(y_test)
