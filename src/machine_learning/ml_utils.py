@@ -498,19 +498,21 @@ def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_
 
         return x_train, x_val, y_train, y_val, feature_names
     else:
-        df_to_split = df['sequence'].unique()
+        # df_to_split = df['sequence'].unique()
+        #
+        # train, test = train_test_split(df_to_split,
+        #                                train_size=0.8,
+        #                                test_size=0.2,
+        #                                shuffle=True,
+        #                                random_state=42)
+        #
+        # train_df = df[df['sequence'].isin(train)]
+        # val_df = df[df['sequence'].isin(test)]
+        #
+        # x_train, y_train = enocde_onehot_without_features(train_df, target_col=target_col)
+        # x_val, y_val = enocde_onehot_without_features(val_df, target_col=target_col)
 
-        train, test = train_test_split(df_to_split,
-                                       train_size=0.8,
-                                       test_size=0.2,
-                                       shuffle=True,
-                                       random_state=42)
-
-        train_df = df[df['sequence'].isin(train)]
-        val_df = df[df['sequence'].isin(test)]
-
-        x_train, y_train = enocde_onehot_without_features(train_df, target_col=target_col)
-        x_val, y_val = enocde_onehot_without_features(val_df, target_col=target_col)
+        x_train, y_train, x_val, y_val = encode_kmer_no_features(df, target_col=target_col)
 
         if out_dir is not None:
             x_val_df = pd.DataFrame(x_val)
@@ -529,7 +531,6 @@ def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_
 
 
 def encode_kmer_with_features(df, target_col, n_components=128, feature_selection = None):
-    # TODO WARUM n_component 128?? Funktion generell nochmal genauer anschauen
     df = add_descriptors(df)  # <- deine Funktion für desc__*
     df = df[feature_selection + ['sequence', target_col]] if feature_selection else df
 
@@ -571,6 +572,38 @@ def encode_kmer_with_features(df, target_col, n_components=128, feature_selectio
     feature_names = svd_names + desc_cols
 
     return X_train, y_train, X_val, y_val, feature_names
+
+
+def encode_kmer_no_features(df, target_col, n_components=128, feature_selection = None):
+
+
+    # Split ohne Leckage: nach einzigartigen Sequenzen
+    uniq = df['sequence'].unique()
+    tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
+                                        random_state=42, shuffle=True)
+    train_df = df[df['sequence'].isin(tr_seqs)].copy()
+    val_df = df[df['sequence'].isin(va_seqs)].copy()
+
+    y_train = train_df[target_col].astype(float).to_numpy()
+    y_val = val_df[target_col].astype(float).to_numpy()
+
+    # --- k-mer TF-IDF ---
+    tfidf = TfidfVectorizer(analyzer='char',
+                            ngram_range=(3, 4),  # 3- und 4-mer
+                            min_df=2)  # ignoriert seltene
+    x_train = tfidf.fit_transform(train_df['sequence'])
+    x_val = tfidf.transform(val_df['sequence'])
+
+    # --- Dimensionalität reduzieren ---
+    svd = TruncatedSVD(n_components=n_components, random_state=42)
+    x_train = svd.fit_transform(x_train)
+    x_val = svd.transform(x_val)
+
+
+
+
+
+    return x_train, y_train, x_val, y_val
 
 
 def get_feature_importance(file_path: str,
