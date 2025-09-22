@@ -95,6 +95,7 @@ def run_all(
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
         file_name = "_".join(parts[:2])  # if len(parts) >= 2 else csv_path.stem
+        logger.info(f"Running {file_name}")
 
         if calculate_features:
             tmp_file_path = output_root / file_name
