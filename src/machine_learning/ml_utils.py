@@ -66,25 +66,6 @@ def load_model(path):
     return model
 
 
-def load_data(path: str, decimal: str) -> pd.DataFrame:
-    sleep(0.75)
-    print(f"Loading data: {path}")
-
-    # Automatically determines seperator between ; and \t in file
-    # to-do: should i add more seperators?
-    # POSSIBLE BUG WITH THIS EXPRESSION! Since for example .gff files can contain multiple line seperators with their
-    # attribute fields. This could lead to a wrong seperator detection since those files contain \t and ; as seperators
-    seperator = ';' if len(open(path, 'r').readline().split(';')) > 1 else '\t'
-    df = pd.read_csv(filepath_or_buffer=path,
-                     header=0,
-                     sep=seperator,
-                     verbose=False,
-                     decimal=decimal
-                     )
-
-    return df
-
-
 def check_label_col(label_col, data: pd.DataFrame):
     # Check single target col
     # Check multiple target cols
@@ -182,21 +163,6 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
-
-
-def log_encoded_sequences(sequence_encoder):
-    """
-    Logs encoded Sequences for the main train logic
-
-    """
-    for category in sequence_encoder.categories_[0]:
-        # Pad for better logging visualisation
-        cat_formated = category + ((36 - len(category)) * ' ')
-        # Transform using a DataFrame
-        encoded_value = sequence_encoder.transform(
-            pd.DataFrame([[category]], columns=sequence_encoder.feature_names_in_)
-        )
-        print(f"Sequence: {cat_formated}\tEncoded: {encoded_value}")
 
 
 def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
@@ -318,40 +284,6 @@ def add_descriptors(df):
     # sauber halten:
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df
-
-
-# --- Build design matrix (OHE || Deskriptoren) + seq-basierter Split ---
-def encode_onehot_with_features(df, target_col="value"):
-    df = df.copy()
-    df = add_pos_columns(df, L=MAX_LEN)
-    df = add_descriptors(df)
-
-    pos_cols = [f"pos{i + 1}" for i in range(MAX_LEN)]
-    desc_cols = [c for c in df.columns if c.startswith("desc__")]
-
-    # Split ohne Leckage: nach einzigartigen Sequenzen
-    uniq = df["sequence"].unique()
-    tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2, random_state=42, shuffle=True)
-    train_df = df[df["sequence"].isin(tr_seqs)].copy()
-    val_df = df[df["sequence"].isin(va_seqs)].copy()
-
-    y_train = train_df[target_col].astype(float).to_numpy()
-    y_val = val_df[target_col].astype(float).to_numpy()
-
-    ohe = OneHotEncoder(categories=[CATEGORIES] * len(pos_cols), handle_unknown="ignore", sparse_output=False)
-    x_pos_train = ohe.fit_transform(train_df[pos_cols])
-    x_pos_val = ohe.transform(val_df[pos_cols])
-
-    # Numerische Features, robust gegen NaNs
-    imp = SimpleImputer(strategy="median")
-    x_desc_train = imp.fit_transform(train_df[desc_cols])
-    x_desc_val = imp.transform(val_df[desc_cols])
-
-    # Concatenate: [OHE | Deskriptoren]
-    x_train = np.hstack([x_pos_train, x_desc_train])
-    x_val = np.hstack([x_pos_val, x_desc_val])
-
-    return x_train, y_train, x_val, y_val
 
 
 def print_results_tabular(results: list[dict], logger: logging.Logger):
