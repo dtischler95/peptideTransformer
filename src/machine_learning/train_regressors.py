@@ -139,17 +139,17 @@ if __name__ == "__main__":
 
     data_dir = './data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
-        #('xtra', ExtraTreesRegressor(n_jobs=1)),
+        ('xtra', ExtraTreesRegressor(n_jobs=1)),
         ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
-        #('rf', RandomForestRegressor(n_jobs=1)),
-        #('svr', SVR(n_jobs=1))
+        ('rf', RandomForestRegressor(n_jobs=1)),
+        ('svr', SVR(n_jobs=1))
     ]
 
     param_grids = [  # config.gb_param_grid,
-        #config.xtra_param_grid,
+        config.xtra_param_grid,
         config.xgb_param_grid,
-        #config.rf_param_grid,
-        #config.svr_param_grid
+        config.rf_param_grid,
+        config.svr_param_grid
     ]
 
 
