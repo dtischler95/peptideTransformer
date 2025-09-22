@@ -44,6 +44,8 @@ def train_regressors(file_path: str,
 
     logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
+
+    logger.info(f"File Name: {file_path} and Model: {model_name}")
     
     
 
