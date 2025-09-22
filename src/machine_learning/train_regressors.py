@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
 
 
-    run_all(calculate_features=True,
+    run_all(calculate_features=False,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)
