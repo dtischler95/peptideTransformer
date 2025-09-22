@@ -8,7 +8,7 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, init_model, regression_plot, format_logit_to_label
+    prepare_fisher_exact, init_model, regression_plot, overall_stats
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -60,6 +60,17 @@ def fine_tune(config_path: str):
 
     # Prepare tokenizer and datasets
 
+    callback_list = [
+        # Custom Callback Class for plotting learning curves. STILL IN WORK
+        LearningCurveCallback(plot_path=training_args.plot_path),
+        # Custom Callback Class for early stopping.
+        EarlyStoppingCallback(),
+        # following callbacks are essential for calculating metrics during training!
+        CollectBatchWiseTrainMetrics(),
+        PlotMetricsCallback()
+    ]
+
+
     tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(model_class=training_args.model_class,
                                                                            model_path=training_args.model_path,
                                                                            train_file=training_args.train_file,
@@ -78,15 +89,6 @@ def fine_tune(config_path: str):
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
 
-    callback_list = [
-        # Custom Callback Class for plotting learning curves. STILL IN WORK
-        LearningCurveCallback(plot_path=training_args.plot_path),
-        # Custom Callback Class for early stopping.
-        EarlyStoppingCallback(),
-        # following callbacks are essential for calculating metrics during training!
-        CollectBatchWiseTrainMetrics(),
-        PlotMetricsCallback()
-    ]
 
     data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args)
 
@@ -139,10 +141,13 @@ def fine_tune(config_path: str):
             y_preds = trainer.predict(test_dataset=test_dataset)
             y_true = test_dataset.labels
 
-            from src.bert_model.fine_tune_utils import format_logit_to_label
+
             y_preds = y_preds.predictions.flatten()
             sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
             regression_plot(y_true=y_true, y_pred=y_preds, logger=logger, path=training_args.plot_path, sequence_data=sequences)
+
+
+            overall_stats(predictions=y_preds, y_test=y_true, save_path=training_args.plot_path)
 
     # not really needed for my case, I guess
     if training_args.do_predict:
@@ -156,4 +161,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/denseBERT.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file

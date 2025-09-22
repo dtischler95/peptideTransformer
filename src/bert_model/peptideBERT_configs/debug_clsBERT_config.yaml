@@ -1,5 +1,5 @@
 # Training and Evaluation Settings
-model_class: 'regression'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
+model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
@@ -25,7 +25,7 @@ max_length: 36                    # Maximum input sequence length
 
 # Dataset and File Paths
 data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
-train_file: '../../data/regression_data/acinetobacter_baumannii_for_regression.csv'  # Path to training data
+train_file: '../../data/hemo_train/happen_style_unvoted.csv'  # Path to training data
 val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './test'                             # Path to save the model

@@ -58,13 +58,19 @@ def prepare_datasets(model_class: str,
     # Load the data
     def load_and_sample_data(file, sample=False):
         df = pd.read_csv(file, sep=';')
-        return df.sample(frac=1)[:200] if sample else df
+        return df.sample(frac=1)[:100] if sample else df
 
     def split_sequences(data, test_size, shuffle=True):
         return train_test_split(data, test_size=test_size, shuffle=shuffle, random_state=42)
 
     def get_labels_and_concentrations(data, concentration):
-        labels = None if model_class.startswith('mlm') else data['label'].values
+
+        if model_class.startswith('mlm'):
+            labels = None
+        elif model_class.startswith('regression'):
+            labels = data['mic_log10'].values
+        elif model_class.startswith('binary'):
+            labels = data['label'].values
         concentrations = data['hemo_concentration'].values if concentration else None
         return labels, concentrations
 
@@ -539,6 +545,50 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     plt.savefig(f"{path}/regression_plot.png")
     plt.close()
     plt.clf()
+
+
+def overall_stats(predictions, y_test, save_path):
+
+
+    # 1. Plotting the distribution of the target feature (y_test)
+    plt.figure(figsize=(10, 6))
+    sns.histplot(y_test, kde=True)
+    plt.title('Verteilung der MIC-Werte (Test Set)')
+    plt.xlabel('MIC (log10)')
+    plt.ylabel('Häufigkeit')
+    plt.savefig(save_path + '/target_distribution.pdf')
+    plt.close()
+    plt.clf()
+
+    # 2. Calculate variance of the target feature in the test set
+    target_variance = np.var(y_test)
+    print(f"Variance of the target feature (value) in test set: {target_variance}")
+
+    # 3. Plotting Predictions vs Actuals for the test set
+    plt.figure(figsize=(10, 6))
+    plt.scatter(y_test, predictions, alpha=0.5)
+    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--')
+    plt.title('Vorhersagen vs Tatsächlich (Test Set)')
+    plt.xlabel('Tatsächlicher Wert')
+    plt.ylabel('Vorhergesagter Wert')
+    plt.savefig(save_path + '/predictions_vs_actuals.pdf')
+    plt.close()
+    plt.clf()
+
+    # 4. Plotting Residuals in the test set
+    residuals = y_test - predictions
+    plt.figure(figsize=(10, 6))
+    sns.histplot(residuals, kde=True)
+    plt.title('Verteilung der Residuen (Test Set)')
+    plt.xlabel('Residuen')
+    plt.ylabel('Häufigkeit')
+    plt.savefig(save_path + '/residuals_distribution.pdf')
+    plt.close()
+    plt.clf()
+
+    # 5. Print MSE for comparison on the test set
+    mse = np.mean((y_test - predictions) ** 2)
+    print(f"Mean Squared Error (MSE) on Test Set: {mse}")
 
 if __name__ == '__main__':
     # data_leakage_wrapper()

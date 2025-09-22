@@ -61,9 +61,9 @@ class PeptideTrainer(Trainer):
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
                     if self.args.model_class.startswith('regression'):
-                        logs['mse'] = round(callback.get_train_mse(), 4)
-                        logs['mae'] = round(callback.get_train_mae(), 4)
-                        logs['r2'] = round(callback.get_train_r2(), 4)
+                        logs['mse'] = round(float(callback.get_train_mse()), 4)
+                        logs['mae'] = round(float(callback.get_train_mae()), 4)
+                        logs['r2'] = round(float(callback.get_train_r2()), 4)
                     if self.args.model_class.startswith('mlm'):
                         logs['accuracy'] = round(callback.get_train_accuracy(), 4)
                     if self.args.model_class.startswith('binary'):
