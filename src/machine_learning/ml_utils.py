@@ -177,12 +177,8 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
     else:
         raise NotImplementedError
 
-    if model_name == 'xbg':
-        n_jobs = 1
-    else:
-        n_jobs=-1
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
-                               n_jobs=n_jobs, verbose=0, cv=5, scoring=scoring).fit(x_train, y_train)
+                               n_jobs=-1, verbose=0, cv=5, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model

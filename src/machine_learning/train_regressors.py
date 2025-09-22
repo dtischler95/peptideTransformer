@@ -11,7 +11,7 @@ import sys
 import ml_utils
 import config
 import logging
-import cupy as cp
+
 
 from pathlib import Path
 from typing import Iterable, Any
@@ -43,12 +43,6 @@ def train_regressors(file_path: str,
                                                                         target_col,
                                                                         plot_path,
                                                                         feature_selection)
-
-    if model_name == 'xgb':
-        x_train = cp.asarray(x_train)
-        x_val = cp.asarray(x_val)
-        y_train = cp.asarray(y_train)
-        y_val = cp.asarray(y_val)
 
     logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
@@ -146,7 +140,7 @@ if __name__ == "__main__":
     data_dir = './data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
         #('xtra', ExtraTreesRegressor(n_jobs=1)),
-        ('xgb', XGBRegressor(n_jobs=1, tree_method="hist", device='cuda')),
+        ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
         #('rf', RandomForestRegressor(n_jobs=1)),
         #('svr', SVR(n_jobs=1))
     ]
