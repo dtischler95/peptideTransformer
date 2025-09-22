@@ -1,4 +1,3 @@
-from sklearn import feature_selection
 from sklearnex import patch_sklearn
 
 patch_sklearn(verbose=False)
@@ -6,7 +5,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.model_selection import train_test_split
 import sys
 import ml_utils
 import config

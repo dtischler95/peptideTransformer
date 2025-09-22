@@ -588,9 +588,17 @@ def get_feature_importance(file_path: str,
                                       min_samples_split=2,
                                       random_state=42,
                                       n_jobs=1)
+        scoring = 'r2'
 
     else:
-        ...
+        model = RandomForestClassifier(n_estimators=800,
+                                      max_depth=None,
+                                      max_features='sqrt',
+                                      min_samples_split=2,
+                                      random_state=42,
+                                      n_jobs=1)
+
+        scoring = 'roc_auc'
     df, target_col = prepare_df(file_path, task)
     #df = add_descriptors(df)
     x_train, x_val, y_train, y_val, feature_names = prepare_train_val_data(calculate_features, df, target_col, None)
@@ -601,7 +609,7 @@ def get_feature_importance(file_path: str,
 
     rfecv = RFECV(estimator=model,
                   cv=5,
-                  scoring='r2',
+                  scoring=scoring,
                   n_jobs=-1)
     rfecv.fit(x_desc, y_train)
 
