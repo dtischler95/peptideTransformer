@@ -1,15 +1,13 @@
 svr_param_grid = {
-    'svr__C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1e3],
-    'svr__epsilon': [0.001, 0.01, 0.05, 0.1, 0.2, 0.5],
-    'svr__gamma': ['scale', 'auto'],
+    'svr__C': [1e-3, 1e-1, 1, 10, 100],
+    'svr__epsilon': [0.001, 0.01, 0.1, 0.5],
     'svr__kernel': ['rbf', 'sigmoid']
 }
 
 rf_param_grid = {
-    'n_estimators': [200, 400, 750, 1000],
+    'n_estimators': [300, 750, 1000],
     'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2, 5],
-    'max_depth': [None, 8, 12, 20],
+    'min_samples_leaf': [1, 2, 5]
 }
 
 rf_test_param_grid = {
@@ -19,8 +17,7 @@ rf_test_param_grid = {
 }
 
 xtra_param_grid = {
-    'n_estimators': [300, 500, 750, 1000],
-    'max_depth': [None, 12, 20],
+    'n_estimators': [300, 750, 1000],
     'min_samples_split': [3, 4, 5, 7],
     'min_samples_leaf': [1, 2, 5]
 }
@@ -41,8 +38,8 @@ xgb_param_grid = {
     'min_child_weight': [1, 3, 5],
     'subsample': [0.6, 0.8, 1.0],
     'colsample_bytree': [0.6, 0.8, 1.0],
-    'reg_lambda': [1.0, 3.0, 10.0],
-    'reg_alpha': [0.0, 0.1, 1.0],
+    'lambda': [1.0, 3.0, 10.0],
+    'alpha': [0.0, 0.1, 1.0],
 }
 
 TOP_ORGANISMS = [
