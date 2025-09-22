@@ -5,7 +5,7 @@ svr_param_grid = {
 }
 
 rf_param_grid = {
-    'n_estimators': [300, 750, 1000],
+    'n_estimators': [100, 200, 300, 700],
     'min_samples_split': [2, 4, 8],
     'min_samples_leaf': [1, 2, 5]
 }
@@ -17,7 +17,7 @@ rf_test_param_grid = {
 }
 
 xtra_param_grid = {
-    'n_estimators': [300, 750, 1000],
+    'n_estimators': [100, 200, 300, 700],
     'min_samples_split': [3, 4, 5, 7],
     'min_samples_leaf': [1, 2, 5]
 }
@@ -32,7 +32,7 @@ gb_param_grid = {
 }
 
 xgb_param_grid = {
-    'n_estimators': [400, 800, 1200],
+    'n_estimators': [100, 200, 300, 700],
     'learning_rate': [0.01, 0.05, 0.1],
     'max_depth': [3, 5, 7],
     # 'min_child_weight': [1, 3, 5],
