@@ -143,7 +143,7 @@ def run_all(
 
 if __name__ == "__main__":
 
-    data_dir = '../../data/regression_data/'
+    data_dir = './data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
         #('xtra', ExtraTreesRegressor(n_jobs=1)),
         ('xgb', XGBRegressor(n_jobs=1, tree_method="hist", device='cuda')),
