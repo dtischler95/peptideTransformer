@@ -12,8 +12,6 @@ from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataC
 from transformers import BertTokenizer
 
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideBertForConvBinaryClassification import \
-    PeptideBertForConvBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -417,19 +415,8 @@ def get_bce_label_weight(labels):
 
 
 def init_model(tokenizer, train_dataset, training_args):
-    if training_args.model_class == 'binary_conv':
 
-        # ('GrimSqueaker/proteinBERT')
-        config = BertConfig.from_pretrained(training_args.model_path)
-        model = PeptideBertForConvBinaryClassification(config,
-                                                       model_path=training_args.model_path,
-                                                       loss_function=training_args.loss_function,
-                                                       bce_logit_weight=get_bce_label_weight(
-                                                           labels=train_dataset.labels).to(training_args.device))
-        data_collator = DefaultDataCollator()
-        run_metric = binary_metrics
-
-    elif training_args.model_class == 'binary_dense':
+    if training_args.model_class == 'binary_dense':
 
         # ('GrimSqueaker/proteinBERT')
         config = BertConfig.from_pretrained(training_args.model_path)
