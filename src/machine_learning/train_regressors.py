@@ -127,6 +127,7 @@ def run_all(
             )
             results.append({
                 "name": file_name,
+                "model_tag": model_tag,
                 "r2_train": train_r2,
                 "r2_val": val_r2,
                 "mse_train": train_mse,

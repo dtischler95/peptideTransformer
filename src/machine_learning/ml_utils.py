@@ -290,7 +290,7 @@ def add_descriptors(df):
 
 def print_results_tabular(results: list[dict], logger: logging.Logger):
     for results in results:
-        logger.info(f"{results['name']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
+        logger.info(f"{results['name']}\t{results['model_tag']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
                     f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 
