@@ -79,7 +79,6 @@ xtra_cls_param_grid = {
     'class_weight': [None, 'balanced'],
 }
 
-# Optional if you include GB:
 gb_cls_param_grid = {
     'learning_rate': [0.01, 0.05, 0.1],
     'n_estimators': [300, 600, 1000],

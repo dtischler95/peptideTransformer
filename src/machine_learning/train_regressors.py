@@ -149,14 +149,14 @@ if __name__ == "__main__":
 
     param_grids = [  # config.gb_param_grid,
         config.xtra_param_grid,
-        config.xgb_param_grid,
+        #config.xgb_param_grid,
         config.rf_param_grid,
         config.svr_param_grid
     ]
 
 
 
-    run_all(calculate_features=False,
+    run_all(calculate_features=True,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)

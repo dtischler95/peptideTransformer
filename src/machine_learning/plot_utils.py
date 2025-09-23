@@ -50,6 +50,7 @@ def plot_permutation_importance_from_est(estimator,
                                          feature_names: list[str],
                                          n_repeats: int = 10,
                                          random_state: bool = 42):
+    feature_names = np.asarray(feature_names)
     importances = permutation_importance(
         estimator=estimator,
         X=x_data,
@@ -57,6 +58,7 @@ def plot_permutation_importance_from_est(estimator,
         n_repeats=n_repeats,
         random_state=random_state
     )
+
 
     with open(file=summary_path, mode="w", encoding="utf8") as outfile:
         outfile.write("# Permuation importance > 0 (mean importances!)\n")
