@@ -61,8 +61,6 @@ TOP_ORGANISMS = [
 
 rf_cls_param_grid = {
     'n_estimators': [100, 200, 300, 700],
-    'max_depth': [None, 8, 16, 24],
-    'max_features': ['sqrt', 'log2', 1.0],
     'min_samples_split': [2, 4, 8],
     'min_samples_leaf': [1, 2, 5],
     'class_weight': [None, 'balanced'],
@@ -76,8 +74,6 @@ rf_cls_test_param_grid = {
 
 xtra_cls_param_grid = {
     'n_estimators': [100, 200, 300, 700],
-    'max_depth': [None, 16, 24],
-    'max_features': ['sqrt', 'log2', 1.0],
     'min_samples_split': [2, 4, 8],
     'min_samples_leaf': [1, 2, 5],
     'class_weight': [None, 'balanced'],
