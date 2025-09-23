@@ -94,8 +94,9 @@ def run_all(
         logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
 
         for (model_tag, estimator), grid in zip(models, grids):
-            logger.info(f"Running {model_tag} on {data_dir} and saving plots to {output_root}")
+
             out_dir = output_root / model_tag / file_name
+            logger.info(f"Running {model_tag} on {file_name} and saving plots to {out_dir}")
             out_dir.mkdir(parents=True, exist_ok=True)
 
             train_classificators(
