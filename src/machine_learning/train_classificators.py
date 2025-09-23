@@ -95,7 +95,7 @@ def run_all(
 
         for (model_tag, estimator), grid in zip(models, grids):
 
-            out_dir = output_root / model_tag / file_name
+            out_dir = output_root / file_name / model_tag
             logger.info(f"Running {model_tag} on {file_name} and saving plots to {out_dir}")
             out_dir.mkdir(parents=True, exist_ok=True)
 
