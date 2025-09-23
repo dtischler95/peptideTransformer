@@ -20,7 +20,7 @@ from sklearn.metrics import (r2_score,
                              mean_squared_error, precision_recall_curve, roc_auc_score, average_precision_score,
                              roc_curve, classification_report, ConfusionMatrixDisplay)
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 
@@ -148,6 +148,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
             'bal_acc': 'balanced_accuracy',
         }
         refit = 'roc_auc'
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     elif task == 'mic':
         scoring = {
             'r2': 'r2',
@@ -155,11 +156,12 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
             'neg_mae': 'neg_mean_absolute_error'
         }
         refit = 'r2'
+        cv = 5
     else:
         raise NotImplementedError
 
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
-                               n_jobs=-1, verbose=0, cv=5, scoring=scoring).fit(x_train, y_train)
+                               n_jobs=-1, verbose=0, cv=cv, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model

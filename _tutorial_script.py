@@ -115,7 +115,7 @@ def main():
     model = BertForMaskedLM.from_pretrained(model_repository_path, config=config)
     tokenizer = BertTokenizer.from_pretrained(model_repository_path)
 
-    arguments_file = "./src/bert_model/peptideBERT_configs/BERT_config.yaml"
+    arguments_file = "src/bert_model/peptideBERT_configs/deprecated/BERT_config.yaml"
     with open(arguments_file, 'r') as file:
         arguments = yaml.safe_load(file)
     training_args = TrainingArguments(**arguments)
