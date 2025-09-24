@@ -111,7 +111,7 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = '../../data/hemo_train/'
+    data_dir = './data/hemo_train/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
         ('xtra', ExtraTreesClassifier()),
         ('xgb', XGBClassifier()),
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         config.svc_cls_param_grid
     ]
 
-    run_all(calculate_features=True,
+    run_all(calculate_features=False,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)
