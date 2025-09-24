@@ -2,7 +2,8 @@ import os
 
 import evaluate
 import matplotlib.pyplot as plt
-from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score, roc_auc_score, \
+    average_precision_score
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
@@ -123,15 +124,15 @@ class PlotMetricsCallback(TrainerCallback):
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
-        plt.plot(epochs, eval_metrics, label=f"Eval {metric_name}", color='blue')
-        plt.plot(epochs, train_metrics, label=f"Train {metric_name}", color='red')
-        plt.xlabel('Epochs')
+        plt.plot(epochs, eval_metrics, label=f"Evaluierungs {metric_name}", color='blue')
+        plt.plot(epochs, train_metrics, label=f"Trainings {metric_name}", color='red')
+        plt.xlabel('Epoche')
         plt.ylabel(metric_name, color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
         plt.xticks(epochs)
 
-        plt.title(f"{metric_name} Curves for {args.model_class} task")
+        plt.title(f"{metric_name}")
         plt.legend()
 
         plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_{metric_name}_curves.png"))
@@ -190,14 +191,24 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def __init__(self) -> None:
         self.collected_predictions = []
         self.collected_labels = []
+        self.collected_probabilities = []
 
-    def append_batch_results(self, predictions, labels):
+    def append_batch_results(self, predictions, labels, probabilities=None):
         self.collected_predictions.extend(predictions)
         self.collected_labels.extend(labels)
+        if probabilities is not None:
+            self.collected_probabilities.extend(probabilities)
 
     def clear_results_after_epoch(self):
         self.collected_predictions = []
         self.collected_labels = []
+        self.collected_probabilities = []
+
+    def get_train_average_precision(self):
+        return average_precision_score(y_true=self.collected_labels, y_score=self.collected_probabilities)
+
+    def get_train_auroc(self):
+        return roc_auc_score(y_true=self.collected_labels, y_score=self.collected_probabilities)
 
     def get_train_mcc(self):
         return matthews_corrcoef(y_true=self.collected_labels, y_pred=self.collected_predictions)

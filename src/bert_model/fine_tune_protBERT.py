@@ -119,18 +119,18 @@ def fine_tune(config_path: str):
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
-            cluster_model_embedding(file_path=test_dataset,
-                                    data_tag=config_path.split('/')[-1].split('.')[0],
-                                    batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path,
-                                    tokenizer_and_model=(tokenizer, trainer.model),
-                                    device=training_args.device,
-                                    sequence_max_length=training_args.max_length,
-                                    label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data,
-                                    model_class=training_args.model_class,
-                                    logger=logger
-                                    )
+            # cluster_model_embedding(file_path=test_dataset,
+            #                         data_tag=config_path.split('/')[-1].split('.')[0],
+            #                         batch_size=training_args.per_device_eval_batch_size,
+            #                         plot_path=training_args.plot_path,
+            #                         tokenizer_and_model=(tokenizer, trainer.model),
+            #                         device=training_args.device,
+            #                         sequence_max_length=training_args.max_length,
+            #                         label_0_cluster_data=training_args.label_0_cluster_data,
+            #                         label_1_cluster_data=training_args.label_1_cluster_data,
+            #                         model_class=training_args.model_class,
+            #                         logger=logger
+            #                         )
 
             prepare_fisher_exact(test_dataset=test_dataset,
                                  trainer=trainer,
@@ -161,4 +161,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file

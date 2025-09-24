@@ -7,6 +7,7 @@ from scipy.stats import linregress
 import seaborn as sns
 import yaml
 from matplotlib import pyplot as plt
+from sklearn.metrics import precision_recall_curve, PrecisionRecallDisplay
 from sklearn.model_selection import train_test_split
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
 from transformers import BertTokenizer
@@ -224,12 +225,12 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
     return PeptideTrainingArguments(**config)
 
 
-def format_logit_to_label(logits):
+def format_logit_to_label(logits, threshold: float = 0.5):
     """
     Format the given logit tensor to a list of labels.
     0.5 is a typical threshold
     """
-    return (logits > 0.5).astype(int).flatten()
+    return (logits > threshold).astype(int).flatten()
 
 
 def format_one_hot_to_label(one_hot_tensor):
@@ -402,12 +403,32 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     from sklearn import metrics
     actual = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
-    confusion_matrix = metrics.confusion_matrix(actual, format_logit_to_label(logits=logits))
-    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=confusion_matrix, display_labels=[0, 1])
-    cm_display.plot()
-    plt.savefig(f"{plot_path}/confusion_matrix.png")
-    plt.close()
-    plt.clf()
+
+    thr, f1_best, p_best, r_best = best_f1_threshold(y_true=actual, y_score=logits.flatten(), plot_path=plot_path)
+
+    print(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
+                f'(P={p_best:.4f}, R={r_best:.4f})')
+
+    confusion_matrix = metrics.confusion_matrix(actual, format_logit_to_label(logits=logits, threshold=thr))
+    with np.errstate(all='ignore'):
+        confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
+
+    titles_options = [
+        ("Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        ("Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+    ]
+
+    for title, matrix in titles_options:
+        cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
+        cm_display.plot()
+
+        # Deutsche Achsenbeschriftung
+        plt.xlabel("Vorhergesagte Klasse")
+        plt.ylabel("Wahre Klasse")
+        plt.title("Konfusionsmatrix")
+        plt.savefig(f"{plot_path}/{title}confusion_matrix.png", dpi=300, bbox_inches="tight")
+        plt.close()
+        plt.clf()
 
 
 def get_bce_label_weight(labels):
@@ -589,6 +610,27 @@ def overall_stats(predictions, y_test, save_path):
     # 5. Print MSE for comparison on the test set
     mse = np.mean((y_test - predictions) ** 2)
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
+
+
+def best_f1_threshold(y_true, y_score, plot_path):
+    p, r, thr = precision_recall_curve(y_true, y_score)
+
+    display = PrecisionRecallDisplay.from_predictions(y_true, y_score, plot_chance_level=True, pos_label=1)
+    _ = display.ax_.set_title("2-Klassen Precision-Recall Kurve")
+    display.plot()
+    plt.xlabel("Recall (Positive Klasse: 1)")
+    plt.ylabel("Precision (Positive Klasse: 1)")
+    plt.savefig(plot_path + '/precision_recall_curve.png')
+    plt.close()
+    plt.clf()
+
+
+    f1 = 2 * p * r / (p + r + 1e-12)
+    i = np.nanargmax(f1)
+    # thresholds has length = len(p)-1; clamp index
+    use_i = min(i, len(thr) - 1) if len(thr) > 0 else 0
+    return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
+
 
 if __name__ == '__main__':
     # data_leakage_wrapper()

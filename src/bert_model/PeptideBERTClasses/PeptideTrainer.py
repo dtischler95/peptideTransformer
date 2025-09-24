@@ -72,6 +72,8 @@ class PeptideTrainer(Trainer):
                         logs['mcc'] = round(callback.get_train_mcc(), 4)
                         logs['recall'] = round(callback.get_train_recall(), 4)
                         logs['f1'] = round(callback.get_train_f1(), 4)
+                        logs['roc-auc'] = round(float(callback.get_train_auroc()), 4)
+                        logs['average_precision'] = round(float(callback.get_train_average_precision()), 4)
 
                     callback.clear_results_after_epoch()
 
@@ -119,7 +121,7 @@ class PeptideTrainer(Trainer):
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
                 pred_labels = format_logit_to_label(logits=preds)
-                train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs)
+                train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs, probabilities=preds.flatten())
 
             elif self.args.model_class == 'mlm':
                 # Extract the logits for the masked tokens
