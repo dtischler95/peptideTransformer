@@ -1,6 +1,6 @@
 import evaluate
 import numpy as np
-from sklearn.metrics import matthews_corrcoef
+from sklearn.metrics import matthews_corrcoef, roc_auc_score, average_precision_score
 
 
 def regression_metrics(eval_preds) -> dict:
@@ -46,6 +46,9 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     predictions = format_logit_to_label(
         logits=logits)  # Apply the threshold to convert probabilities to binary predictions
 
+    auroc = roc_auc_score(y_true=labels, y_score=logits.flatten())
+    average_precision = average_precision_score(y_true=labels, y_score=logits.flatten())
+
     mcc = matthews_corrcoef(y_true=labels, y_pred=predictions)
     precision = evaluate.load("precision").compute(predictions=predictions, references=labels, zero_division=0)[
         "precision"]
@@ -61,6 +64,8 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
             "precision": round(precision, 4),
             "f1": round(f1, 4),
             "recall": round(recall, 4),
+            "roc_auc": round(auroc, 4),
+            "average_precision": round(average_precision, 4),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
@@ -70,7 +75,9 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
         "mcc": round(mcc, 4),
         "precision": round(precision, 4),
         "f1": round(f1, 4),
-        "recall": round(recall, 4)
+        "recall": round(recall, 4),
+        "roc_auc": round(auroc, 4),
+        "average_precision": round(average_precision, 4)
     }
 
 

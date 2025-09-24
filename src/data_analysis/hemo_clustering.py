@@ -94,14 +94,14 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
 
     handles, labels = ax1.get_legend_handles_labels()
     ax1.legend(handles, labels)
-    ax1.set_title("PCA on embedding data")
-    ax1.set_xlabel("Component 1")
-    ax1.set_ylabel("Component 2")
-    ax2.set_title("PCA explained variance ratio")
-    ax2.set_ylabel("Explained variance ratio")
-    ax2.set_xlabel("Principal components")
-    plt.suptitle("PCA Plot analysis")
-    ax2.plot(np.arange(30) + 1, pca.explained_variance_ratio_, "o-",
+    ax1.set_title("PCA auf Sequenz-Embeddings")
+    ax1.set_xlabel("Komponente 1")
+    ax1.set_ylabel("Komponente 2")
+    ax2.set_title("Erklärte Varianz der PCA")
+    ax2.set_ylabel("Anteil erklärte Varianz")
+    ax2.set_xlabel("Hauptkomponenten")
+    plt.suptitle("PCA-Analyse der Sequenzen")
+    ax2.plot(np.arange(10) + 1, pca.explained_variance_ratio_, "o-",
              linewidth=2)  # needs to be the same as pca comps TODO move to param
     """ax1.scatter(
         kmeans.cluster_centers_[:, 0],
@@ -157,9 +157,9 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
-    ax.set_title("TSNE on embedding data")
-    ax.set_xlabel("Component 1")
-    ax.set_ylabel("Component 2")
+    ax.set_title("TSNE auf Sequenz-Embeddings")
+    ax.set_xlabel("Komponente 1")
+    ax.set_ylabel("Komponente 2")
 
     if plot_path != "":
         plt.savefig(f"{plot_path}.pdf")
@@ -207,9 +207,9 @@ def plot_umap(data, labels, plot_path=""):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
-    ax.set_title("UMAP on embedding data")
-    ax.set_xlabel("Component 1")
-    ax.set_ylabel("Component 2")
+    ax.set_title("UMAP auf Sequenz-Embeddings")
+    ax.set_xlabel("Komponente 1")
+    ax.set_ylabel("Komponente 2")
 
     if plot_path != "":
         plt.savefig(f"{plot_path}.pdf")
@@ -281,7 +281,7 @@ def perform_clustering(embedded_sequences,
         print(f"Mutual Information Score: {res['mifs']:4f}")
         print("----------------------------------------------------")
 
-    def run_pca(data, comps=30):  # need to be the same as in line 93
+    def run_pca(data, comps=10):  # need to be the same as in line 93
         print("[Clustering] Running PCA")
         _pca = PCA(n_components=comps, random_state=42)
         return _pca, _pca.fit(data).transform(data)
@@ -314,9 +314,9 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    # if logger:
-    #     logger.info("[Clustering] Starting clustering analysis PCA")
-    # pca, pca_fit = run_pca(embedded_sequences)
+    if logger:
+        logger.info("[Clustering] Starting clustering analysis PCA")
+    pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -327,14 +327,14 @@ def perform_clustering(embedded_sequences,
     umap_fit = run_umap(embedded_sequences)
 
     # print("[Clustering] Running KMeans for PCA")
-    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
     #
-    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")

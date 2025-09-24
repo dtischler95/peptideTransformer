@@ -111,7 +111,7 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = './data/hemo_train/'
+    data_dir = '../../data/hemo_train/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
         ('xtra', ExtraTreesClassifier()),
         ('xgb', XGBClassifier()),

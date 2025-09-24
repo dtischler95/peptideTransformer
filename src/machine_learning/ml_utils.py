@@ -18,7 +18,7 @@ from sklearn.metrics import (r2_score,
                              mean_absolute_error,
                              explained_variance_score,
                              mean_squared_error, precision_recall_curve, roc_auc_score, average_precision_score,
-                             roc_curve, classification_report, ConfusionMatrixDisplay)
+                             roc_curve, classification_report, ConfusionMatrixDisplay, PrecisionRecallDisplay)
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -341,8 +341,18 @@ def _get_scores(model, X):
     return model.predict(X).astype(float)
 
 
-def _best_f1_threshold(y_true, y_score):
+def _best_f1_threshold(y_true, y_score, plot_path):
     p, r, thr = precision_recall_curve(y_true, y_score)
+
+    display = PrecisionRecallDisplay.from_predictions(y_true, y_score, plot_chance_level=True, pos_label=1)
+    _ = display.ax_.set_title("2-Klassen Precision-Recall Kurve")
+    display.plot()
+    plt.xlabel("Recall (Positive Klasse: 1)")
+    plt.ylabel("Precision (Positive Klasse: 1)")
+    plt.savefig(plot_path + '/precision_recall_curve.png')
+    plt.close()
+    plt.clf()
+
     f1 = 2 * p * r / (p + r + 1e-12)
     i = np.nanargmax(f1)
     # thresholds has length = len(p)-1; clamp index
@@ -390,7 +400,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, log
     except Exception as e:
         logger.warning(f'PR plotting skipped: {e}')
     # Threshold tuning for F1
-    thr, f1_best, p_best, r_best = _best_f1_threshold(y_val, y_score)
+    thr, f1_best, p_best, r_best = _best_f1_threshold(y_val, y_score, plot_path)
     logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
                 f'(P={p_best:.4f}, R={r_best:.4f})')
     y_pred = (y_score >= thr).astype(int)
