@@ -24,11 +24,11 @@ max_length: 36                    # Maximum input sequence length
 # Binary Classification Settings
 label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
-loss_function: 'bce'              # Possible Choices ['bce', 'bce_logit_loss']
+loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_logit_loss']
 use_concentration: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Dataset and File Paths
-train_file: '../../data/hemo_train/happen_style_unvoted.csv'  # Path to training data
+train_file: './data/hemo_train/happen_style_unvoted.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                               # Path to pretrained model
 model_save_path: './peptideBERT'             # Path to save the model
 plot_path: './peptideplots'                                   # Path to save the plots
