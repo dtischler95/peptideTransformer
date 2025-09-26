@@ -1,6 +1,6 @@
 import logging
 import os
-
+import peptides as pep
 import numpy as np
 import pandas as pd
 from scipy.stats import linregress
@@ -57,6 +57,19 @@ def prepare_datasets(model_class: str,
     """
 
     # Load the data
+    def compute_desc_row(sequence):
+        p = pep.Peptide(sequence)
+        d = p.descriptors()  # dict -> nur Zahlen
+        return {f"desc__{k}": float(v) for k, v in d.items()}
+
+    def add_descriptors(df):
+        desc_rows = [compute_desc_row(s) for s in df["sequence"]]
+        desc_df = pd.DataFrame(desc_rows).reset_index(drop=True)
+        df = df.reset_index(drop=True).join(desc_df)
+        # sauber halten:
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        return df
+
     def load_and_sample_data(file, sample=False):
         df = pd.read_csv(file, sep=';')
         return df.sample(frac=1)[:100] if sample else df
@@ -72,11 +85,12 @@ def prepare_datasets(model_class: str,
             labels = data['mic_log10'].values
         elif model_class.startswith('binary'):
             labels = data['label'].values
-        concentrations = data['hemo_concentration'].values if concentration else None
+        concentrations = data.drop(columns=['sequence', labels]) if concentration else None
         return labels, concentrations
 
     # Load and preprocess data
     df_train = load_and_sample_data(train_file, cut_df_for_faster_debug)
+    df_train = add_descriptors(df_train) if use_concentration else df_train
     df_to_split = df_train if ignore_leakage else df_train['sequence'].unique()
 
     if random_data_shuffle:
