@@ -1,13 +1,10 @@
 import logging
-from typing import Any
-
 import torch
 import umap
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-from numpy import ndarray, dtype
 from sklearn.decomposition import PCA
 from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
@@ -314,9 +311,9 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    if logger:
-        logger.info("[Clustering] Starting clustering analysis PCA")
-    pca, pca_fit = run_pca(embedded_sequences)
+    # if logger:
+    #     logger.info("[Clustering] Starting clustering analysis PCA")
+    # pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -326,15 +323,15 @@ def perform_clustering(embedded_sequences,
         logger.info("[Clustering] Starting clustering analysis UMAP")
     umap_fit = run_umap(embedded_sequences)
 
-    # print("[Clustering] Running KMeans for PCA")
-    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    # # print("[Clustering] Running KMeans for PCA")
+    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
     #
-    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
@@ -345,14 +342,14 @@ def perform_clustering(embedded_sequences,
 def encode_peptides(sequence_file,
                     device,
                     plot_path: str,
-                    model_class: str,
+                    add_features: bool,
                     sequence_max_length: int,
                     logger: logging.Logger or None = None,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
                     batch_size: int = 32
-                    ) -> tuple[ndarray[Any, dtype[Any]], Any]:
+                    ):
     if tokenizer_and_model is None:
         # Load the pre-trained model and tokenizer
         tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert_bfd", do_lower_case=False,
@@ -401,17 +398,23 @@ def encode_peptides(sequence_file,
         else:
             print(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
 
+
+
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
+    embeddings_to_return = [('seq_embedding',embeddings)]
+    if add_features:
+        feature_embedding = np.hstack([embeddings, sequence_file.features])
+        embeddings_to_return.append(('seq_feature_embedding' ,feature_embedding))
 
-    return embeddings, df['label'].to_list()
+    return embeddings_to_return, df['label'].to_list()
 
 
 def cluster_model_embedding(file_path,
                             batch_size: int,
                             plot_path: str,
                             device,
-                            model_class: str,
+                            add_features: bool,
                             sequence_max_length: int,
                             data_tag: str = "test_run",
                             label_0_cluster_data: int = 500,
@@ -427,6 +430,7 @@ def cluster_model_embedding(file_path,
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
     :param device: Device to run the model on
+    :param add_features: Whether to add features to the sequence data
     :param sequence_max_length: Maximum length of the sequences
     :param data_tag: Tag for the output files
     :param label_0_cluster_data: Amount of data points for label 0
@@ -448,12 +452,14 @@ def cluster_model_embedding(file_path,
                                         label_1_cluster_data=label_1_cluster_data,
                                         logger=logger,
                                         plot_path=plot_path,
-                                        model_class=model_class)
-    perform_clustering(embedded_sequences=embedding,
-                       sequence_labels=labels,
-                       logger=logger,
-                       tag=data_tag,
-                       plot_path=plot_path)
+                                        add_features=add_features)
+
+    for emb in embedding:
+        perform_clustering(embedded_sequences=emb[1],
+                           sequence_labels=labels,
+                           logger=logger,
+                           tag=data_tag + emb[0],
+                           plot_path=plot_path)
 
 
 def reduce_data_points_for_clustering(df: pd.DataFrame,

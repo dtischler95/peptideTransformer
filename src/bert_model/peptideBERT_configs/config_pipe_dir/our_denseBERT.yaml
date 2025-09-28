@@ -30,8 +30,8 @@ use_concentration: false          # Use concentration as extra feature [WARNING]
 # Dataset and File Paths
 train_file: './data/hemo_train/happen_style_unvoted.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                               # Path to pretrained model
-model_save_path: './peptideBERT'             # Path to save the model
-plot_path: './peptideplots'                                   # Path to save the plots
+model_save_path: './hemo_our'             # Path to save the model
+plot_path: './hemo_our_plots'                                   # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)

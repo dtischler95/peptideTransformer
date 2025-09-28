@@ -3,12 +3,20 @@ import os
 
 import numpy as np
 import pandas as pd
-from scipy.stats import linregress
+import peptides as pep
 import seaborn as sns
 import yaml
 from matplotlib import pyplot as plt
-from sklearn.metrics import precision_recall_curve, PrecisionRecallDisplay
+from scipy.stats import linregress
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import (r2_score,
+                             mean_absolute_error,
+                             explained_variance_score,
+                             mean_squared_error,
+                             precision_recall_curve,
+                             PrecisionRecallDisplay)
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
 from transformers import BertTokenizer
 
@@ -31,8 +39,8 @@ def prepare_datasets(model_class: str,
                      validation_data_size: float = 0.2,
                      test_data_size: float = 0.5,
                      random_data_shuffle: bool = False,
-                     use_concentration: bool = False) -> tuple[
-    BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
+                     add_features: bool = False) -> tuple[
+    BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset, int]:
     """
     Creates the datasets for training, validation and testing. For the given transformers Dataset class
     Differentiates between binary classification and masked language modeling in this case.
@@ -51,12 +59,25 @@ def prepare_datasets(model_class: str,
     :param validation_data_size: Size of the validation data. Default is 0.2.
     :param test_data_size: Size of the test data. Default is 0.5.
     :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
-    :param use_concentration: If the concentration data should be used for training. Default is False.
+    :param add_features: If the concentration data should be used for training. Default is False.
 
     :return: Tokenizer, train_dataset, val_dataset, test_dataset
     """
 
     # Load the data
+    def compute_desc_row(sequence):
+        p = pep.Peptide(sequence)
+        d = p.descriptors()  # dict -> nur Zahlen
+        return {f"desc__{k}": float(v) for k, v in d.items()}
+
+    def add_descriptors(df):
+        desc_rows = [compute_desc_row(s) for s in df["sequence"]]
+        desc_df = pd.DataFrame(desc_rows).reset_index(drop=True)
+        df = df.reset_index(drop=True).join(desc_df)
+        # sauber halten:
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        return df
+
     def load_and_sample_data(file, sample=False):
         df = pd.read_csv(file, sep=';')
         return df.sample(frac=1)[:100] if sample else df
@@ -64,19 +85,34 @@ def prepare_datasets(model_class: str,
     def split_sequences(data, test_size, shuffle=True):
         return train_test_split(data, test_size=test_size, shuffle=shuffle, random_state=42)
 
-    def get_labels_and_concentrations(data, concentration):
+    def get_labels_and_features(data, concentration):
 
-        if model_class.startswith('mlm'):
-            labels = None
-        elif model_class.startswith('regression'):
-            labels = data['mic_log10'].values
+        if model_class.startswith('regression'):
+            target_column = 'mic_log10'
+            columns_to_drop = ['sequence', target_column]
         elif model_class.startswith('binary'):
-            labels = data['label'].values
-        concentrations = data['hemo_concentration'].values if concentration else None
+            target_column = 'label'
+            columns_to_drop = ['sequence', target_column]
+            if 'hemo_percent' in data.keys():
+                columns_to_drop += ['hemo_percent', 'hemo_concentration']
+        labels = data[target_column].values
+        concentrations = data.drop(columns=columns_to_drop) if concentration else None
         return labels, concentrations
 
     # Load and preprocess data
-    df_train = load_and_sample_data(train_file, cut_df_for_faster_debug)
+    df = load_and_sample_data(train_file, cut_df_for_faster_debug)
+    selected_features = []
+    if add_features:
+        df_train = add_descriptors(df)
+
+
+        with open(file=f"{train_file.replace('.csv', '.txt')}") as f:
+            selected_features = [line.strip() for line in f]
+
+        df_train = pd.concat([df_train[selected_features], df.reset_index()], axis=1).drop(columns='index')
+
+    else:
+        df_train = df
     df_to_split = df_train if ignore_leakage else df_train['sequence'].unique()
 
     if random_data_shuffle:
@@ -95,22 +131,39 @@ def prepare_datasets(model_class: str,
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
     # Extract labels and concentrations
-    label_data_train, concentration_data_train = get_labels_and_concentrations(train_sequences, use_concentration)
-    label_data_val, concentration_data_val = get_labels_and_concentrations(val_sequences, use_concentration)
-    label_data_test, concentration_data_test = get_labels_and_concentrations(test_sequences, use_concentration)
+    label_data_train, feature_data_train = get_labels_and_features(train_sequences, add_features)
+    label_data_val, feature_data_val = get_labels_and_features(val_sequences, add_features)
+    label_data_test, feature_data_test = get_labels_and_features(test_sequences, add_features)
 
     # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
+    if add_features:
+        imp = SimpleImputer(strategy='median')
+        scaler = StandardScaler()
+
+        feature_data_train = scaler.fit_transform(imp.fit_transform(feature_data_train.values)).astype(np.float32)
+        feature_data_val = scaler.transform(imp.transform(feature_data_val.values)).astype(np.float32)
+        feature_data_test = scaler.transform(imp.transform(feature_data_test.values)).astype(np.float32)
+
     # Create datasets
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], concentrations=concentration_data_train,
-                                   tokenizer=tokenizer, labels=label_data_train, max_length=max_length,
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
+                                   features=feature_data_train,
+                                   tokenizer=tokenizer,
+                                   labels=label_data_train,
+                                   max_length=max_length,
                                    model_class=model_class)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], concentrations=concentration_data_val,
-                                 tokenizer=tokenizer, labels=label_data_val, max_length=max_length,
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
+                                 features=feature_data_val,
+                                 tokenizer=tokenizer,
+                                 labels=label_data_val,
+                                 max_length=max_length,
                                  model_class=model_class)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], concentrations=concentration_data_test,
-                                  tokenizer=tokenizer, labels=label_data_test, max_length=max_length,
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
+                                  features=feature_data_test,
+                                  tokenizer=tokenizer,
+                                  labels=label_data_test,
+                                  max_length=max_length,
                                   model_class=model_class)
 
     # Optional: Show encoding
@@ -121,7 +174,7 @@ def prepare_datasets(model_class: str,
     check_data_loader_for_leakage(train_data_loader=train_dataset, val_data_loader=val_dataset,
                                   test_data_loader=test_dataset, ignore_leakage=ignore_leakage, logger=logger)
 
-    return tokenizer, train_dataset, val_dataset, test_dataset
+    return tokenizer, train_dataset, val_dataset, test_dataset, len(selected_features)
 
 
 def get_encoding(tokenizer: BertTokenizer):
@@ -441,7 +494,7 @@ def get_bce_label_weight(labels):
     return torch.tensor([label_0 / label_1])
 
 
-def init_model(tokenizer, train_dataset, training_args):
+def init_model(tokenizer, train_dataset, training_args, n_features):
 
     if training_args.model_class == 'binary_dense':
 
@@ -449,10 +502,10 @@ def init_model(tokenizer, train_dataset, training_args):
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config,
                                                    model_path=training_args.model_path,
-                                                   extra_feature=training_args.use_concentration,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
-                                                       labels=train_dataset.labels).to(training_args.device))
+                                                       labels=train_dataset.labels).to(training_args.device),
+                                                   n_features=n_features)
         data_collator = DefaultDataCollator()
         run_metric = binary_metrics
 
@@ -483,7 +536,8 @@ def init_model(tokenizer, train_dataset, training_args):
         config.num_labels = 1
         # model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
         model = PeptideBertForRegression(config,
-                                         model_path=training_args.model_path)
+                                         model_path=training_args.model_path,
+                                         n_features=n_features)
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics  # TODO implement regression metrics
 
@@ -520,7 +574,7 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
             for sequence in negative_extreme_peptides:
                 f.write(f"{sequence[0]};{sequence[1]}\n")
 
-        print(1)
+
     logger.info(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM)")
 
     # generating residual plot
@@ -631,6 +685,89 @@ def best_f1_threshold(y_true, y_score, plot_path):
     use_i = min(i, len(thr) - 1) if len(thr) > 0 else 0
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
+
+def get_model_stats(model,
+                    plot_dir: str,
+                    predictions,
+                    target_data,
+                    logger: logging.Logger,
+                    tag: str):
+    #pred_train = model.predict(feature_data)
+
+    r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
+
+    # plot regression train
+    plot_with_seaborn(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf",
+                      tag=f"{tag}")
+
+    return r2, mse
+
+def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
+    logger.info(f"Regression metrics: \n"
+                f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
+                f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
+                f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
+                f"    -> VAR: {explained_variance_score(y_true=y_true, y_pred=y_pred):.5f}\n")
+    return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
+
+
+
+def plot_with_seaborn(y_true, y_pred, path, tag):
+    fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
+
+    # Regression part
+    slope, intercept, r_value, p_value, std_err = linregress(y_pred, y_true)
+    # reg_equation = "y = {:.2f}x".format(slope)
+
+    # calculate the residuals
+    residuals = y_true - y_pred
+    std_residuals = np.std(residuals)
+
+    print(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM) for {tag}")
+
+    # generating residual plot
+    sns.residplot(x=y_pred, y=residuals, ax=axs[1])
+    axs[1].set_title(
+        "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
+    axs[1].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
+    axs[1].set_ylabel("Residuum MHK/log(µM)")
+
+    # Plot two red horizontal lines representing positive and negative standard deviations
+    axs[1].axhline(std_residuals, color='red', linestyle='--')
+    axs[1].axhline(-std_residuals, color='red', linestyle='--')
+
+    # Plot manually added regression line with confidence interval
+    y_pred_sorted = np.sort(y_pred)
+
+    # generate scatter plot
+    sns.regplot(x=y_pred, y=y_true, ax=axs[0], fit_reg=False)
+
+    # plot the fitted line through the origin and also a line with slope 1 for comparison
+    # axs[0].plot(y_pred_sorted, slope * y_pred_sorted, color='red')
+    # standarf f(x) function for getting slope=1
+    axs[0].plot([-1, 4], [-1, 4], linestyle='--', color='green', label='45-degree Line')
+
+    # Calculate bounds for lines parallel to the regression line
+    lower_bound = 1 * y_pred_sorted - std_residuals
+    upper_bound = 1 * y_pred_sorted + std_residuals
+
+    # reg_equation2 = f"y = {slope:.2f}x + {intercept:.2f}"
+    # axs[0].text(0.05, 0.95, reg_equation2, transform=axs[0].transAxes, fontsize=12,
+    #            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
+
+    # Plot two lines parallel to the regression line representing positive and negative standard deviations
+    axs[0].plot(y_pred_sorted, lower_bound, color='red', linestyle='--')
+    axs[0].plot(y_pred_sorted, upper_bound, color='red', linestyle='--')
+
+    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MIC/log(µM)")
+    axs[0].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
+    axs[0].set_ylabel("Tatsächlicher Wert MIC/log(µM)")
+
+    fig.suptitle("Regressions -und Residuenplot")
+    plt.tight_layout()
+    plt.savefig(path)
+    plt.close()
+    plt.clf()
 
 if __name__ == '__main__':
     # data_leakage_wrapper()
