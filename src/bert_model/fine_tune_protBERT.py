@@ -82,7 +82,7 @@ def fine_tune(config_path: str):
                                                                            validation_data_size=training_args.validation_data_size,
                                                                            test_data_size=training_args.test_data_size,
                                                                            random_data_shuffle=training_args.data_shuffle,
-                                                                           use_concentration=training_args.use_concentration)
+                                                                           add_features=training_args.add_features)
 
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
@@ -108,11 +108,11 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    if training_args.do_train:
-        trainer.train()
-        trainer.save_model(training_args.model_save_path)
-        tokenizer.save_pretrained(training_args.model_save_path)
-        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    # if training_args.do_train:
+    #     trainer.train()
+    #     trainer.save_model(training_args.model_save_path)
+    #     tokenizer.save_pretrained(training_args.model_save_path)
+    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
 
@@ -128,7 +128,7 @@ def fine_tune(config_path: str):
                                     sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data,
-                                    model_class=training_args.model_class,
+                                    add_features=training_args.add_features,
                                     logger=logger
                                     )
 
@@ -161,4 +161,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file
