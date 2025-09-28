@@ -92,13 +92,13 @@ def plot_permutation_importance_from_est(estimator,
     )
     ax2.set_yticks(clf_idx)
     ax2.set_yticklabels(feature_names[clf_importances_idx], fontsize=4)
-    fig.suptitle(f"Permutation feature importance {n_repeats} folds", fontsize=14)
-    ax1.set_title("Barplot")
-    ax1.set_ylabel("Feaurename")
-    ax1.set_xlabel("Importance")
+    fig.suptitle(f"Permutationsbasierte Merkmalswichtigkeit {n_repeats} Faltungen", fontsize=14)
+    ax1.set_title("Balkendiagramm")
+    ax1.set_ylabel("Merkmalsname")  # statt „Feaurename“
+    ax1.set_xlabel("Wichtigkeit")
 
     ax2.set_title("Boxplot")
-    ax2.set_xlabel("Importance")
+    ax2.set_xlabel("Wichtigkeit")
 
     fig.tight_layout()
     # plt.show()
