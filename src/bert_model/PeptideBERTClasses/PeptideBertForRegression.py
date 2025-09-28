@@ -13,7 +13,7 @@ class PeptideBertForRegression(BertModel):
     I also need to implement a robust and consistent architecture for regression.
     """
 
-    def __init__(self, config, model_path: str):
+    def __init__(self, config, model_path: str, n_features: int):
         config.return_dict = False
         super().__init__(config)
         # config.
@@ -24,18 +24,20 @@ class PeptideBertForRegression(BertModel):
         #     param.requires_grad = False
 
         # ----------------- Add regression head -----------------
-        self.norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.norm = nn.LayerNorm(config.hidden_size + n_features, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(0.15)
-        self.regression = nn.Linear(config.hidden_size, 1)
+        self.regression = nn.Linear(config.hidden_size + n_features, 1)
         # -------------------------------------------------------
 
         # Initialize weights and apply final processing
         self.post_init()
+        self.norm_seq = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps, elementwise_affine=False)
 
     def forward(
             self,
             input_ids: Optional[torch.Tensor] = None,
             attention_mask: Optional[torch.Tensor] = None,
+            features: Optional[torch.Tensor] = None,
             token_type_ids: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.Tensor] = None,
             head_mask: Optional[torch.Tensor] = None,
@@ -61,6 +63,7 @@ class PeptideBertForRegression(BertModel):
 
         :param input_ids: input ids for the model
         :param attention_mask: attention mask for the model
+        :param features: features for the model
         :param token_type_ids: token type ids for the model
         :param position_ids: position ids for the model
         :param head_mask: head mask for the model
@@ -93,6 +96,14 @@ class PeptideBertForRegression(BertModel):
 
         # ------- ADJUST IF REGRESSION HEAD IS CHANGED -------
         pooled_output = outputs[1]  # Use pooled output
+
+        if return_pooler_output:
+            return self.norm_seq(pooled_output)  # Return pooled output for visualization
+
+        if features is not None:
+            # Concatenate pooled output and concentration
+            pooled_output = torch.cat((pooled_output, features), dim=1)
+
         pooled_output = self.norm(pooled_output)
         pooled_output = self.dropout(pooled_output)
         logits = self.regression(pooled_output)
@@ -101,7 +112,7 @@ class PeptideBertForRegression(BertModel):
         # If labels are provided, compute the loss
         loss = None
         if labels is not None:
-            loss_fct = nn.MSELoss()  # Use Binary Cross Entropy Loss
+            loss_fct = nn.MSELoss()
             loss = loss_fct(logits.view(-1), labels.view(-1))
 
         if return_pooler_output:
