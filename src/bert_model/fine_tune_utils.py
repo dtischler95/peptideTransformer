@@ -3,12 +3,17 @@ import os
 import peptides as pep
 import numpy as np
 import pandas as pd
+from pyexpat import features
+
+from nltk.metrics.aline import feature_matrix
 from scipy.stats import linregress
 import seaborn as sns
 import yaml
 from matplotlib import pyplot as plt
 from sklearn.metrics import precision_recall_curve, PrecisionRecallDisplay
 from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
 from transformers import BertTokenizer
 
@@ -31,7 +36,7 @@ def prepare_datasets(model_class: str,
                      validation_data_size: float = 0.2,
                      test_data_size: float = 0.5,
                      random_data_shuffle: bool = False,
-                     use_concentration: bool = False) -> tuple[
+                     add_features: bool = False) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset]:
     """
     Creates the datasets for training, validation and testing. For the given transformers Dataset class
@@ -51,7 +56,7 @@ def prepare_datasets(model_class: str,
     :param validation_data_size: Size of the validation data. Default is 0.2.
     :param test_data_size: Size of the test data. Default is 0.5.
     :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
-    :param use_concentration: If the concentration data should be used for training. Default is False.
+    :param add_features: If the concentration data should be used for training. Default is False.
 
     :return: Tokenizer, train_dataset, val_dataset, test_dataset
     """
@@ -72,25 +77,28 @@ def prepare_datasets(model_class: str,
 
     def load_and_sample_data(file, sample=False):
         df = pd.read_csv(file, sep=';')
-        return df.sample(frac=1)[:100] if sample else df
+        return df.sample(frac=1)[:300] if sample else df
 
     def split_sequences(data, test_size, shuffle=True):
         return train_test_split(data, test_size=test_size, shuffle=shuffle, random_state=42)
 
-    def get_labels_and_concentrations(data, concentration):
+    def get_labels_and_features(data, concentration):
 
-        if model_class.startswith('mlm'):
-            labels = None
-        elif model_class.startswith('regression'):
-            labels = data['mic_log10'].values
+        if model_class.startswith('regression'):
+            target_column = 'mic_log10'
+            columns_to_drop = ['sequence', target_column]
         elif model_class.startswith('binary'):
-            labels = data['label'].values
-        concentrations = data.drop(columns=['sequence', labels]) if concentration else None
+            target_column = 'label'
+            columns_to_drop = ['sequence', target_column]
+            if 'hemo_percent' in data.keys():
+                columns_to_drop += ['hemo_percent', 'hemo_concentration']
+        labels = data[target_column].values
+        concentrations = data.drop(columns=columns_to_drop) if concentration else None
         return labels, concentrations
 
     # Load and preprocess data
     df_train = load_and_sample_data(train_file, cut_df_for_faster_debug)
-    df_train = add_descriptors(df_train) if use_concentration else df_train
+    df_train = add_descriptors(df_train) if add_features else df_train
     df_to_split = df_train if ignore_leakage else df_train['sequence'].unique()
 
     if random_data_shuffle:
@@ -109,22 +117,39 @@ def prepare_datasets(model_class: str,
         test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
 
     # Extract labels and concentrations
-    label_data_train, concentration_data_train = get_labels_and_concentrations(train_sequences, use_concentration)
-    label_data_val, concentration_data_val = get_labels_and_concentrations(val_sequences, use_concentration)
-    label_data_test, concentration_data_test = get_labels_and_concentrations(test_sequences, use_concentration)
+    label_data_train, feature_data_train = get_labels_and_features(train_sequences, add_features)
+    label_data_val, feature_data_val = get_labels_and_features(val_sequences, add_features)
+    label_data_test, feature_data_test = get_labels_and_features(test_sequences, add_features)
 
     # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
+    if add_features:
+        imp = SimpleImputer(strategy='median')
+        scaler = StandardScaler()
+
+        feature_data_train = scaler.fit_transform(imp.fit_transform(feature_data_train.values)).astype(np.float32)
+        feature_data_val = scaler.transform(imp.transform(feature_data_val.values)).astype(np.float32)
+        feature_data_test = scaler.transform(imp.transform(feature_data_test.values)).astype(np.float32)
+
     # Create datasets
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'], concentrations=concentration_data_train,
-                                   tokenizer=tokenizer, labels=label_data_train, max_length=max_length,
+    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
+                                   features=feature_data_train,
+                                   tokenizer=tokenizer,
+                                   labels=label_data_train,
+                                   max_length=max_length,
                                    model_class=model_class)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'], concentrations=concentration_data_val,
-                                 tokenizer=tokenizer, labels=label_data_val, max_length=max_length,
+    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
+                                 features=feature_data_val,
+                                 tokenizer=tokenizer,
+                                 labels=label_data_val,
+                                 max_length=max_length,
                                  model_class=model_class)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'], concentrations=concentration_data_test,
-                                  tokenizer=tokenizer, labels=label_data_test, max_length=max_length,
+    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
+                                  features=feature_data_test,
+                                  tokenizer=tokenizer,
+                                  labels=label_data_test,
+                                  max_length=max_length,
                                   model_class=model_class)
 
     # Optional: Show encoding
@@ -463,7 +488,7 @@ def init_model(tokenizer, train_dataset, training_args):
         config = BertConfig.from_pretrained(training_args.model_path)
         model = PeptideBertForBinaryClassification(config,
                                                    model_path=training_args.model_path,
-                                                   extra_feature=training_args.use_concentration,
+                                                   extra_feature=training_args.add_features,
                                                    loss_function=training_args.loss_function,
                                                    bce_logit_weight=get_bce_label_weight(
                                                        labels=train_dataset.labels).to(training_args.device))
