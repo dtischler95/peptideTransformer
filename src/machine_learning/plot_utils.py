@@ -68,9 +68,9 @@ def plot_permutation_importance_from_est(estimator,
                               f"    * Mean importance:{importances.importances_mean[i]:.3f}\n"
                               f"    * Std: {importances.importances_std[i]:.3f}\n")
 
-    imp_idx = importances.importances_mean.argsort()[:100]
-    clf_importances_idx = np.argsort(estimator.feature_importances_)[:100]
-    clf_idx = (np.arange(0, len(estimator.feature_importances_)) + 0.5)[:100]
+    imp_idx = importances.importances_mean.argsort()[:50]
+    clf_importances_idx = np.argsort(estimator.feature_importances_)[:50]
+    clf_idx = (np.arange(0, len(estimator.feature_importances_)) + 0.5)[:50]
 
     # when using a lot of features, use fontsize 4 for yticklabels
     # when using small amount, use 8
