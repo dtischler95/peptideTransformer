@@ -25,7 +25,7 @@ max_length: 36                    # Maximum input sequence length
 label_0_cluster_data: 50         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 50         # Number of data points for label 1 used in downstream clustering
 loss_function: 'bce'             # Possible Choices ['bce', 'bce_logit_loss']
-use_concentration: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # MLM Settings
 mlm_curriculum_learning: true        # Enable curriculum learning for MLM
