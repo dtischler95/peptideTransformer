@@ -13,6 +13,7 @@ early_stop_warm_up: 8            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
+use_concentration: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Model and Optimizer Settings
 learning_rate: 0.00002            # Learning rate for optimizer
