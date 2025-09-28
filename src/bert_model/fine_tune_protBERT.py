@@ -8,7 +8,7 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, init_model, regression_plot, overall_stats
+    prepare_fisher_exact, init_model, regression_plot, overall_stats, get_model_stats
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -70,8 +70,7 @@ def fine_tune(config_path: str):
         PlotMetricsCallback()
     ]
 
-
-    tokenizer, train_dataset, val_dataset, test_dataset = prepare_datasets(model_class=training_args.model_class,
+    tokenizer, train_dataset, val_dataset, test_dataset, n_features = prepare_datasets(model_class=training_args.model_class,
                                                                            model_path=training_args.model_path,
                                                                            train_file=training_args.train_file,
                                                                            val_file=training_args.val_file,
@@ -89,8 +88,7 @@ def fine_tune(config_path: str):
     # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
     # Since this implementation integrated a classifier for the sequence classification task
 
-
-    data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args)
+    data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args, n_features)
 
     # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
     # configured PeptideTrainingArguments class is provided
@@ -108,17 +106,17 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    # if training_args.do_train:
-    #     trainer.train()
-    #     trainer.save_model(training_args.model_save_path)
-    #     tokenizer.save_pretrained(training_args.model_save_path)
-    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    if training_args.do_train:
+        trainer.train()
+        trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
 
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
-            #Custom Function for cluster the model embeddings with the whole dataset
+            # Custom Function for cluster the model embeddings with the whole dataset
             cluster_model_embedding(file_path=test_dataset,
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
@@ -138,16 +136,53 @@ def fine_tune(config_path: str):
 
         elif training_args.model_class.startswith('regression'):
 
-            y_preds = trainer.predict(test_dataset=test_dataset)
-            y_true = test_dataset.labels
+            y_train_preds = trainer.predict(test_dataset=train_dataset)
+            y_train_preds = y_train_preds.predictions.flatten()
+            y_train_true = train_dataset.labels
 
+            y_val_preds = trainer.predict(test_dataset=val_dataset)
+            y_val_preds = y_val_preds.predictions.flatten()
+            y_val_true = val_dataset.labels
 
-            y_preds = y_preds.predictions.flatten()
+            y_test_preds = trainer.predict(test_dataset=test_dataset)
+            y_test_preds = y_test_preds.predictions.flatten()
+            y_test_true = test_dataset.labels
+
             sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
-            regression_plot(y_true=y_true, y_pred=y_preds, logger=logger, path=training_args.plot_path, sequence_data=sequences)
+            regression_plot(y_true=y_test_true, y_pred=y_test_preds, logger=logger, path=training_args.plot_path,
+                            sequence_data=sequences)
 
+            overall_stats(predictions=y_test_preds, y_test=y_test_true, save_path=training_args.plot_path)
 
-            overall_stats(predictions=y_preds, y_test=y_true, save_path=training_args.plot_path)
+            train_r2, train_mse = get_model_stats(model=trainer,
+                                                  plot_dir=training_args.plot_path,
+                                                  predictions=y_train_preds,
+                                                  target_data=y_train_true,
+                                                  logger=logger,
+                                                  tag=training_args.train_file.split('/')[-1].split('.')[0] + '_train')
+
+            val_r2, val_mse = get_model_stats(model=trainer,
+                                              plot_dir=training_args.plot_path,
+                                              predictions=y_val_preds,
+                                              target_data=y_val_true,
+                                              logger=logger,
+                                              tag=training_args.train_file.split('/')[-1].split('.')[0] + '_val')
+
+            test_r2, test_mse = get_model_stats(model=trainer,
+                                                plot_dir=training_args.plot_path,
+                                                predictions=y_test_preds,
+                                                target_data=y_test_true,
+                                                logger=logger,
+                                                tag=training_args.train_file.split('/')[-1].split('.')[0] + '_test')
+
+            with open(f"{training_args.plot_path}/{training_args.train_file.split('/')[-1].split('.')[0]}_train.txt", "w") as f:
+                f.write(f"Filename: {training_args.train_file.split('/')[-1].split('.')[0]}\n"
+                        f"Train R2: {round(train_r2, 4)}\n"
+                        f"Train MSE: {round(train_mse, 4)}\n"
+                        f"Validation R2: {round(val_r2, 4)}\n"
+                        f"Validation MSE: {round(val_mse, 4)}\n"
+                        f"Test R2: {round(test_r2, 4)}\n"
+                        f"Test MSE: {round(test_mse, 4)}\n")
 
     # not really needed for my case, I guess
     if training_args.do_predict:
@@ -161,4 +196,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
