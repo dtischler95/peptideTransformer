@@ -26,7 +26,7 @@ max_length: 36                    # Maximum input sequence length
 label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_logit_loss']
-use_concentration: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 
 # Dataset and File Paths
