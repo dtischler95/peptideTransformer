@@ -622,7 +622,7 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     plt.clf()
 
 
-def overall_stats(predictions, y_test, save_path):
+def overall_stats(predictions, y_test, save_path, tag):
 
 
     # 1. Plotting the distribution of the target feature (y_test)
@@ -631,7 +631,7 @@ def overall_stats(predictions, y_test, save_path):
     plt.title('Verteilung der MIC-Werte (Test Set)')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + '/target_distribution.pdf')
+    plt.savefig(save_path + f'/{tag}target_distribution.pdf')
     plt.close()
     plt.clf()
 
@@ -639,16 +639,6 @@ def overall_stats(predictions, y_test, save_path):
     target_variance = np.var(y_test)
     print(f"Variance of the target feature (value) in test set: {target_variance}")
 
-    # 3. Plotting Predictions vs Actuals for the test set
-    plt.figure(figsize=(10, 6))
-    plt.scatter(y_test, predictions, alpha=0.5)
-    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--')
-    plt.title('Vorhersagen vs Tatsächlich (Test Set)')
-    plt.xlabel('Tatsächlicher Wert')
-    plt.ylabel('Vorhergesagter Wert')
-    plt.savefig(save_path + '/predictions_vs_actuals.pdf')
-    plt.close()
-    plt.clf()
 
     # 4. Plotting Residuals in the test set
     residuals = y_test - predictions
@@ -657,7 +647,26 @@ def overall_stats(predictions, y_test, save_path):
     plt.title('Verteilung der Residuen (Test Set)')
     plt.xlabel('Residuen')
     plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + '/residuals_distribution.pdf')
+    plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
+    plt.close()
+    plt.clf()
+
+    df = pd.DataFrame({
+        "MIC (log$_{10}$ µM)": y_test,
+        "Residuen (log$_{10}$ µM)": residuals
+    })
+
+    # Einteilung in 4 Quantile – du kannst q=5 oder q=[0,.25,.5,.75,1.] nehmen
+    df["MIC-Quantil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
+
+    plt.figure(figsize=(8, 4))
+    sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
+
+    plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
+    plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
+    plt.title("Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts")
+    plt.tight_layout()
+    plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
     plt.clf()
 

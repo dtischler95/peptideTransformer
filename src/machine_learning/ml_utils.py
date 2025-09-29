@@ -205,6 +205,25 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag):
     plt.close()
     plt.clf()
 
+    df = pd.DataFrame({
+        "MIC (log$_{10}$ µM)": y_test,
+        "Residuen (log$_{10}$ µM)": residuals
+    })
+
+    # Einteilung in 4 Quantile – du kannst q=5 oder q=[0,.25,.5,.75,1.] nehmen
+    df["MIC-Quantil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
+
+    plt.figure(figsize=(8, 4))
+    sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
+
+    plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
+    plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
+    plt.title("Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts")
+    plt.tight_layout()
+    plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
+    plt.close()
+    plt.clf()
+
     # 5. Print MSE for comparison on the test set
     mse = np.mean((y_test - predictions) ** 2)
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
