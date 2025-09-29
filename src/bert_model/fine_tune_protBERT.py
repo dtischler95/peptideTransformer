@@ -117,6 +117,7 @@ def fine_tune(config_path: str):
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
+            # TODO Cluster für Train test und val y.y selbe für fisher exact
             cluster_model_embedding(file_path=test_dataset,
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
