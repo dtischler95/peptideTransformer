@@ -369,16 +369,16 @@ def _best_f1_threshold(y_true, y_score, plot_path):
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
-def evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, logger):
-    y_score = _get_scores(best_estimator, x_val)
+def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, tag, logger):
+    y_score = _get_scores(best_estimator, x_data)
     try:
-        auc = roc_auc_score(y_val, y_score)
+        auc = roc_auc_score(y_data, y_score)
     except Exception:
         auc = float('nan')
-    ap = average_precision_score(y_val, y_score)
+    ap = average_precision_score(y_data, y_score)
     # ROC curve
     try:
-        fpr, tpr, _ = roc_curve(y_val, y_score)
+        fpr, tpr, _ = roc_curve(y_data, y_score)
         plt.figure()
         plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
         plt.plot([0, 1], [0, 1], linestyle='--')
@@ -387,37 +387,37 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, log
         plt.title('ROC-Kurve (Validierung)')
         plt.legend(loc='lower right')
         plt.grid(True)
-        roc_path = f'{plot_path}/{model_name}_roc.png'
+        roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
         plt.savefig(roc_path)
         plt.close()
     except Exception as e:
         logger.warning(f'ROC plotting skipped: {e}')
     # PR curve
     try:
-        precision, recall, _ = precision_recall_curve(y_val, y_score)
+        precision, recall, _ = precision_recall_curve(y_data, y_score)
         plt.figure()
         plt.plot(recall, precision, label=f'AP={ap:.3f}')
-        plt.hlines(np.mean(y_val), 0, 1, linestyles='--')
+        plt.hlines(np.mean(y_data), 0, 1, linestyles='--')
         plt.xlabel('Sensitivität')
         plt.ylabel('Präzision')
         plt.title('Präzisions-Sensivitäts-Kurve (Validierung)')
         plt.legend(loc='lower left')
         plt.grid(True)
-        pr_path = f'{plot_path}/{model_name}_pr.png'
+        pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
         plt.savefig(pr_path)
         plt.close()
     except Exception as e:
         logger.warning(f'PR plotting skipped: {e}')
     # Threshold tuning for F1
-    thr, f1_best, p_best, r_best = _best_f1_threshold(y_val, y_score, plot_path)
+    thr, f1_best, p_best, r_best = _best_f1_threshold(y_data, y_score, plot_path)
     logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
                 f'(P={p_best:.4f}, R={r_best:.4f})')
     y_pred = (y_score >= thr).astype(int)
     logger.info(f'AUROC: {auc:.4f}')
     logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
     logger.info("Cls report here")
-    logger.info(classification_report(y_val, y_pred, digits=3))
-    confusion_matrix = metrics.confusion_matrix(y_val, y_pred)
+    logger.info(classification_report(y_data, y_pred, digits=3))
+    confusion_matrix = metrics.confusion_matrix(y_data, y_pred)
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
@@ -430,7 +430,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, log
         plt.title(title)
         plt.xlabel('Vorhergesagte Klasse')
         plt.ylabel('Tatsächliche Klasse')
-        plt.savefig(f"{plot_path}/{title}.png")
+        plt.savefig(f"{plot_path}/{tag}_{title}.png")
         plt.close()
         plt.clf()
 

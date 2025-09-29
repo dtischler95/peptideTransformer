@@ -53,7 +53,22 @@ def train_classificators(file_path: str,
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
-    ml_utils.evaluate_hemo_model(best_estimator, model_name, plot_path, x_val, y_val, logger)
+
+    ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
+                                 model_name=model_name,
+                                 plot_path=plot_path,
+                                 x_data=x_train,
+                                 y_data=y_train,
+                                 tag='Training',
+                                 logger=logger)
+
+    ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
+                                 model_name=model_name,
+                                 plot_path=plot_path,
+                                 x_data=x_val,
+                                 y_data=y_val,
+                                 tag='Validierung',
+                                 logger=logger)
 
 
 def run_all(
