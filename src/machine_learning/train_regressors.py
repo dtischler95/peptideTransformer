@@ -10,7 +10,6 @@ import ml_utils
 import config
 import logging
 
-
 from pathlib import Path
 from typing import Iterable, Any
 
@@ -46,8 +45,6 @@ def train_regressors(file_path: str,
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
 
     logger.info(f"File Name: {file_path} and Model: {model_name}")
-    
-    
 
     best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
                                                                     x_train,
@@ -58,14 +55,15 @@ def train_regressors(file_path: str,
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
-
-    train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train,
-                                                               y_val, logger)
+    train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator,
+                                                                        plot_path,
+                                                                        x_train,
+                                                                        x_val,
+                                                                        y_train,
+                                                                        y_val,
+                                                                        logger)
 
     return train_r2, train_mse, val_r2, val_mse
-
-
-
 
 
 def run_all(
@@ -81,7 +79,6 @@ def run_all(
     Returns a list of RunResult with basic status info per run.
     """
 
-
     # Prevent silent truncation if lengths differ
     models = list(models)
     grids = list(grids)
@@ -90,7 +87,6 @@ def run_all(
     output_root = Path(output_root)
 
     results = []
-
 
     csv_files = sorted(data_dir.glob("*.csv"))
     for csv_path in csv_files:
@@ -138,7 +134,6 @@ def run_all(
 
 
 if __name__ == "__main__":
-
     data_dir = './data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
         ('xtra', ExtraTreesRegressor(n_jobs=1)),
@@ -153,8 +148,6 @@ if __name__ == "__main__":
         config.rf_param_grid,
         config.svr_param_grid
     ]
-
-
 
     run_all(calculate_features=True,
             data_dir=data_dir,

@@ -176,17 +176,17 @@ def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
     return onehot, label
 
 
-def overall_stats(best_estimator, x_test, y_test, save_path):
+def overall_stats(best_estimator, x_test, y_test, save_path, tag):
     # Make predictions on the test set
     predictions = best_estimator.predict(x_test)
 
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
     sns.histplot(y_test, kde=True)
-    plt.title('Verteilung der MIC-Werte (Test Set)')
+    plt.title(f'Verteilung der MIC-Werte ({tag})')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + '/target_distribution.pdf')
+    plt.savefig(save_path + f'/{tag}_target_distribution.pdf')
     plt.close()
     plt.clf()
 
@@ -194,25 +194,14 @@ def overall_stats(best_estimator, x_test, y_test, save_path):
     target_variance = np.var(y_test)
     print(f"Variance of the target feature (value) in test set: {target_variance}")
 
-    # 3. Plotting Predictions vs Actuals for the test set
-    plt.figure(figsize=(10, 6))
-    plt.scatter(y_test, predictions, alpha=0.5)
-    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--')
-    plt.title('Vorhersagen vs Tatsächlich (Test Set)')
-    plt.xlabel('Tatsächlicher Wert')
-    plt.ylabel('Vorhergesagter Wert')
-    plt.savefig(save_path + '/predictions_vs_actuals.pdf')
-    plt.close()
-    plt.clf()
-
     # 4. Plotting Residuals in the test set
     residuals = y_test - predictions
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
-    plt.title('Verteilung der Residuen (Test Set)')
+    plt.title(f'Verteilung der Residuen ({tag})')
     plt.xlabel('Residuen')
     plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + '/residuals_distribution.pdf')
+    plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
     plt.clf()
 
@@ -302,14 +291,16 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
                                           feature_data=x_train,
                                           target_data=y_train,
                                           logger=logger,
-                                          tag="Train")
+                                          tag="Training")
     val_r2, val_mse = get_model_stats(model=best_estimator,
                                       plot_dir=plot_path,
                                       feature_data=x_val,
                                       target_data=y_val,
                                       logger=logger,
-                                      tag="Test")
-    overall_stats(best_estimator=best_estimator, x_test=x_val, y_test=y_val, save_path=plot_path)
+                                      tag="Validierung")
+
+    overall_stats(best_estimator=best_estimator, x_test=x_train, y_test=y_train, save_path=plot_path, tag='Training')
+    overall_stats(best_estimator=best_estimator, x_test=x_val, y_test=y_val, save_path=plot_path, tag='Validierung')
     return train_mse, train_r2, val_mse, val_r2
 
 
