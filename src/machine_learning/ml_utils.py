@@ -307,7 +307,6 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
 def prepare_df(file_path, task):
     df = pd.read_csv(file_path, sep=';')
     if task == 'mic':
-        df = df.drop(columns='value')
         target_col = 'mic_log10'
     elif task == 'hemo':
         try:
