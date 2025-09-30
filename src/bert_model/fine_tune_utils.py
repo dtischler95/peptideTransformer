@@ -695,13 +695,12 @@ def best_f1_threshold(y_true, y_score, plot_path):
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
-def get_model_stats(model,
-                    plot_dir: str,
+def get_model_stats(plot_dir: str,
                     predictions,
                     target_data,
                     logger: logging.Logger,
                     tag: str):
-    #pred_train = model.predict(feature_data)
+
 
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 

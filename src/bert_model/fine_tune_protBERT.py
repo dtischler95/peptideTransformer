@@ -157,22 +157,19 @@ def fine_tune(config_path: str):
             overall_stats(predictions=y_val_preds, y_test=y_val_true, save_path=training_args.plot_path, tag='Validierung')
             overall_stats(predictions=y_test_preds, y_test=y_test_true, save_path=training_args.plot_path, tag='Test')
 
-            train_r2, train_mse = get_model_stats(model=trainer,
-                                                  plot_dir=training_args.plot_path,
+            train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                   predictions=y_train_preds,
                                                   target_data=y_train_true,
                                                   logger=logger,
                                                   tag=training_args.train_file.split('/')[-1].split('.')[0] + '_train')
 
-            val_r2, val_mse = get_model_stats(model=trainer,
-                                              plot_dir=training_args.plot_path,
+            val_r2, val_mse = get_model_stats(plot_dir=training_args.plot_path,
                                               predictions=y_val_preds,
                                               target_data=y_val_true,
                                               logger=logger,
                                               tag=training_args.train_file.split('/')[-1].split('.')[0] + '_val')
 
-            test_r2, test_mse = get_model_stats(model=trainer,
-                                                plot_dir=training_args.plot_path,
+            test_r2, test_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                 predictions=y_test_preds,
                                                 target_data=y_test_true,
                                                 logger=logger,
