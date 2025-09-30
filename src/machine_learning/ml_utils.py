@@ -415,7 +415,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, t
     y_pred = (y_score >= thr).astype(int)
     logger.info(f'AUROC: {auc:.4f}')
     logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
-    logger.info("Cls report here")
+    logger.info(f"Cls report here for {tag}")
     logger.info(classification_report(y_data, y_pred, digits=3))
     confusion_matrix = metrics.confusion_matrix(y_data, y_pred)
     with np.errstate(all='ignore'):
