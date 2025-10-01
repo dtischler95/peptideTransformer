@@ -106,11 +106,11 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    #if training_args.do_train:
-        # trainer.train()
-        # trainer.save_model(training_args.model_save_path)
-        # tokenizer.save_pretrained(training_args.model_save_path)
-        # logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    if training_args.do_train:
+        trainer.train()
+        trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
 
@@ -149,13 +149,13 @@ def fine_tune(config_path: str):
             y_test_preds = y_test_preds.predictions.flatten()
             y_test_true = test_dataset.labels
 
-            # sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
-            # regression_plot(y_true=y_test_true, y_pred=y_test_preds, logger=logger, path=training_args.plot_path,
-            #                 sequence_data=sequences)
-            #
-            # overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path, tag='Training')
-            # overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path, tag='Validierung')
-            # overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test')
+            sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
+            regression_plot(y_true=y_test_true, y_pred=y_test_preds, logger=logger, path=training_args.plot_path,
+                            sequence_data=sequences)
+
+            overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path, tag='Training')
+            overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path, tag='Validierung')
+            overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test')
 
             train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                   predictions=y_train_preds,
