@@ -622,12 +622,12 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     plt.clf()
 
 
-def overall_stats(predictions, y_test, save_path, tag):
+def overall_stats(predictions, y_true, save_path, tag):
 
 
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
-    sns.histplot(y_test, kde=True)
+    sns.histplot(y_true, kde=True)
     plt.title('Verteilung der MIC-Werte (Test Set)')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
@@ -636,12 +636,12 @@ def overall_stats(predictions, y_test, save_path, tag):
     plt.clf()
 
     # 2. Calculate variance of the target feature in the test set
-    target_variance = np.var(y_test)
+    target_variance = np.var(y_true)
     print(f"Variance of the target feature (value) in test set: {target_variance}")
 
 
     # 4. Plotting Residuals in the test set
-    residuals = y_test - predictions
+    residuals = y_true - predictions
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
     plt.title('Verteilung der Residuen (Test Set)')
@@ -652,7 +652,7 @@ def overall_stats(predictions, y_test, save_path, tag):
     plt.clf()
 
     df = pd.DataFrame({
-        "MIC (log$_{10}$ µM)": y_test,
+        "MIC (log$_{10}$ µM)": y_true,
         "Residuen (log$_{10}$ µM)": residuals
     })
 
@@ -671,7 +671,7 @@ def overall_stats(predictions, y_test, save_path, tag):
     plt.clf()
 
     # 5. Print MSE for comparison on the test set
-    mse = np.mean((y_test - predictions) ** 2)
+    mse = np.mean((y_true - predictions) ** 2)
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
 
 
@@ -734,7 +734,7 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     print(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM) for {tag}")
 
     # generating residual plot
-    sns.residplot(x=y_pred, y=residuals, ax=axs[1])
+    sns.residplot(x=y_pred, y=residuals, ax=axs[1], lowess=False)
     axs[1].set_title(
         "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
     axs[1].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
