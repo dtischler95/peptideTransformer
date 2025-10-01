@@ -30,7 +30,7 @@ train_file: './data/regression_data/micrococcus_luteus_for_regression.csv'  # Pa
 val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './models/micrococcus_luteus'                             # Path to save the model
-plot_path: './model_path/micrococcus_luteus_plots'                                    # Path to save the plots
+plot_path: './model_plots/micrococcus_luteus_plots'                                    # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.3       # Validation dataset size (fraction)
