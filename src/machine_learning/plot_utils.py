@@ -120,7 +120,7 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     print(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM) for {tag}")
 
     # generating residual plot
-    sns.residplot(x=y_pred, y=residuals, ax=axs[1])
+    sns.residplot(x=y_pred, y=residuals, ax=axs[1], lowess=False)
     axs[1].set_title(
         "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
     axs[1].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
