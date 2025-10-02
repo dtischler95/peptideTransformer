@@ -721,55 +721,37 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
 
 
 def plot_with_seaborn(y_true, y_pred, path, tag):
-    fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
+    # 1) Sauber machen
+    y_true = np.asarray(y_true).reshape(-1).astype(float)
+    y_pred = np.asarray(y_pred).reshape(-1).astype(float)
 
-    # Regression part
-    slope, intercept, r_value, p_value, std_err = linregress(y_pred, y_true)
-    # reg_equation = "y = {:.2f}x".format(slope)
 
-    # calculate the residuals
-    residuals = y_true - y_pred
-    std_residuals = np.std(residuals)
+    # 2) Residuen
+    resid = y_true - y_pred
+    sigma = resid.std(ddof=1)
 
-    print(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM) for {tag}")
 
-    # generating residual plot
-    sns.residplot(x=y_pred, y=residuals, ax=axs[1], lowess=False)
-    axs[1].set_title(
-        "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
-    axs[1].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
-    axs[1].set_ylabel("Residuum MHK/log(µM)")
+    fig, (ax_reg, ax_res) = plt.subplots(1, 2, figsize=(16, 6))
 
-    # Plot two red horizontal lines representing positive and negative standard deviations
-    axs[1].axhline(std_residuals, color='red', linestyle='--')
-    axs[1].axhline(-std_residuals, color='red', linestyle='--')
+    # --- Regression (y_true vs y_pred)
+    ax_reg.scatter(y_pred, y_true, alpha=0.6, edgecolor='none')
+    lo, hi = np.nanpercentile(np.concatenate([y_true, y_pred]), [0.5, 99.5])
+    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green', label='45°-Linie')
+    x_vals = np.linspace(lo, hi, endpoint=True)
+    ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
+    ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
+    ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
+    ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
+    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt {tag}')
 
-    # Plot manually added regression line with confidence interval
-    y_pred_sorted = np.sort(y_pred)
-
-    # generate scatter plot
-    sns.regplot(x=y_pred, y=y_true, ax=axs[0], fit_reg=False)
-
-    # plot the fitted line through the origin and also a line with slope 1 for comparison
-    # axs[0].plot(y_pred_sorted, slope * y_pred_sorted, color='red')
-    # standarf f(x) function for getting slope=1
-    axs[0].plot([-1, 4], [-1, 4], linestyle='--', color='green', label='45-degree Line')
-
-    # Calculate bounds for lines parallel to the regression line
-    lower_bound = 1 * y_pred_sorted - std_residuals
-    upper_bound = 1 * y_pred_sorted + std_residuals
-
-    # reg_equation2 = f"y = {slope:.2f}x + {intercept:.2f}"
-    # axs[0].text(0.05, 0.95, reg_equation2, transform=axs[0].transAxes, fontsize=12,
-    #            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
-
-    # Plot two lines parallel to the regression line representing positive and negative standard deviations
-    axs[0].plot(y_pred_sorted, lower_bound, color='red', linestyle='--')
-    axs[0].plot(y_pred_sorted, upper_bound, color='red', linestyle='--')
-
-    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MIC/log(µM)")
-    axs[0].set_xlabel("Vorhergesagter Wert MIC/log(µM)")
-    axs[0].set_ylabel("Tatsächlicher Wert MIC/log(µM)")
+    # --- Residuen (eigene Berechnung, kein residplot)
+    ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
+    ax_res.axhline(0, color='k', ls=':')
+    ax_res.axhline(+sigma, color='r', ls='--')
+    ax_res.axhline(-sigma, color='r', ls='--')
+    ax_res.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
+    ax_res.set_ylabel('Residuum MIC/log(µM)')
+    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f}) {tag}')
 
     fig.suptitle("Regressions -und Residuenplot")
     plt.tight_layout()
