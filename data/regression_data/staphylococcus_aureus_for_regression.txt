@@ -35,6 +35,7 @@ desc__MSWHIM1
 desc__MSWHIM2
 desc__MSWHIM3
 desc__E1
+desc__E2
 desc__E3
 desc__E4
 desc__E5
@@ -67,10 +68,12 @@ desc__SVGER3
 desc__SVGER4
 desc__SVGER5
 desc__SVGER6
+desc__SVGER7
 desc__SVGER8
 desc__SVGER9
 desc__SVGER10
 desc__SVGER11
+desc__T1
 desc__T2
 desc__T3
 desc__T4
@@ -88,6 +91,7 @@ desc__VSTPV4
 desc__VSTPV5
 desc__VSTPV6
 desc__Z1
+desc__Z2
 desc__Z3
 desc__Z4
 desc__Z5

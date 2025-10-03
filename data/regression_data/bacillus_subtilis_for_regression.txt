@@ -1,6 +1,9 @@
 desc__AF1
+desc__AF2
+desc__AF4
 desc__AF5
 desc__BLOSUM1
+desc__BLOSUM3
 desc__BLOSUM4
 desc__BLOSUM5
 desc__BLOSUM6
@@ -17,11 +20,14 @@ desc__F6
 desc__KF3
 desc__KF5
 desc__KF7
+desc__KF9
+desc__KF10
 desc__MSWHIM2
 desc__MSWHIM3
 desc__E1
 desc__E4
 desc__E5
+desc__PD1
 desc__PD2
 desc__PRIN1
 desc__PRIN3
@@ -33,12 +39,15 @@ desc__ProtFP7
 desc__ProtFP8
 desc__SV2
 desc__SV3
+desc__SV4
 desc__ST3
 desc__ST5
 desc__ST7
 desc__ST8
 desc__SVGER1
+desc__SVGER2
 desc__SVGER3
+desc__SVGER4
 desc__SVGER5
 desc__SVGER6
 desc__SVGER9
@@ -50,6 +59,5 @@ desc__VHSE5
 desc__VHSE7
 desc__VSTPV4
 desc__VSTPV6
-desc__Z3
 desc__Z4
 desc__Z5
