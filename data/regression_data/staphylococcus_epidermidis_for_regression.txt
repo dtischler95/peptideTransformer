@@ -2,7 +2,6 @@ desc__AF3
 desc__AF4
 desc__BLOSUM1
 desc__BLOSUM3
-desc__BLOSUM4
 desc__BLOSUM5
 desc__BLOSUM6
 desc__BLOSUM7
@@ -24,7 +23,6 @@ desc__MSWHIM2
 desc__MSWHIM3
 desc__E1
 desc__E2
-desc__E3
 desc__PRIN1
 desc__PRIN3
 desc__ProtFP1
@@ -43,9 +41,7 @@ desc__SVGER7
 desc__SVGER9
 desc__T3
 desc__T5
-desc__VHSE3
 desc__VHSE5
-desc__VHSE7
 desc__VHSE8
 desc__VSTPV6
 desc__Z3

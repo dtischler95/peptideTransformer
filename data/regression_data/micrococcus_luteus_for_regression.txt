@@ -21,9 +21,7 @@ desc__F3
 desc__F4
 desc__F5
 desc__F6
-desc__KF1
 desc__KF3
-desc__KF4
 desc__KF5
 desc__KF6
 desc__KF7
@@ -38,7 +36,6 @@ desc__E2
 desc__E3
 desc__E4
 desc__E5
-desc__PD1
 desc__PD2
 desc__PRIN2
 desc__PRIN3
@@ -66,17 +63,18 @@ desc__SVGER3
 desc__SVGER4
 desc__SVGER5
 desc__SVGER6
+desc__SVGER7
 desc__SVGER8
 desc__SVGER9
 desc__SVGER11
 desc__T2
 desc__T3
 desc__T5
+desc__VHSE1
 desc__VHSE2
 desc__VHSE3
 desc__VHSE4
 desc__VHSE5
-desc__VHSE6
 desc__VHSE7
 desc__VHSE8
 desc__VSTPV2
