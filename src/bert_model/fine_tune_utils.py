@@ -705,8 +705,8 @@ def get_model_stats(plot_dir: str,
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 
     # plot regression train
-    plot_with_seaborn(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf",
-                      tag=f"{tag}")
+    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf",
+                         tag=f"{tag}")
 
     return r2, mse
 
@@ -720,13 +720,36 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
 
 
 
-def plot_with_seaborn(y_true, y_pred, path, tag):
-    # 1) Sauber machen
+def make_regression_plot(y_true, y_pred, path, tag):
+
     y_true = np.asarray(y_true).reshape(-1).astype(float)
     y_pred = np.asarray(y_pred).reshape(-1).astype(float)
 
+    if tag.startswith("acineto"):
+        tag = "Acinetobacter baumannii"
+    elif tag.startswith("bacillus"):
+        tag = "Bacillus subtilis"
+    elif tag.startswith("candida"):
+        tag = "Candida albicans"
+    elif tag.startswith("enterobacter"):
+        tag = "Enterobacter sp."
+    elif tag.startswith("enterococc"):
+        tag = "Enterococcus faecalis"
+    elif tag.startswith("escher"):
+        tag = "Escherichia coli"
+    elif tag.startswith("klebsie"):
+        tag = "Klebsiella pneumoniae"
+    elif tag.startswith("micro"):
+        tag = "Micrococcus luteus"
+    elif tag.startswith("pseudo"):
+        tag = "Pseudomonas aeruginosa"
+    elif tag.startswith("salmonella"):
+        tag = "Salmonella enterica"
+    elif tag.startswith("staphylococcus_aureus"):
+        tag = "Staphylococcus aureus"
+    elif tag.startswith("staphylococcus_epi"):
+        tag = "Staphylococcus epidermidis"
 
-    # 2) Residuen
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
 

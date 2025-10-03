@@ -107,13 +107,12 @@ def plot_permutation_importance_from_est(estimator,
 
 
 
-def plot_with_seaborn(y_true, y_pred, path, tag):
-    # 1) Sauber machen
+def make_regression(y_true, y_pred, path):
+
+
     y_true = np.asarray(y_true).reshape(-1).astype(float)
     y_pred = np.asarray(y_pred).reshape(-1).astype(float)
 
-
-    # 2) Residuen
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
 
@@ -129,7 +128,7 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
     ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
-    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt {tag}')
+    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt')
 
     # --- Residuen (eigene Berechnung, kein residplot)
     ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
@@ -138,7 +137,7 @@ def plot_with_seaborn(y_true, y_pred, path, tag):
     ax_res.axhline(-sigma, color='r', ls='--')
     ax_res.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_res.set_ylabel('Residuum MIC/log(µM)')
-    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f}) {tag}')
+    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f})')
 
     fig.suptitle("Regressions -und Residuenplot")
     plt.tight_layout()
