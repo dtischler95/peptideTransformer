@@ -115,8 +115,7 @@ def get_model_stats(model,
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
 
     # plot regression train
-    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
-                               tag=f"{tag}")
+    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf")
 
     return r2, mse
 
