@@ -385,8 +385,8 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, t
         plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
         plt.plot([0, 1], [0, 1], linestyle='--')
         plt.xlabel('Falsch-Positiven-Rate')
-        plt.ylabel('Richtig-Positiven-Rate (Recall)')
-        plt.title('ROC-Kurve (Validierung)')
+        plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
+        plt.title(f'ROC-Kurve ({tag})')
         plt.legend(loc='lower right')
         plt.grid(True)
         roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
@@ -402,7 +402,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, t
         plt.hlines(np.mean(y_data), 0, 1, linestyles='--')
         plt.xlabel('Sensitivität')
         plt.ylabel('Präzision')
-        plt.title('Präzisions-Sensivitäts-Kurve (Validierung)')
+        plt.title(f'Präzisions-Sensivitäts-Kurve ({tag})')
         plt.legend(loc='lower left')
         plt.grid(True)
         pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
@@ -423,8 +423,8 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, t
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
-        ("Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        ("Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"{tag} Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        (f"{tag} Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
     for title, matrix in titles_options:
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])

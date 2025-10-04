@@ -6,7 +6,7 @@ import pandas as pd
 import peptides as pep
 import seaborn as sns
 import yaml
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.stats import linregress
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (r2_score,
@@ -32,6 +32,7 @@ def prepare_datasets(model_class: str,
                      train_file: str,
                      val_file: str,
                      logger: logging.Logger,
+                     save_path: str,
                      show_encoding: bool = False,
                      ignore_leakage: bool = False,
                      max_length: int = 36,
@@ -39,7 +40,8 @@ def prepare_datasets(model_class: str,
                      validation_data_size: float = 0.2,
                      test_data_size: float = 0.5,
                      random_data_shuffle: bool = False,
-                     add_features: bool = False) -> tuple[
+                     add_features: bool = False
+                     ) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset, int]:
     """
     Creates the datasets for training, validation and testing. For the given transformers Dataset class
@@ -173,6 +175,12 @@ def prepare_datasets(model_class: str,
     # Check for data leakage
     check_data_loader_for_leakage(train_data_loader=train_dataset, val_data_loader=val_dataset,
                                   test_data_loader=test_dataset, ignore_leakage=ignore_leakage, logger=logger)
+
+    for dataset, tag in zip([train_dataset, val_dataset, test_dataset], ['train', 'val', 'test']):
+        with open(f"{save_path}/{tag}_sequences.csv", "w") as f:
+            f.write('sequence\n')
+            for peptide in dataset.peptides:
+                f.write(f"{''.join(peptide.split(' '))}\n")
 
     return tokenizer, train_dataset, val_dataset, test_dataset, len(selected_features)
 
@@ -452,7 +460,8 @@ fast_debug: false                                      # Use fast debug mode (on
 
 def prepare_fisher_exact(test_dataset: PeptideDataset,
                          trainer,
-                         plot_path: str):
+                         plot_path: str,
+                         tag:str):
     from sklearn import metrics
     actual = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
@@ -467,8 +476,8 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
 
     titles_options = [
-        ("Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        ("Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"{tag} Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        (f"{tag} Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
 
     for title, matrix in titles_options:
@@ -478,8 +487,8 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
         # Deutsche Achsenbeschriftung
         plt.xlabel("Vorhergesagte Klasse")
         plt.ylabel("Wahre Klasse")
-        plt.title("Konfusionsmatrix")
-        plt.savefig(f"{plot_path}/{title}confusion_matrix.png", dpi=300, bbox_inches="tight")
+        plt.title(title)
+        plt.savefig(f"{plot_path}{title}_confusion_matrix.png", dpi=300, bbox_inches="tight")
         plt.close()
         plt.clf()
 
@@ -679,11 +688,11 @@ def best_f1_threshold(y_true, y_score, plot_path):
     p, r, thr = precision_recall_curve(y_true, y_score)
 
     display = PrecisionRecallDisplay.from_predictions(y_true, y_score, plot_chance_level=True, pos_label=1)
-    _ = display.ax_.set_title("2-Klassen Precision-Recall Kurve")
+    _ = display.ax_.set_title("2-Klassen Präzision-Sensitivität Kurve")
     display.plot()
-    plt.xlabel("Recall (Positive Klasse: 1)")
-    plt.ylabel("Precision (Positive Klasse: 1)")
-    plt.savefig(plot_path + '/precision_recall_curve.png')
+    plt.xlabel("Sensitivität (Positive Klasse: 1)")
+    plt.ylabel("Präzision (Positive Klasse: 1)")
+    plt.savefig(plot_path + 'precision_recall_curve.png')
     plt.close()
     plt.clf()
 
