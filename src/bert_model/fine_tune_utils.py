@@ -645,7 +645,7 @@ def overall_stats(predictions, y_true, save_path, tag):
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
     plt.title(f'Verteilung der Residuen ({tag})')
-    plt.xlabel('Residuen')
+    plt.xlabel('Residuen MIC/log(µM)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
@@ -705,7 +705,7 @@ def get_model_stats(plot_dir: str,
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 
     # plot regression train
-    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf", tag=tag)
+    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf", file_name=tag)
 
     return r2, mse
 
@@ -719,35 +719,35 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
 
 
 
-def make_regression_plot(y_true, y_pred, path, tag):
+def make_regression_plot(y_true, y_pred, path, file_name):
+
+    if file_name.startswith("acineto"):
+        file_name = "Acinetobacter baumannii"
+    elif file_name.startswith("bacillus"):
+        file_name = "Bacillus subtilis"
+    elif file_name.startswith("candida"):
+        file_name = "Candida albicans"
+    elif file_name.startswith("enterobacter"):
+        file_name = "Enterobacter sp."
+    elif file_name.startswith("enterococc"):
+        file_name = "Enterococcus faecalis"
+    elif file_name.startswith("escher"):
+        file_name = "Escherichia coli"
+    elif file_name.startswith("klebsie"):
+        file_name = "Klebsiella pneumoniae"
+    elif file_name.startswith("micro"):
+        file_name = "Micrococcus luteus"
+    elif file_name.startswith("pseudo"):
+        file_name = "Pseudomonas aeruginosa"
+    elif file_name.startswith("salmonella"):
+        file_name = "Salmonella enterica"
+    elif file_name.startswith("staphylococcus_aureus"):
+        file_name = "Staphylococcus aureus"
+    elif file_name.startswith("staphylococcus_epi"):
+        file_name = "Staphylococcus epidermidis"
 
     y_true = np.asarray(y_true).reshape(-1).astype(float)
     y_pred = np.asarray(y_pred).reshape(-1).astype(float)
-
-    if tag.startswith("acineto"):
-        tag = "Acinetobacter baumannii"
-    elif tag.startswith("bacillus"):
-        tag = "Bacillus subtilis"
-    elif tag.startswith("candida"):
-        tag = "Candida albicans"
-    elif tag.startswith("enterobacter"):
-        tag = "Enterobacter sp."
-    elif tag.startswith("enterococc"):
-        tag = "Enterococcus faecalis"
-    elif tag.startswith("escher"):
-        tag = "Escherichia coli"
-    elif tag.startswith("klebsie"):
-        tag = "Klebsiella pneumoniae"
-    elif tag.startswith("micro"):
-        tag = "Micrococcus luteus"
-    elif tag.startswith("pseudo"):
-        tag = "Pseudomonas aeruginosa"
-    elif tag.startswith("salmonella"):
-        tag = "Salmonella enterica"
-    elif tag.startswith("staphylococcus_aureus"):
-        tag = "Staphylococcus aureus"
-    elif tag.startswith("staphylococcus_epi"):
-        tag = "Staphylococcus epidermidis"
 
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
@@ -758,24 +758,26 @@ def make_regression_plot(y_true, y_pred, path, tag):
     # --- Regression (y_true vs y_pred)
     ax_reg.scatter(y_pred, y_true, alpha=0.6, edgecolor='none')
     lo, hi = np.nanpercentile(np.concatenate([y_true, y_pred]), [0.5, 99.5])
-    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green', label='45°-Linie')
+    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green')
     x_vals = np.linspace(lo, hi, endpoint=True)
     ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
     ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
-    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt {tag}')
+    ax_reg.set_title('Tatsächlich vs. vorhergesagt')
+    ax_reg.legend(loc='best')
 
     # --- Residuen (eigene Berechnung, kein residplot)
     ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
     ax_res.axhline(0, color='k', ls=':')
-    ax_res.axhline(+sigma, color='r', ls='--')
-    ax_res.axhline(-sigma, color='r', ls='--')
+    ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
+    ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
     ax_res.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_res.set_ylabel('Residuum MIC/log(µM)')
-    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f}) {tag}')
+    ax_res.set_title('Residuen vs. Vorhersage')
+    ax_res.legend(loc='best')
 
-    fig.suptitle("Regressions -und Residuenplot")
+    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) {file_name}")
     plt.tight_layout()
     plt.savefig(path)
     plt.close()
