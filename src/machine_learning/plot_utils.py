@@ -107,7 +107,32 @@ def plot_permutation_importance_from_est(estimator,
 
 
 
-def make_regression(y_true, y_pred, path):
+def make_regression(y_true, y_pred, file_name, path):
+
+    if file_name.startswith("acineto"):
+        file_name = "Acinetobacter baumannii"
+    elif file_name.startswith("bacillus"):
+        file_name = "Bacillus subtilis"
+    elif file_name.startswith("candida"):
+        file_name = "Candida albicans"
+    elif file_name.startswith("enterobacter"):
+        file_name = "Enterobacter sp."
+    elif file_name.startswith("enterococc"):
+        file_name = "Enterococcus faecalis"
+    elif file_name.startswith("escher"):
+        file_name = "Escherichia coli"
+    elif file_name.startswith("klebsie"):
+        file_name = "Klebsiella pneumoniae"
+    elif file_name.startswith("micro"):
+        file_name = "Micrococcus luteus"
+    elif file_name.startswith("pseudo"):
+        file_name = "Pseudomonas aeruginosa"
+    elif file_name.startswith("salmonella"):
+        file_name = "Salmonella enterica"
+    elif file_name.startswith("staphylococcus_aureus"):
+        file_name = "Staphylococcus aureus"
+    elif file_name.startswith("staphylococcus_epi"):
+        file_name = "Staphylococcus epidermidis"
 
 
     y_true = np.asarray(y_true).reshape(-1).astype(float)
@@ -128,7 +153,7 @@ def make_regression(y_true, y_pred, path):
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
     ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
-    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt')
+    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt {file_name}')
 
     # --- Residuen (eigene Berechnung, kein residplot)
     ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
@@ -137,7 +162,7 @@ def make_regression(y_true, y_pred, path):
     ax_res.axhline(-sigma, color='r', ls='--')
     ax_res.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_res.set_ylabel('Residuum MIC/log(µM)')
-    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f})')
+    ax_res.set_title(f'Residuen vs. Vorhersage (σ={sigma:.2f}) {file_name}')
 
     fig.suptitle("Regressions -und Residuenplot")
     plt.tight_layout()

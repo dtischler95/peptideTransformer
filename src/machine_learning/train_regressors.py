@@ -31,6 +31,7 @@ def train_regressors(file_path: str,
                      plot_path: str,
                      model_name: str,
                      feature_selection,
+                     file_name: str,
                      calculate_features: bool = True
                      ):
     df, target_col = ml_utils.prepare_df(file_path, 'mic')
@@ -61,7 +62,8 @@ def train_regressors(file_path: str,
                                                                         x_val,
                                                                         y_train,
                                                                         y_val,
-                                                                        logger)
+                                                                        logger,
+                                                                        file_name)
 
     return train_r2, train_mse, val_r2, val_mse
 
@@ -119,7 +121,8 @@ def run_all(
                 model_name=model_tag,
                 calculate_features=calculate_features,
                 feature_selection=features,
-                plot_path=str(out_dir)
+                plot_path=str(out_dir),
+                file_name=file_name
             )
             results.append({
                 "name": file_name,

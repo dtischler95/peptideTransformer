@@ -109,13 +109,14 @@ def get_model_stats(model,
                     feature_data,
                     target_data,
                     logger: logging.Logger,
+                    file_name,
                     tag: str):
     pred_train = model.predict(feature_data)
 
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
 
     # plot regression train
-    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf")
+    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf", file_name=file_name)
 
     return r2, mse
 
@@ -303,18 +304,20 @@ def print_results_tabular(results: list[dict], logger: logging.Logger):
                     f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 
-def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger):
+def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger, file_name):
     train_r2, train_mse = get_model_stats(model=best_estimator,
                                           plot_dir=plot_path,
                                           feature_data=x_train,
                                           target_data=y_train,
                                           logger=logger,
+                                          file_name=file_name,
                                           tag="Training")
     val_r2, val_mse = get_model_stats(model=best_estimator,
                                       plot_dir=plot_path,
                                       feature_data=x_val,
                                       target_data=y_val,
                                       logger=logger,
+                                      file_name=file_name,
                                       tag="Validierung")
 
     overall_stats(best_estimator=best_estimator, x_test=x_train, y_test=y_train, save_path=plot_path, tag='Training')
