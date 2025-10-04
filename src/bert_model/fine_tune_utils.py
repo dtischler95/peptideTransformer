@@ -628,7 +628,7 @@ def overall_stats(predictions, y_true, save_path, tag):
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
     sns.histplot(y_true, kde=True)
-    plt.title('Verteilung der MIC-Werte (Test Set)')
+    plt.title(f'Verteilung der MIC-Werte ({tag})')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}target_distribution.pdf')
@@ -644,7 +644,7 @@ def overall_stats(predictions, y_true, save_path, tag):
     residuals = y_true - predictions
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
-    plt.title('Verteilung der Residuen (Test Set)')
+    plt.title(f'Verteilung der Residuen ({tag})')
     plt.xlabel('Residuen')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
@@ -664,7 +664,7 @@ def overall_stats(predictions, y_true, save_path, tag):
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
     plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
-    plt.title("Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts")
+    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts {tag}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
