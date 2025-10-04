@@ -187,12 +187,10 @@ def fine_tune(config_path: str):
     # not really needed for my case, I guess
     if training_args.do_predict:
         ...
-        # Test dataset is not used so far. May remove it completely?
         """
         This part is only for debugging purposes.        
         """
-        # if training_args.model_class == 'binary':
-        #     test_binary_label_bias(tokenizer, trainer, training_args)
+
 
 
 if __name__ == '__main__':
