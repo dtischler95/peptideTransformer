@@ -705,7 +705,7 @@ def get_model_stats(plot_dir: str,
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 
     # plot regression train
-    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf")
+    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf", tag=tag)
 
     return r2, mse
 
