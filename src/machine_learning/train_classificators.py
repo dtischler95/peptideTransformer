@@ -126,20 +126,20 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = '../../data/hemo_train/'
+    data_dir = './data/hemo_train/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
-        #('xtra', ExtraTreesClassifier()),
-        #('xgb', XGBClassifier()),
+        ('xtra', ExtraTreesClassifier()),
+        ('xgb', XGBClassifier()),
         ('rf', RandomForestClassifier()),
-        #('svc', SVC(probability=True)),
+        ('svc', SVC(probability=True)),
 
     ]
 
     param_grids = [  # config.gb_param_grid,
-        #config.xtra_cls_param_grid,
-        #config.xgb_cls_param_grid,
-        config.rf_cls_test_param_grid,
-        #config.svc_cls_param_grid
+        config.xtra_cls_param_grid,
+        config.xgb_cls_param_grid,
+        config.rf_cls_param_grid,
+        config.svc_cls_param_grid
     ]
 
     run_all(calculate_features=False,
