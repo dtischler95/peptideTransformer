@@ -199,7 +199,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag):
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
     plt.title(f'Verteilung der Residuen ({tag})')
-    plt.xlabel('Residuen')
+    plt.xlabel('Residuen MIC/log(µM)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
