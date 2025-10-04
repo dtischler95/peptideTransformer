@@ -109,11 +109,11 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    # if training_args.do_train:
-    #     trainer.train()
-    #     trainer.save_model(training_args.model_save_path)
-    #     tokenizer.save_pretrained(training_args.model_save_path)
-    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    if training_args.do_train:
+        trainer.train()
+        trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
 
