@@ -61,19 +61,19 @@ class PeptideTrainer(Trainer):
             for callback in self.callback_handler.callbacks:
                 if callback.__class__.__name__ == 'CollectBatchWiseTrainMetrics':
                     if self.args.model_class.startswith('regression'):
-                        logs['mse'] = round(float(callback.get_train_mse()), 4)
-                        logs['mae'] = round(float(callback.get_train_mae()), 4)
-                        logs['r2'] = round(float(callback.get_train_r2()), 4)
+                        logs['MSE'] = round(float(callback.get_train_mse()), 4)
+                        logs['MAE'] = round(float(callback.get_train_mae()), 4)
+                        logs['R2'] = round(float(callback.get_train_r2()), 4)
                     if self.args.model_class.startswith('mlm'):
-                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
+                        logs['Genauigkeit'] = round(callback.get_train_accuracy(), 4)
                     if self.args.model_class.startswith('binary'):
-                        logs['accuracy'] = round(callback.get_train_accuracy(), 4)
-                        logs['precision'] = round(callback.get_train_precision(), 4)
-                        logs['mcc'] = round(callback.get_train_mcc(), 4)
-                        logs['recall'] = round(callback.get_train_recall(), 4)
-                        logs['f1'] = round(callback.get_train_f1(), 4)
-                        logs['roc-auc'] = round(float(callback.get_train_auroc()), 4)
-                        logs['average_precision'] = round(float(callback.get_train_average_precision()), 4)
+                        logs['Genauigkeit'] = round(callback.get_train_accuracy(), 4)
+                        logs['Präzision'] = round(callback.get_train_precision(), 4)
+                        logs['MCC'] = round(callback.get_train_mcc(), 4)
+                        logs['Sensitivität'] = round(callback.get_train_recall(), 4)
+                        logs['F1-Wert'] = round(callback.get_train_f1(), 4)
+                        logs['ROC-AUC'] = round(float(callback.get_train_auroc()), 4)
+                        logs['Durchschnittliche Präzision'] = round(float(callback.get_train_average_precision()), 4)
 
                     callback.clear_results_after_epoch()
 

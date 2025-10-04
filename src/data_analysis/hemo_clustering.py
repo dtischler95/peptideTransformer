@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn import manifold, metrics
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 from transformers import BertTokenizer, BertModel
 
 
@@ -334,9 +335,9 @@ def perform_clustering(embedded_sequences,
     # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
 
     print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_tsne_plot")
+    plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
     print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_umap_plot")
+    plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}{tag}_umap_plot")
 
 
 def encode_peptides(sequence_file,
@@ -345,6 +346,7 @@ def encode_peptides(sequence_file,
                     add_features: bool,
                     sequence_max_length: int,
                     logger: logging.Logger or None = None,
+                    scaler = None,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
@@ -364,7 +366,7 @@ def encode_peptides(sequence_file,
 
     df = pd.DataFrame({'sequence': sequence_file.peptides, 'label': sequence_file.labels})
     # Shuffle the data to ensure labels are mixed
-    df = df.sample(frac=1).reset_index(drop=True)
+    df = df.sample(frac=1).reset_index(drop=False).rename(columns={'index':'orig_idx'})
 
     # ------------
     # Change number of datapoints used for clustering here.
@@ -402,12 +404,22 @@ def encode_peptides(sequence_file,
 
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
+    if scaler is None:
+        scaler = StandardScaler()
+        embeddings = scaler.fit_transform(embeddings)
+    else:
+        embeddings = scaler.transform(embeddings)
     embeddings_to_return = [('seq_embedding',embeddings)]
     if add_features:
-        feature_embedding = np.hstack([embeddings, sequence_file.features])
-        embeddings_to_return.append(('seq_feature_embedding' ,feature_embedding))
+        seq_feature_embedding = np.hstack([embeddings, sequence_file.features[df['orig_idx'].values]])
 
-    return embeddings_to_return, df['label'].to_list()
+        embeddings_to_return.append(('seq_feature_embedding' , seq_feature_embedding))
+        embeddings_to_return.append(('feature_vector', sequence_file.features[df['orig_idx'].values]))
+
+
+
+    return embeddings_to_return, df['label'].to_list(), scaler
+
 
 
 def cluster_model_embedding(file_path,
@@ -420,6 +432,7 @@ def cluster_model_embedding(file_path,
                             label_0_cluster_data: int = 500,
                             label_1_cluster_data: int = 500,
                             logger: logging.Logger or None = None,
+                            scaler = None,
                             tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
     """
     Standalone Wrapper for clustering analysis if you run this file directly.
@@ -443,7 +456,7 @@ def cluster_model_embedding(file_path,
     if device is None:
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    embedding, labels = encode_peptides(sequence_file=file_path,
+    embedding, labels, scaler = encode_peptides(sequence_file=file_path,
                                         batch_size=batch_size,
                                         tokenizer_and_model=tokenizer_and_model,
                                         device=device,
@@ -451,6 +464,7 @@ def cluster_model_embedding(file_path,
                                         label_0_cluster_data=label_0_cluster_data,
                                         label_1_cluster_data=label_1_cluster_data,
                                         logger=logger,
+                                        scaler=scaler,
                                         plot_path=plot_path,
                                         add_features=add_features)
 
@@ -461,7 +475,7 @@ def cluster_model_embedding(file_path,
                            tag=data_tag + emb[0],
                            plot_path=plot_path)
 
-
+    return scaler
 def reduce_data_points_for_clustering(df: pd.DataFrame,
                                       plot_path: str,
                                       label_0_data: int = 500,

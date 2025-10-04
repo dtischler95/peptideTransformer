@@ -70,18 +70,21 @@ def fine_tune(config_path: str):
         PlotMetricsCallback()
     ]
 
-    tokenizer, train_dataset, val_dataset, test_dataset, n_features = prepare_datasets(model_class=training_args.model_class,
-                                                                           model_path=training_args.model_path,
-                                                                           train_file=training_args.train_file,
-                                                                           val_file=training_args.val_file,
-                                                                           ignore_leakage=training_args.ignore_leakage,
-                                                                           max_length=training_args.max_length,
-                                                                           logger=logger,
-                                                                           cut_df_for_faster_debug=training_args.fast_debug_mode,
-                                                                           validation_data_size=training_args.validation_data_size,
-                                                                           test_data_size=training_args.test_data_size,
-                                                                           random_data_shuffle=training_args.data_shuffle,
-                                                                           add_features=training_args.add_features)
+    tokenizer, train_dataset, val_dataset, test_dataset, n_features = prepare_datasets(
+        model_class=training_args.model_class,
+        model_path=training_args.model_path,
+        train_file=training_args.train_file,
+        val_file=training_args.val_file,
+        save_path=training_args.plot_path,
+        ignore_leakage=training_args.ignore_leakage,
+        max_length=training_args.max_length,
+        logger=logger,
+        cut_df_for_faster_debug=training_args.fast_debug_mode,
+        validation_data_size=training_args.validation_data_size,
+        test_data_size=training_args.test_data_size,
+        random_data_shuffle=training_args.data_shuffle,
+        add_features=training_args.add_features
+    )
 
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
@@ -106,22 +109,36 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    if training_args.do_train:
-        trainer.train()
-        trainer.save_model(training_args.model_save_path)
-        tokenizer.save_pretrained(training_args.model_save_path)
-        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    # if training_args.do_train:
+    #     trainer.train()
+    #     trainer.save_model(training_args.model_save_path)
+    #     tokenizer.save_pretrained(training_args.model_save_path)
+    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
 
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
-            # TODO Cluster für Train test und val y.y selbe für fisher exact
-            cluster_model_embedding(file_path=test_dataset,
+            scaler = cluster_model_embedding(file_path=train_dataset,
+                                             data_tag=config_path.split('/')[-1].split('.')[0],
+                                             batch_size=training_args.per_device_eval_batch_size,
+                                             plot_path=training_args.plot_path + "/Training_",
+                                             scaler=None,
+                                             tokenizer_and_model=(tokenizer, trainer.model),
+                                             device=training_args.device,
+                                             sequence_max_length=training_args.max_length,
+                                             label_0_cluster_data=training_args.label_0_cluster_data,
+                                             label_1_cluster_data=training_args.label_1_cluster_data,
+                                             add_features=training_args.add_features,
+                                             logger=logger
+                                             )
+
+            cluster_model_embedding(file_path=val_dataset,
                                     data_tag=config_path.split('/')[-1].split('.')[0],
                                     batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path,
+                                    plot_path=training_args.plot_path + "/val_",
+                                    scaler=scaler,
                                     tokenizer_and_model=(tokenizer, trainer.model),
                                     device=training_args.device,
                                     sequence_max_length=training_args.max_length,
@@ -131,9 +148,32 @@ def fine_tune(config_path: str):
                                     logger=logger
                                     )
 
+            cluster_model_embedding(file_path=test_dataset,
+                                    data_tag=config_path.split('/')[-1].split('.')[0],
+                                    batch_size=training_args.per_device_eval_batch_size,
+                                    plot_path=training_args.plot_path + "/test_",
+                                    scaler=scaler,
+                                    tokenizer_and_model=(tokenizer, trainer.model),
+                                    device=training_args.device,
+                                    sequence_max_length=training_args.max_length,
+                                    label_0_cluster_data=training_args.label_0_cluster_data,
+                                    label_1_cluster_data=training_args.label_1_cluster_data,
+                                    add_features=training_args.add_features,
+                                    logger=logger
+                                    )
+
+            prepare_fisher_exact(test_dataset=train_dataset,
+                                 trainer=trainer,
+                                 plot_path=training_args.plot_path + "/train_",
+                                 tag='Trainings')
+            prepare_fisher_exact(test_dataset=val_dataset,
+                                 trainer=trainer,
+                                 plot_path=training_args.plot_path + "/val_",
+                                 tag='Validierungs')
             prepare_fisher_exact(test_dataset=test_dataset,
                                  trainer=trainer,
-                                 plot_path=training_args.plot_path)
+                                 plot_path=training_args.plot_path + "/test_",
+                                 tag='Test')
 
         elif training_args.model_class.startswith('regression'):
 
@@ -153,8 +193,10 @@ def fine_tune(config_path: str):
             regression_plot(y_true=y_test_true, y_pred=y_test_preds, logger=logger, path=training_args.plot_path,
                             sequence_data=sequences)
 
-            overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path, tag='Training')
-            overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path, tag='Validierung')
+            overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path,
+                          tag='Training')
+            overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path,
+                          tag='Validierung')
             overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test')
 
             train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
@@ -175,7 +217,8 @@ def fine_tune(config_path: str):
                                                 logger=logger,
                                                 tag=training_args.train_file.split('/')[-1].split('.')[0] + '_test')
 
-            with open(f"{training_args.plot_path}/{training_args.train_file.split('/')[-1].split('.')[0]}_train.txt", "w") as f:
+            with open(f"{training_args.plot_path}/{training_args.train_file.split('/')[-1].split('.')[0]}_train.txt",
+                      "w") as f:
                 f.write(f"Filename: {training_args.train_file.split('/')[-1].split('.')[0]}\n"
                         f"Train R2: {round(train_r2, 4)}\n"
                         f"Train MSE: {round(train_mse, 4)}\n"
@@ -190,7 +233,6 @@ def fine_tune(config_path: str):
         """
         This part is only for debugging purposes.        
         """
-
 
 
 if __name__ == '__main__':
