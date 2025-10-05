@@ -500,7 +500,7 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     df_1 = df[df['label'] == 1].sample(frac=1)
 
     result_df = pd.concat([df_0[:label_0_data], df_1[:label_1_data]]).sample(frac=1)
-    result_df.to_csv(f"{plot_path}/data_used_for_clustering.csv", sep=';',
+    result_df.to_csv(f"{plot_path}data_used_for_clustering.csv", sep=';',
                      index=False)  # TODO maybe make this optional?
 
 
