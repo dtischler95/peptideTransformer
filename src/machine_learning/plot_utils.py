@@ -47,16 +47,21 @@ def plot_permutation_importance_from_est(estimator,
                                          y_data,
                                          plot_path: str,
                                          summary_path: str,
+                                         file_name: str,
                                          feature_names: list[str],
                                          n_repeats: int = 10,
                                          random_state: bool = 42):
+
+
+
     feature_names = np.asarray(feature_names)
     importances = permutation_importance(
         estimator=estimator,
         X=x_data,
         y=y_data,
         n_repeats=n_repeats,
-        random_state=random_state
+        random_state=random_state,
+        n_jobs=-1
     )
 
 
@@ -80,7 +85,7 @@ def plot_permutation_importance_from_est(estimator,
              height=0.7
              )
     ax1.set_yticks(clf_idx)
-    ax1.set_yticklabels(feature_names[clf_importances_idx], fontsize=4)
+    ax1.set_yticklabels(feature_names[clf_importances_idx], fontsize=8)
     ax1.set_xticks(ax1.get_xticks())
     ax1.set_xticklabels(ax1.get_xticklabels(), fontsize=8)
     ax1.xaxis.set_major_locator(FixedLocator(ax1.get_xticks()))
@@ -91,8 +96,8 @@ def plot_permutation_importance_from_est(estimator,
         labels=feature_names[clf_importances_idx]
     )
     ax2.set_yticks(clf_idx)
-    ax2.set_yticklabels(feature_names[clf_importances_idx], fontsize=4)
-    fig.suptitle(f"Permutationsbasierte Merkmalswichtigkeit {n_repeats} Faltungen", fontsize=14)
+    ax2.set_yticklabels(feature_names[clf_importances_idx], fontsize=8)
+    fig.suptitle(f"Permutationsbasierte Merkmalswichtigkeit {n_repeats} Faltungen\nModel: rf Daten: {file_name}", fontsize=14)
     ax1.set_title("Balkendiagramm")
     ax1.set_ylabel("Merkmalsname")  # statt „Feaurename“
     ax1.set_xlabel("Wichtigkeit")
@@ -107,7 +112,7 @@ def plot_permutation_importance_from_est(estimator,
 
 
 
-def make_regression(y_true, y_pred, file_name, path):
+def make_regression(y_true, y_pred, file_name, path, model_name):
 
     if file_name.startswith("acineto"):
         file_name = "Acinetobacter baumannii"
@@ -166,7 +171,7 @@ def make_regression(y_true, y_pred, file_name, path):
     ax_res.set_title(f'Residuen vs. Vorhersage')
     ax_res.legend(loc='best')
 
-    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) {file_name}")
+    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f})\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(path)
     plt.close()

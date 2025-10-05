@@ -29,6 +29,7 @@ def train_classificators(file_path: str,
                          plot_path: str,
                          model_name: str,
                          feature_selection,
+                         data_name: str,
                          calculate_features: bool = True
                          ):
     df, target_col = ml_utils.prepare_df(file_path, 'hemo')
@@ -59,16 +60,18 @@ def train_classificators(file_path: str,
                                  plot_path=plot_path,
                                  x_data=x_train,
                                  y_true=y_train,
-                                 tag='Trainings',
-                                 logger=logger)
+                                 tag='Training',
+                                 logger=logger,
+                                 data_name=data_name)
 
     ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
                                  model_name=model_name,
                                  plot_path=plot_path,
                                  x_data=x_val,
                                  y_true=y_val,
-                                 tag='Validierungs',
-                                 logger=logger)
+                                 tag='Validierung',
+                                 logger=logger,
+                                 data_name=data_name)
 
 
 def run_all(
@@ -121,6 +124,7 @@ def run_all(
                 model_name=model_tag,
                 calculate_features=calculate_features,
                 feature_selection=features,
+                data_name=file_name,
                 plot_path=str(out_dir)
             )
 

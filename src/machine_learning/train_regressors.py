@@ -63,7 +63,8 @@ def train_regressors(file_path: str,
                                                                         y_train,
                                                                         y_val,
                                                                         logger,
-                                                                        file_name)
+                                                                        file_name,
+                                                                        model_name)
 
     return train_r2, train_mse, val_r2, val_mse
 
@@ -102,7 +103,8 @@ def run_all(
             tmp_file_path.mkdir(parents=True, exist_ok=True)
             features = ml_utils.get_feature_importance(file_path=str(csv_path),
                                                        task='mic',
-                                                       plot_path=str(tmp_file_path))
+                                                       plot_path=str(tmp_file_path),
+                                                       file_name=file_name)
             logger.info(f"Anzahl verwenderter Features für {str(tmp_file_path)} ist : {len(features)}")
         else:
             features = None
@@ -148,7 +150,7 @@ if __name__ == "__main__":
     param_grids = [  # config.gb_param_grid,
         config.xtra_param_grid,
         config.xgb_param_grid,
-        config.rf_param_grid,
+        config.rf_test_param_grid,
         config.svr_param_grid
     ]
 

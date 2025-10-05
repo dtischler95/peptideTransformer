@@ -111,14 +111,15 @@ def get_model_stats(model,
                     target_data,
                     logger: logging.Logger,
                     file_name,
-                    tag: str):
+                    tag: str,
+                    model_name):
     pred_train = model.predict(feature_data)
 
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
 
     # plot regression train
     plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
-                               file_name=file_name)
+                               file_name=file_name, model_name=model_name)
 
     return r2, mse
 
@@ -178,14 +179,39 @@ def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
     return onehot, label
 
 
-def overall_stats(best_estimator, x_test, y_test, save_path, tag):
+def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, model_name):
+    if file_name.startswith("acineto"):
+        file_name = "Acinetobacter baumannii"
+    elif file_name.startswith("bacillus"):
+        file_name = "Bacillus subtilis"
+    elif file_name.startswith("candida"):
+        file_name = "Candida albicans"
+    elif file_name.startswith("enterobacter"):
+        file_name = "Enterobacter sp."
+    elif file_name.startswith("enterococc"):
+        file_name = "Enterococcus faecalis"
+    elif file_name.startswith("escher"):
+        file_name = "Escherichia coli"
+    elif file_name.startswith("klebsie"):
+        file_name = "Klebsiella pneumoniae"
+    elif file_name.startswith("micro"):
+        file_name = "Micrococcus luteus"
+    elif file_name.startswith("pseudo"):
+        file_name = "Pseudomonas aeruginosa"
+    elif file_name.startswith("salmonella"):
+        file_name = "Salmonella enterica"
+    elif file_name.startswith("staphylococcus_aureus"):
+        file_name = "Staphylococcus aureus"
+    elif file_name.startswith("staphylococcus_epi"):
+        file_name = "Staphylococcus epidermidis"
+
     # Make predictions on the test set
     predictions = best_estimator.predict(x_test)
 
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
     sns.histplot(y_test, kde=True)
-    plt.title(f'Verteilung der MIC-Werte ({tag})')
+    plt.title(f'Verteilung der MIC-Werte ({tag})\nModel: {model_name} Daten: {file_name}')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}_target_distribution.pdf')
@@ -200,7 +226,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag):
     residuals = y_test - predictions
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
-    plt.title(f'Verteilung der Residuen ({tag})')
+    plt.title(f'Verteilung der Residuen ({tag})\nModel: {model_name} Daten: {file_name}')
     plt.xlabel('Residuen MIC/log(µM)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
@@ -220,7 +246,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag):
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
     plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
-    plt.title("Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts")
+    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -307,24 +333,38 @@ def print_results_tabular(results: list[dict], logger: logging.Logger):
             f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 
-def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger, file_name):
+def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger, file_name, model_name):
     train_r2, train_mse = get_model_stats(model=best_estimator,
                                           plot_dir=plot_path,
                                           feature_data=x_train,
                                           target_data=y_train,
                                           logger=logger,
                                           file_name=file_name,
-                                          tag="Training")
+                                          tag="Training",
+                                          model_name=model_name)
     val_r2, val_mse = get_model_stats(model=best_estimator,
                                       plot_dir=plot_path,
                                       feature_data=x_val,
                                       target_data=y_val,
                                       logger=logger,
                                       file_name=file_name,
-                                      tag="Validierung")
+                                      tag="Validierung",
+                                      model_name=model_name)
 
-    overall_stats(best_estimator=best_estimator, x_test=x_train, y_test=y_train, save_path=plot_path, tag='Training')
-    overall_stats(best_estimator=best_estimator, x_test=x_val, y_test=y_val, save_path=plot_path, tag='Validierung')
+    overall_stats(best_estimator=best_estimator,
+                  x_test=x_train,
+                  y_test=y_train,
+                  save_path=plot_path,
+                  tag='Training',
+                  file_name=file_name,
+                  model_name=model_name)
+    overall_stats(best_estimator=best_estimator,
+                  x_test=x_val,
+                  y_test=y_val,
+                  save_path=plot_path,
+                  tag='Validierung',
+                  file_name=file_name,
+                  model_name=model_name)
     return train_mse, train_r2, val_mse, val_r2
 
 
@@ -374,7 +414,12 @@ def _best_f1_threshold(y_true, y_score, plot_path):
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
-def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger):
+def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
+    if data_name == 'happen_style':
+        data_name = 'Eigener Schwellenwert-Datensatz'
+    else:
+        data_name = 'WhiteLab-Datensatz'
+
     y_score = _get_scores(best_estimator, x_data)
 
     auc = roc_auc_score(y_true, y_score)
@@ -398,6 +443,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     plt.plot(thresholds, precisions, label="Präzision")
     plt.plot(thresholds, recalls, label="Sensitivität")
     plt.plot(thresholds, mccs, label="MCC")
+    plt.title(f"Schwellenwertanalyse der Modellmetriken\nModel: {model_name} Daten: {data_name}")
     plt.xlabel("Schwellenwert")
     plt.ylabel("Wert")
     plt.legend()
@@ -410,7 +456,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     plt.plot([0, 1], [0, 1], linestyle='--')
     plt.xlabel('Falsch-Positiven-Rate')
     plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
-    plt.title(f'ROC-Kurve ({tag})')
+    plt.title(f'ROC-Kurve ({tag})\nModel: {model_name} Daten: {data_name}')
     plt.legend(loc='lower right')
     plt.grid(True)
     roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
@@ -423,7 +469,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
     plt.xlabel('Sensitivität')
     plt.ylabel('Präzision')
-    plt.title(f'Präzisions-Sensivitäts-Kurve ({tag})')
+    plt.title(f'Präzisions-Sensitivität-Kurve ({tag})\nModel: {model_name} Daten: {data_name}')
     plt.legend(loc='lower left')
     plt.grid(True)
     pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
@@ -448,14 +494,14 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
-        (f"{tag} Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        (f"{tag} Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"{tag}s Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        (f"{tag}s Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
 
     for title, matrix in titles_options:
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
-        plt.title(title)
+        plt.title(f"{title}\nModel: {model_name} Daten: {data_name}")
         plt.xlabel('Vorhergesagte Klasse')
         plt.ylabel('Tatsächliche Klasse')
         plt.savefig(f"{plot_path}/{tag}_{title}.png")
@@ -584,12 +630,42 @@ def encode_kmer_no_features(df, target_col, n_components=128, feature_selection=
 
 def get_feature_importance(file_path: str,
                            task,
-                           plot_path):
+                           plot_path,
+                           file_name):
     """
     After
     https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
 
     """
+    if file_name == 'happen_style':
+        file_name = 'Eigener Schwellenwert-Datensatz'
+    elif file_name == 'whitelab_hemo':
+        file_name = 'WhiteLab-Datensatz'
+    elif file_name.startswith("acineto"):
+        file_name = "Acinetobacter baumannii"
+    elif file_name.startswith("bacillus"):
+        file_name = "Bacillus subtilis"
+    elif file_name.startswith("candida"):
+        file_name = "Candida albicans"
+    elif file_name.startswith("enterobacter"):
+        file_name = "Enterobacter sp."
+    elif file_name.startswith("enterococc"):
+        file_name = "Enterococcus faecalis"
+    elif file_name.startswith("escher"):
+        file_name = "Escherichia coli"
+    elif file_name.startswith("klebsie"):
+        file_name = "Klebsiella pneumoniae"
+    elif file_name.startswith("micro"):
+        file_name = "Micrococcus luteus"
+    elif file_name.startswith("pseudo"):
+        file_name = "Pseudomonas aeruginosa"
+    elif file_name.startswith("salmonella"):
+        file_name = "Salmonella enterica"
+    elif file_name.startswith("staphylococcus_aureus"):
+        file_name = "Staphylococcus aureus"
+    elif file_name.startswith("staphylococcus_epi"):
+        file_name = "Staphylococcus epidermidis"
+
     if task == 'mic':
         model = RandomForestRegressor(n_estimators=800,
                                       max_depth=None,
@@ -639,6 +715,7 @@ def get_feature_importance(file_path: str,
                                                     plot_path=plot_path + '/feature_importance_est.png',
                                                     summary_path=plot_path + '/feature_importance_summary.txt',
                                                     feature_names=desc_names,
+                                                    file_name=file_name
                                                     )
 
     print("PI done")
@@ -663,7 +740,7 @@ def get_feature_importance(file_path: str,
         y=cv_results["mean_test_score"],
         yerr=cv_results["std_test_score"],
     )
-    plt.title("Rekursive Feature Elimination")
+    plt.title(f"Rekursive Feature Elimination\nModel: rf Daten: {file_name}")
     plt.savefig(plot_path + '/Feature_elimination.png')
     plt.close()
     plt.clf()
