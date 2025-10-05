@@ -443,7 +443,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     plt.plot(thresholds, precisions, label="Präzision")
     plt.plot(thresholds, recalls, label="Sensitivität")
     plt.plot(thresholds, mccs, label="MCC")
-    plt.title(f"Schwellenwertanalyse der Modellmetriken\nModel: {model_name} Daten: {data_name}")
+    plt.title(f"Schwellenwertanalyse der Modellmetriken ({tag})\nModel: {model_name} Daten: {data_name}")
     plt.xlabel("Schwellenwert")
     plt.ylabel("Wert")
     plt.legend()
