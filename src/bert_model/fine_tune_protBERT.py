@@ -109,71 +109,74 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    if training_args.do_train:
-        trainer.train()
-        trainer.save_model(training_args.model_save_path)
-        tokenizer.save_pretrained(training_args.model_save_path)
-        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    # if training_args.do_train:
+    #     trainer.train()
+    #     trainer.save_model(training_args.model_save_path)
+    #     tokenizer.save_pretrained(training_args.model_save_path)
+    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
-
+        file_name = training_args.train_file.split('/')[-1].split('.')[0]
         if training_args.model_class.startswith('binary'):
-            from src.data_analysis.hemo_clustering import cluster_model_embedding
-            # Custom Function for cluster the model embeddings with the whole dataset
-            scaler = cluster_model_embedding(file_path=train_dataset,
-                                             data_tag=config_path.split('/')[-1].split('.')[0],
-                                             batch_size=training_args.per_device_eval_batch_size,
-                                             plot_path=training_args.plot_path + "/Training_",
-                                             scaler=None,
-                                             tokenizer_and_model=(tokenizer, trainer.model),
-                                             device=training_args.device,
-                                             sequence_max_length=training_args.max_length,
-                                             label_0_cluster_data=training_args.label_0_cluster_data,
-                                             label_1_cluster_data=training_args.label_1_cluster_data,
-                                             add_features=training_args.add_features,
-                                             logger=logger
-                                             )
-
-            cluster_model_embedding(file_path=val_dataset,
-                                    data_tag=config_path.split('/')[-1].split('.')[0],
-                                    batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path + "/val_",
-                                    scaler=scaler,
-                                    tokenizer_and_model=(tokenizer, trainer.model),
-                                    device=training_args.device,
-                                    sequence_max_length=training_args.max_length,
-                                    label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data,
-                                    add_features=training_args.add_features,
-                                    logger=logger
-                                    )
-
-            cluster_model_embedding(file_path=test_dataset,
-                                    data_tag=config_path.split('/')[-1].split('.')[0],
-                                    batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path + "/test_",
-                                    scaler=scaler,
-                                    tokenizer_and_model=(tokenizer, trainer.model),
-                                    device=training_args.device,
-                                    sequence_max_length=training_args.max_length,
-                                    label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data,
-                                    add_features=training_args.add_features,
-                                    logger=logger
-                                    )
+            # from src.data_analysis.hemo_clustering import cluster_model_embedding
+            # # Custom Function for cluster the model embeddings with the whole dataset
+            # scaler = cluster_model_embedding(file_path=train_dataset,
+            #                                  data_tag=config_path.split('/')[-1].split('.')[0],
+            #                                  batch_size=training_args.per_device_eval_batch_size,
+            #                                  plot_path=training_args.plot_path + "/Training_",
+            #                                  scaler=None,
+            #                                  tokenizer_and_model=(tokenizer, trainer.model),
+            #                                  device=training_args.device,
+            #                                  sequence_max_length=training_args.max_length,
+            #                                  label_0_cluster_data=training_args.label_0_cluster_data,
+            #                                  label_1_cluster_data=training_args.label_1_cluster_data,
+            #                                  add_features=training_args.add_features,
+            #                                  logger=logger
+            #                                  )
+            #
+            # cluster_model_embedding(file_path=val_dataset,
+            #                         data_tag=config_path.split('/')[-1].split('.')[0],
+            #                         batch_size=training_args.per_device_eval_batch_size,
+            #                         plot_path=training_args.plot_path + "/val_",
+            #                         scaler=scaler,
+            #                         tokenizer_and_model=(tokenizer, trainer.model),
+            #                         device=training_args.device,
+            #                         sequence_max_length=training_args.max_length,
+            #                         label_0_cluster_data=training_args.label_0_cluster_data,
+            #                         label_1_cluster_data=training_args.label_1_cluster_data,
+            #                         add_features=training_args.add_features,
+            #                         logger=logger
+            #                         )
+            #
+            # cluster_model_embedding(file_path=test_dataset,
+            #                         data_tag=config_path.split('/')[-1].split('.')[0],
+            #                         batch_size=training_args.per_device_eval_batch_size,
+            #                         plot_path=training_args.plot_path + "/test_",
+            #                         scaler=scaler,
+            #                         tokenizer_and_model=(tokenizer, trainer.model),
+            #                         device=training_args.device,
+            #                         sequence_max_length=training_args.max_length,
+            #                         label_0_cluster_data=training_args.label_0_cluster_data,
+            #                         label_1_cluster_data=training_args.label_1_cluster_data,
+            #                         add_features=training_args.add_features,
+            #                         logger=logger
+            #                         )
 
             prepare_fisher_exact(test_dataset=train_dataset,
                                  trainer=trainer,
                                  plot_path=training_args.plot_path + "/train_",
-                                 tag='Trainings')
+                                 tag='Training',
+                                 file_name=file_name)
             prepare_fisher_exact(test_dataset=val_dataset,
                                  trainer=trainer,
                                  plot_path=training_args.plot_path + "/val_",
-                                 tag='Validierungs')
+                                 tag='Validierung',
+                                 file_name=file_name)
             prepare_fisher_exact(test_dataset=test_dataset,
                                  trainer=trainer,
                                  plot_path=training_args.plot_path + "/test_",
-                                 tag='Test')
+                                 tag='Test',
+                                 file_name=file_name)
 
         elif training_args.model_class.startswith('regression'):
 
@@ -189,37 +192,36 @@ def fine_tune(config_path: str):
             y_test_preds = y_test_preds.predictions.flatten()
             y_test_true = test_dataset.labels
 
-            sequences = [pep.replace(" ", "") for pep in test_dataset.peptides]
-            regression_plot(y_true=y_test_true, y_pred=y_test_preds, logger=logger, path=training_args.plot_path,
-                            sequence_data=sequences)
-
             overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path,
-                          tag='Training')
+                          tag='Training', file_name=file_name)
             overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path,
-                          tag='Validierung')
-            overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test')
+                          tag='Validierung', file_name=file_name)
+            overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test', file_name=file_name)
 
             train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                   predictions=y_train_preds,
                                                   target_data=y_train_true,
                                                   logger=logger,
-                                                  tag=training_args.train_file.split('/')[-1].split('.')[0] + '_train')
+                                                  file_name=file_name,
+                                                  tag='Training')
 
             val_r2, val_mse = get_model_stats(plot_dir=training_args.plot_path,
                                               predictions=y_val_preds,
                                               target_data=y_val_true,
                                               logger=logger,
-                                              tag=training_args.train_file.split('/')[-1].split('.')[0] + '_val')
+                                              file_name=file_name,
+                                              tag='Validierung')
 
             test_r2, test_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                 predictions=y_test_preds,
                                                 target_data=y_test_true,
                                                 logger=logger,
-                                                tag=training_args.train_file.split('/')[-1].split('.')[0] + '_test')
+                                                file_name=file_name,
+                                                tag='Test')
 
             with open(f"{training_args.plot_path}/{training_args.train_file.split('/')[-1].split('.')[0]}_train.txt",
                       "w") as f:
-                f.write(f"Filename: {training_args.train_file.split('/')[-1].split('.')[0]}\n"
+                f.write(f"Filename: {file_name}\n"
                         f"Train R2: {round(train_r2, 4)}\n"
                         f"Train MSE: {round(train_mse, 4)}\n"
                         f"Validation R2: {round(val_r2, 4)}\n"
