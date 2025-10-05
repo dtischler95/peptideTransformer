@@ -104,7 +104,8 @@ def run_all(
             tmp_file_path.mkdir(parents=True, exist_ok=True)
             features = ml_utils.get_feature_importance(file_path=str(csv_path),
                                                        task='hemo',
-                                                       plot_path=str(tmp_file_path))
+                                                       plot_path=str(tmp_file_path),
+                                                       file_name=file_name)
             logger.info(f"Anzahl verwenderter Features für {str(tmp_file_path)} ist : {len(features)}")
         else:
             features = None
@@ -130,23 +131,23 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = './data/hemo_train/'
+    data_dir = '../../data/hemo_train/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
-        ('xtra', ExtraTreesClassifier()),
-        ('xgb', XGBClassifier()),
+        #('xtra', ExtraTreesClassifier()),
+        #('xgb', XGBClassifier()),
         ('rf', RandomForestClassifier()),
-        ('svc', SVC(probability=True)),
+        #('svc', SVC(probability=True)),
 
     ]
 
     param_grids = [  # config.gb_param_grid,
-        config.xtra_cls_param_grid,
-        config.xgb_cls_param_grid,
+        #config.xtra_cls_param_grid,
+        #config.xgb_cls_param_grid,
         config.rf_cls_param_grid,
-        config.svc_cls_param_grid
+        #config.svc_cls_param_grid
     ]
 
-    run_all(calculate_features=False,
+    run_all(calculate_features=True,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)
