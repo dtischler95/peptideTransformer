@@ -30,7 +30,7 @@ train_file: './data/regression_data/bacillus_subtilis_for_regression.csv'  # Pat
 val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './ohne/b_subtilis'                             # Path to save the model
-plot_path: './model_plots/b_subtilis_plots'                                    # Path to save the plots
+plot_path: './ohne_plots/b_subtilis_plots'                                    # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.3       # Validation dataset size (fraction)
@@ -38,8 +38,8 @@ test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
-output_dir: './results_bsubtilis'         # Path to checkpoints
-logging_dir: './bsubtilis'           # Path to logging directory
+output_dir: './ohne_plotsresults_bsubtilis'         # Path to checkpoints
+logging_dir: './ohne_plotsbsubtilis'           # Path to logging directory
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
