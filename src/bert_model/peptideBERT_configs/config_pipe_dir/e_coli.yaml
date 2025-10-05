@@ -29,8 +29,8 @@ data_shuffle: true                  # True: Shuffle the dataset[No val file need
 train_file: './data/regression_data/escherichia_coli_for_regression.csv'  # Path to training data
 val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './ohne/e_coli'                             # Path to save the model
-plot_path: './ohne_plots/e_coli_plots'                                    # Path to save the plots
+model_save_path: './models/e_coli'                             # Path to save the model
+plot_path: './model_plots/e_coli_plots'                                    # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.3       # Validation dataset size (fraction)
