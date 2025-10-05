@@ -156,8 +156,8 @@ def make_regression(y_true, y_pred, file_name, path, model_name):
     x_vals = np.linspace(lo, hi, endpoint=True)
     ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
-    ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
-    ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
+    ax_reg.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
+    ax_reg.set_ylabel('Tatsächlicher Wert MIC (log$_{10}$ µM)')
     ax_reg.set_title(f'Tatsächlich vs. vorhergesagt')
     ax_reg.legend(loc='best')
 
@@ -166,8 +166,8 @@ def make_regression(y_true, y_pred, file_name, path, model_name):
     ax_res.axhline(0, color='k', ls=':')
     ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
     ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
-    ax_res.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
-    ax_res.set_ylabel('Residuum MIC/log(µM)')
+    ax_res.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
+    ax_res.set_ylabel('Residuum MIC (log$_{10}$ µM)')
     ax_res.set_title(f'Residuen vs. Vorhersage')
     ax_res.legend(loc='best')
 

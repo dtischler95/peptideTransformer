@@ -8,7 +8,7 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, init_model, regression_plot, overall_stats, get_model_stats
+    prepare_fisher_exact, init_model, overall_stats, get_model_stats
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -109,58 +109,58 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    # if training_args.do_train:
-    #     trainer.train()
-    #     trainer.save_model(training_args.model_save_path)
-    #     tokenizer.save_pretrained(training_args.model_save_path)
-    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    if training_args.do_train:
+        trainer.train()
+        trainer.save_model(training_args.model_save_path)
+        tokenizer.save_pretrained(training_args.model_save_path)
+        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
         file_name = training_args.train_file.split('/')[-1].split('.')[0]
         if training_args.model_class.startswith('binary'):
-            # from src.data_analysis.hemo_clustering import cluster_model_embedding
-            # # Custom Function for cluster the model embeddings with the whole dataset
-            # scaler = cluster_model_embedding(file_path=train_dataset,
-            #                                  data_tag=config_path.split('/')[-1].split('.')[0],
-            #                                  batch_size=training_args.per_device_eval_batch_size,
-            #                                  plot_path=training_args.plot_path + "/Training_",
-            #                                  scaler=None,
-            #                                  tokenizer_and_model=(tokenizer, trainer.model),
-            #                                  device=training_args.device,
-            #                                  sequence_max_length=training_args.max_length,
-            #                                  label_0_cluster_data=training_args.label_0_cluster_data,
-            #                                  label_1_cluster_data=training_args.label_1_cluster_data,
-            #                                  add_features=training_args.add_features,
-            #                                  logger=logger
-            #                                  )
-            #
-            # cluster_model_embedding(file_path=val_dataset,
-            #                         data_tag=config_path.split('/')[-1].split('.')[0],
-            #                         batch_size=training_args.per_device_eval_batch_size,
-            #                         plot_path=training_args.plot_path + "/val_",
-            #                         scaler=scaler,
-            #                         tokenizer_and_model=(tokenizer, trainer.model),
-            #                         device=training_args.device,
-            #                         sequence_max_length=training_args.max_length,
-            #                         label_0_cluster_data=training_args.label_0_cluster_data,
-            #                         label_1_cluster_data=training_args.label_1_cluster_data,
-            #                         add_features=training_args.add_features,
-            #                         logger=logger
-            #                         )
-            #
-            # cluster_model_embedding(file_path=test_dataset,
-            #                         data_tag=config_path.split('/')[-1].split('.')[0],
-            #                         batch_size=training_args.per_device_eval_batch_size,
-            #                         plot_path=training_args.plot_path + "/test_",
-            #                         scaler=scaler,
-            #                         tokenizer_and_model=(tokenizer, trainer.model),
-            #                         device=training_args.device,
-            #                         sequence_max_length=training_args.max_length,
-            #                         label_0_cluster_data=training_args.label_0_cluster_data,
-            #                         label_1_cluster_data=training_args.label_1_cluster_data,
-            #                         add_features=training_args.add_features,
-            #                         logger=logger
-            #                         )
+            from src.data_analysis.hemo_clustering import cluster_model_embedding
+            # Custom Function for cluster the model embeddings with the whole dataset
+            scaler = cluster_model_embedding(file_path=train_dataset,
+                                             data_tag=config_path.split('/')[-1].split('.')[0],
+                                             batch_size=training_args.per_device_eval_batch_size,
+                                             plot_path=training_args.plot_path + "/Training_",
+                                             scaler=None,
+                                             tokenizer_and_model=(tokenizer, trainer.model),
+                                             device=training_args.device,
+                                             sequence_max_length=training_args.max_length,
+                                             label_0_cluster_data=training_args.label_0_cluster_data,
+                                             label_1_cluster_data=training_args.label_1_cluster_data,
+                                             add_features=training_args.add_features,
+                                             logger=logger
+                                             )
+
+            cluster_model_embedding(file_path=val_dataset,
+                                    data_tag=config_path.split('/')[-1].split('.')[0],
+                                    batch_size=training_args.per_device_eval_batch_size,
+                                    plot_path=training_args.plot_path + "/val_",
+                                    scaler=scaler,
+                                    tokenizer_and_model=(tokenizer, trainer.model),
+                                    device=training_args.device,
+                                    sequence_max_length=training_args.max_length,
+                                    label_0_cluster_data=training_args.label_0_cluster_data,
+                                    label_1_cluster_data=training_args.label_1_cluster_data,
+                                    add_features=training_args.add_features,
+                                    logger=logger
+                                    )
+
+            cluster_model_embedding(file_path=test_dataset,
+                                    data_tag=config_path.split('/')[-1].split('.')[0],
+                                    batch_size=training_args.per_device_eval_batch_size,
+                                    plot_path=training_args.plot_path + "/test_",
+                                    scaler=scaler,
+                                    tokenizer_and_model=(tokenizer, trainer.model),
+                                    device=training_args.device,
+                                    sequence_max_length=training_args.max_length,
+                                    label_0_cluster_data=training_args.label_0_cluster_data,
+                                    label_1_cluster_data=training_args.label_1_cluster_data,
+                                    add_features=training_args.add_features,
+                                    logger=logger
+                                    )
 
             prepare_fisher_exact(test_dataset=train_dataset,
                                  trainer=trainer,
@@ -238,4 +238,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
