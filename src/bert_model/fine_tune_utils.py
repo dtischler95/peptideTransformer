@@ -14,7 +14,11 @@ from sklearn.metrics import (r2_score,
                              explained_variance_score,
                              mean_squared_error,
                              precision_recall_curve,
-                             PrecisionRecallDisplay)
+                             PrecisionRecallDisplay,
+                             f1_score,
+                             precision_score,
+                             recall_score,
+                             matthews_corrcoef)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
@@ -106,7 +110,6 @@ def prepare_datasets(model_class: str,
     selected_features = []
     if add_features:
         df_train = add_descriptors(df)
-
 
         with open(file=f"{train_file.replace('.csv', '.txt')}") as f:
             selected_features = [line.strip() for line in f]
@@ -461,17 +464,41 @@ fast_debug: false                                      # Use fast debug mode (on
 def prepare_fisher_exact(test_dataset: PeptideDataset,
                          trainer,
                          plot_path: str,
-                         tag:str):
+                         tag: str):
     from sklearn import metrics
-    actual = test_dataset.labels
+    y_true = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
 
-    thr, f1_best, p_best, r_best = best_f1_threshold(y_true=actual, y_score=logits.flatten(), plot_path=plot_path)
+    thresholds = np.linspace(0.0, 1.0, 101)
+    f1s, precisions, recalls, mccs = [], [], [], []
+
+    y_score = logits.flatten()
+
+    for thr in thresholds:
+        preds_bin = (y_score >= thr).astype(int)
+        f1s.append(f1_score(y_true, preds_bin))
+        precisions.append(precision_score(y_true, preds_bin))
+        recalls.append(recall_score(y_true, preds_bin))
+        mccs.append(matthews_corrcoef(y_true, preds_bin))
+
+    # Plot F1 vs threshold
+    plt.plot(thresholds, f1s, label="F1")
+    plt.plot(thresholds, precisions, label="Präzision")
+    plt.plot(thresholds, recalls, label="Sensitivität")
+    plt.plot(thresholds, mccs, label="MCC")
+    plt.xlabel("Schwellenwert")
+    plt.ylabel("Wert")
+    plt.legend()
+    thres_curve = f'{plot_path}_threshold_curves.png'
+    plt.savefig(thres_curve)
+    plt.close()
+
+    thr, f1_best, p_best, r_best = best_f1_threshold(y_true=y_true, y_score=logits.flatten(), plot_path=plot_path)
 
     print(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
-                f'(P={p_best:.4f}, R={r_best:.4f})')
+          f'(P={p_best:.4f}, R={r_best:.4f})')
 
-    confusion_matrix = metrics.confusion_matrix(actual, format_logit_to_label(logits=logits, threshold=thr))
+    confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits, threshold=thr))
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
 
@@ -504,7 +531,6 @@ def get_bce_label_weight(labels):
 
 
 def init_model(tokenizer, train_dataset, training_args, n_features):
-
     if training_args.model_class == 'binary_dense':
 
         # ('GrimSqueaker/proteinBERT')
@@ -556,7 +582,6 @@ def init_model(tokenizer, train_dataset, training_args, n_features):
     return data_collator, model, run_metric
 
 
-
 def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
 
@@ -574,7 +599,7 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
         positive_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=True)[:30]
         joined_info = zip(sequence_data, residuals)
         negative_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=False)[:30]
-        #highest_sequences = sorted_peptides[:50]
+        # highest_sequences = sorted_peptides[:50]
         # print the sequences to file
         with open(f"{path}/highest_residuals.csv", "w") as f:
             f.write("sequence;residual\n")
@@ -582,7 +607,6 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
                 f.write(f"{sequence[0]};{sequence[1]}\n")
             for sequence in negative_extreme_peptides:
                 f.write(f"{sequence[0]};{sequence[1]}\n")
-
 
     logger.info(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM)")
 
@@ -632,8 +656,6 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
 
 
 def overall_stats(predictions, y_true, save_path, tag):
-
-
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
     sns.histplot(y_true, kde=True)
@@ -647,7 +669,6 @@ def overall_stats(predictions, y_true, save_path, tag):
     # 2. Calculate variance of the target feature in the test set
     target_variance = np.var(y_true)
     print(f"Variance of the target feature (value) in test set: {target_variance}")
-
 
     # 4. Plotting Residuals in the test set
     residuals = y_true - predictions
@@ -696,7 +717,6 @@ def best_f1_threshold(y_true, y_score, plot_path):
     plt.close()
     plt.clf()
 
-
     f1 = 2 * p * r / (p + r + 1e-12)
     i = np.nanargmax(f1)
     # thresholds has length = len(p)-1; clamp index
@@ -709,14 +729,14 @@ def get_model_stats(plot_dir: str,
                     target_data,
                     logger: logging.Logger,
                     tag: str):
-
-
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 
     # plot regression train
-    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf", file_name=tag)
+    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf",
+                         file_name=tag)
 
     return r2, mse
+
 
 def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
     logger.info(f"Regression metrics: \n"
@@ -727,9 +747,7 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
     return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
 
 
-
 def make_regression_plot(y_true, y_pred, path, file_name):
-
     if file_name.startswith("acineto"):
         file_name = "Acinetobacter baumannii"
     elif file_name.startswith("bacillus"):
@@ -761,7 +779,6 @@ def make_regression_plot(y_true, y_pred, path, file_name):
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
 
-
     fig, (ax_reg, ax_res) = plt.subplots(1, 2, figsize=(16, 6))
 
     # --- Regression (y_true vs y_pred)
@@ -791,6 +808,7 @@ def make_regression_plot(y_true, y_pred, path, file_name):
     plt.savefig(path)
     plt.close()
     plt.clf()
+
 
 if __name__ == '__main__':
     # data_leakage_wrapper()

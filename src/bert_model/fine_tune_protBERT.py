@@ -236,5 +236,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    #fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file
-    fine_tune(config_path='peptideBERT_configs/whitelab_denseBERT.yaml')
+    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file

@@ -58,7 +58,7 @@ def train_classificators(file_path: str,
                                  model_name=model_name,
                                  plot_path=plot_path,
                                  x_data=x_train,
-                                 y_data=y_train,
+                                 y_true=y_train,
                                  tag='Trainings',
                                  logger=logger)
 
@@ -66,7 +66,7 @@ def train_classificators(file_path: str,
                                  model_name=model_name,
                                  plot_path=plot_path,
                                  x_data=x_val,
-                                 y_data=y_val,
+                                 y_true=y_val,
                                  tag='Validierungs',
                                  logger=logger)
 
