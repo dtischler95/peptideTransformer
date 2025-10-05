@@ -38,8 +38,8 @@ test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
-output_dir: './ohne_plotsresults_micrococcus_luteus'         # Path to checkpoints
-logging_dir: './ohne_plotslogs_micrococcus_luteus'           # Path to logging directory
+output_dir: './results_micrococcus_luteus'         # Path to checkpoints
+logging_dir: './logs_micrococcus_luteus'           # Path to logging directory
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
