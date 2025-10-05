@@ -246,7 +246,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
     plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
-    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts\nModel: {model_name} Daten: {file_name}")
+    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts {tag}\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -494,14 +494,14 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
-        (f"{tag}s Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        (f"{tag}s Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        (f"Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
 
     for title, matrix in titles_options:
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
-        plt.title(f"{title}\nModel: {model_name} Daten: {data_name}")
+        plt.title(f"{title} ({tag})\nModel: {model_name} Daten: {data_name}")
         plt.xlabel('Vorhergesagte Klasse')
         plt.ylabel('Tatsächliche Klasse')
         plt.savefig(f"{plot_path}/{tag}_{title}.png")

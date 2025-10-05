@@ -464,7 +464,13 @@ fast_debug: false                                      # Use fast debug mode (on
 def prepare_fisher_exact(test_dataset: PeptideDataset,
                          trainer,
                          plot_path: str,
-                         tag: str):
+                         tag: str,
+                         file_name: str):
+    if file_name == 'happen_style':
+        file_name = 'Eigener Schwellenwert-Datensatz'
+    else:
+        file_name = 'WhiteLab-Datensatz'
+
     from sklearn import metrics
     y_true = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
@@ -488,6 +494,7 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     plt.plot(thresholds, mccs, label="MCC")
     plt.xlabel("Schwellenwert")
     plt.ylabel("Wert")
+    plt.title(f"Schwellenwertanalyse der Modellmetriken ({tag})\nDaten: {file_name}")
     plt.legend()
     thres_curve = f'{plot_path}_threshold_curves.png'
     plt.savefig(thres_curve)
@@ -503,8 +510,8 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
 
     titles_options = [
-        (f"{tag} Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        (f"{tag} Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
+        (f"Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
 
     for title, matrix in titles_options:
@@ -514,8 +521,8 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
         # Deutsche Achsenbeschriftung
         plt.xlabel("Vorhergesagte Klasse")
         plt.ylabel("Wahre Klasse")
-        plt.title(title)
-        plt.savefig(f"{plot_path}{title}_confusion_matrix.png", dpi=300, bbox_inches="tight")
+        plt.title(title + f" ({tag})\nDaten: {file_name}")
+        plt.savefig(f"{plot_path}{title}_{tag}_confusion_matrix.png", dpi=300, bbox_inches="tight")
         plt.close()
         plt.clf()
 
@@ -655,11 +662,35 @@ def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
     plt.clf()
 
 
-def overall_stats(predictions, y_true, save_path, tag):
+def overall_stats(predictions, y_true, save_path, tag, file_name):
+    if file_name.startswith("acineto"):
+        file_name = "Acinetobacter baumannii"
+    elif file_name.startswith("bacillus"):
+        file_name = "Bacillus subtilis"
+    elif file_name.startswith("candida"):
+        file_name = "Candida albicans"
+    elif file_name.startswith("enterobacter"):
+        file_name = "Enterobacter sp."
+    elif file_name.startswith("enterococc"):
+        file_name = "Enterococcus faecalis"
+    elif file_name.startswith("escher"):
+        file_name = "Escherichia coli"
+    elif file_name.startswith("klebsie"):
+        file_name = "Klebsiella pneumoniae"
+    elif file_name.startswith("micro"):
+        file_name = "Micrococcus luteus"
+    elif file_name.startswith("pseudo"):
+        file_name = "Pseudomonas aeruginosa"
+    elif file_name.startswith("salmonella"):
+        file_name = "Salmonella enterica"
+    elif file_name.startswith("staphylococcus_aureus"):
+        file_name = "Staphylococcus aureus"
+    elif file_name.startswith("staphylococcus_epi"):
+        file_name = "Staphylococcus epidermidis"
     # 1. Plotting the distribution of the target feature (y_test)
     plt.figure(figsize=(10, 6))
     sns.histplot(y_true, kde=True)
-    plt.title(f'Verteilung der MIC-Werte ({tag})')
+    plt.title(f'Verteilung der MIC-Werte ({tag})\nDaten: {file_name}')
     plt.xlabel('MIC (log10)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}target_distribution.pdf')
@@ -674,7 +705,7 @@ def overall_stats(predictions, y_true, save_path, tag):
     residuals = y_true - predictions
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
-    plt.title(f'Verteilung der Residuen ({tag})')
+    plt.title(f'Verteilung der Residuen ({tag})\nDaten: {file_name}')
     plt.xlabel('Residuen MIC/log(µM)')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
@@ -694,7 +725,7 @@ def overall_stats(predictions, y_true, save_path, tag):
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
     plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
-    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts {tag}")
+    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts ({tag})\nDaten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -728,12 +759,13 @@ def get_model_stats(plot_dir: str,
                     predictions,
                     target_data,
                     logger: logging.Logger,
+                    file_name: str,
                     tag: str):
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
 
     # plot regression train
-    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{tag}_regression.pdf",
-                         file_name=tag)
+    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{file_name + tag}_regression.pdf",
+                         file_name=file_name, tag=tag)
 
     return r2, mse
 
@@ -747,7 +779,7 @@ def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
     return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
 
 
-def make_regression_plot(y_true, y_pred, path, file_name):
+def make_regression_plot(y_true, y_pred, path, file_name, tag):
     if file_name.startswith("acineto"):
         file_name = "Acinetobacter baumannii"
     elif file_name.startswith("bacillus"):
@@ -790,7 +822,7 @@ def make_regression_plot(y_true, y_pred, path, file_name):
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
     ax_reg.set_xlabel('Vorhergesagter Wert MIC/log(µM)')
     ax_reg.set_ylabel('Tatsächlicher Wert MIC/log(µM)')
-    ax_reg.set_title('Tatsächlich vs. vorhergesagt')
+    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt ')
     ax_reg.legend(loc='best')
 
     # --- Residuen (eigene Berechnung, kein residplot)
@@ -803,7 +835,7 @@ def make_regression_plot(y_true, y_pred, path, file_name):
     ax_res.set_title('Residuen vs. Vorhersage')
     ax_res.legend(loc='best')
 
-    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) {file_name}")
+    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
     plt.tight_layout()
     plt.savefig(path)
     plt.close()
