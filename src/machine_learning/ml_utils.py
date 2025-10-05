@@ -18,7 +18,8 @@ from sklearn.metrics import (r2_score,
                              mean_absolute_error,
                              explained_variance_score,
                              mean_squared_error, precision_recall_curve, roc_auc_score, average_precision_score,
-                             roc_curve, classification_report, ConfusionMatrixDisplay, PrecisionRecallDisplay)
+                             roc_curve, classification_report, ConfusionMatrixDisplay, PrecisionRecallDisplay, f1_score,
+                             precision_score, recall_score, matthews_corrcoef)
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -116,7 +117,8 @@ def get_model_stats(model,
     r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
 
     # plot regression train
-    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf", file_name=file_name)
+    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
+                               file_name=file_name)
 
     return r2, mse
 
@@ -300,8 +302,9 @@ def add_descriptors(df):
 
 def print_results_tabular(results: list[dict], logger: logging.Logger):
     for results in results:
-        logger.info(f"{results['name']}\t{results['model_tag']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
-                    f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
+        logger.info(
+            f"{results['name']}\t{results['model_tag']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
+            f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
 
 
 def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger, file_name):
@@ -371,61 +374,84 @@ def _best_f1_threshold(y_true, y_score, plot_path):
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
-def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, tag, logger):
+def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger):
     y_score = _get_scores(best_estimator, x_data)
-    try:
-        auc = roc_auc_score(y_data, y_score)
-    except Exception:
-        auc = float('nan')
-    ap = average_precision_score(y_data, y_score)
-    # ROC curve
-    try:
-        fpr, tpr, _ = roc_curve(y_data, y_score)
-        plt.figure()
-        plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
-        plt.plot([0, 1], [0, 1], linestyle='--')
-        plt.xlabel('Falsch-Positiven-Rate')
-        plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
-        plt.title(f'ROC-Kurve ({tag})')
-        plt.legend(loc='lower right')
-        plt.grid(True)
-        roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
-        plt.savefig(roc_path)
-        plt.close()
-    except Exception as e:
-        logger.warning(f'ROC plotting skipped: {e}')
-    # PR curve
-    try:
-        precision, recall, _ = precision_recall_curve(y_data, y_score)
-        plt.figure()
-        plt.plot(recall, precision, label=f'AP={ap:.3f}')
-        plt.hlines(np.mean(y_data), 0, 1, linestyles='--')
-        plt.xlabel('Sensitivität')
-        plt.ylabel('Präzision')
-        plt.title(f'Präzisions-Sensivitäts-Kurve ({tag})')
-        plt.legend(loc='lower left')
-        plt.grid(True)
-        pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
-        plt.savefig(pr_path)
-        plt.close()
-    except Exception as e:
-        logger.warning(f'PR plotting skipped: {e}')
+
+    auc = roc_auc_score(y_true, y_score)
+
+    ap = average_precision_score(y_true, y_score)
+
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+
+    thresholds = np.linspace(0.0, 1.0, 101)
+    f1s, precisions, recalls, mccs = [], [], [], []
+
+    for thr in thresholds:
+        preds_bin = (y_score >= thr).astype(int)
+        f1s.append(f1_score(y_true, preds_bin))
+        precisions.append(precision_score(y_true, preds_bin))
+        recalls.append(recall_score(y_true, preds_bin))
+        mccs.append(matthews_corrcoef(y_true, preds_bin))
+
+    # Plot F1 vs threshold
+    plt.plot(thresholds, f1s, label="F1")
+    plt.plot(thresholds, precisions, label="Präzision")
+    plt.plot(thresholds, recalls, label="Sensitivität")
+    plt.plot(thresholds, mccs, label="MCC")
+    plt.xlabel("Schwellenwert")
+    plt.ylabel("Wert")
+    plt.legend()
+    thres_curve = f'{plot_path}/{tag}_{model_name}_threshold_curves.png'
+    plt.savefig(thres_curve)
+    plt.close()
+
+    plt.figure()
+    plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
+    plt.plot([0, 1], [0, 1], linestyle='--')
+    plt.xlabel('Falsch-Positiven-Rate')
+    plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
+    plt.title(f'ROC-Kurve ({tag})')
+    plt.legend(loc='lower right')
+    plt.grid(True)
+    roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
+    plt.savefig(roc_path)
+    plt.close()
+
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+    plt.figure()
+    plt.plot(recall, precision, label=f'AP={ap:.3f}')
+    plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
+    plt.xlabel('Sensitivität')
+    plt.ylabel('Präzision')
+    plt.title(f'Präzisions-Sensivitäts-Kurve ({tag})')
+    plt.legend(loc='lower left')
+    plt.grid(True)
+    pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
+    plt.savefig(pr_path)
+    plt.close()
+
     # Threshold tuning for F1
-    thr, f1_best, p_best, r_best = _best_f1_threshold(y_data, y_score, plot_path)
+    thr, f1_best, p_best, r_best = _best_f1_threshold(y_true, y_score, plot_path)
     logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
                 f'(P={p_best:.4f}, R={r_best:.4f})')
+
+    # Generating predictions based on calculated threshold
     y_pred = (y_score >= thr).astype(int)
+    mcc = matthews_corrcoef(y_true, y_pred)
+    logger.info(f"MCC: {mcc:.4f}")
     logger.info(f'AUROC: {auc:.4f}')
     logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
     logger.info(f"Cls report here for {tag}")
-    logger.info(classification_report(y_data, y_pred, digits=3))
-    confusion_matrix = metrics.confusion_matrix(y_data, y_pred)
+    logger.info(classification_report(y_true, y_pred, digits=3))
+    confusion_matrix = metrics.confusion_matrix(y_true, y_pred)
+
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
         (f"{tag} Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
         (f"{tag} Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
     ]
+
     for title, matrix in titles_options:
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
@@ -437,10 +463,11 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_data, t
         plt.clf()
 
 
-def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_selection = None):
+def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_selection=None):
     if calculate_features:
         # x_train, y_train, x_val, y_val = encode_onehot_with_features(df, target_col=target_col)
-        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(df, target_col=target_col, feature_selection=feature_selection)
+        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(df, target_col=target_col,
+                                                                                  feature_selection=feature_selection)
 
         if out_dir is not None:
             x_val_df = pd.DataFrame(x_val, columns=feature_names)
@@ -482,12 +509,10 @@ def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_
 
             val_df.to_csv(f"{out_dir}/val_data.csv", sep=';', index=False)
 
-
-
         return x_train, x_val, y_train, y_val, None
 
 
-def encode_kmer_with_features(df, target_col, n_components=128, feature_selection = None):
+def encode_kmer_with_features(df, target_col, n_components=128, feature_selection=None):
     df = add_descriptors(df)  # <- deine Funktion für desc__*
     df = df[feature_selection + ['sequence', target_col]] if feature_selection else df
 
@@ -531,9 +556,7 @@ def encode_kmer_with_features(df, target_col, n_components=128, feature_selectio
     return X_train, y_train, X_val, y_val, feature_names
 
 
-def encode_kmer_no_features(df, target_col, n_components=128, feature_selection = None):
-
-
+def encode_kmer_no_features(df, target_col, n_components=128, feature_selection=None):
     # Split ohne Leckage: nach einzigartigen Sequenzen
     uniq = df['sequence'].unique()
     tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
@@ -556,10 +579,6 @@ def encode_kmer_no_features(df, target_col, n_components=128, feature_selection 
     x_train = svd.fit_transform(x_train)
     x_val = svd.transform(x_val)
 
-
-
-
-
     return x_train, y_train, x_val, y_val
 
 
@@ -580,37 +599,32 @@ def get_feature_importance(file_path: str,
                                       n_jobs=1)
 
         model_for_pi = RandomForestRegressor(n_estimators=800,
-                                      max_depth=None,
-                                      max_features='sqrt',
-                                      min_samples_split=2,
-                                      random_state=42,
-                                      n_jobs=1)
+                                             max_depth=None,
+                                             max_features='sqrt',
+                                             min_samples_split=2,
+                                             random_state=42,
+                                             n_jobs=1)
         scoring = 'r2'
 
     else:
         model = RandomForestClassifier(n_estimators=800,
-                                      max_depth=None,
-                                      max_features='sqrt',
-                                      min_samples_split=2,
-                                      random_state=42,
-                                      n_jobs=1)
-
-        model_for_pi = RandomForestClassifier(n_estimators=800,
                                        max_depth=None,
                                        max_features='sqrt',
                                        min_samples_split=2,
                                        random_state=42,
                                        n_jobs=1)
+
+        model_for_pi = RandomForestClassifier(n_estimators=800,
+                                              max_depth=None,
+                                              max_features='sqrt',
+                                              min_samples_split=2,
+                                              random_state=42,
+                                              n_jobs=1)
         scoring = 'roc_auc'
-
-
-
-
 
     df, target_col = prepare_df(file_path, task)
 
     x_train, x_val, y_train, y_val, feature_names = prepare_train_val_data(calculate_features, df, target_col, None)
-
 
     desc_idx = [i for i, f in enumerate(feature_names) if f.startswith('desc__')]
     desc_names = [desc for desc in feature_names if desc.startswith('desc__')]
@@ -661,10 +675,6 @@ def get_feature_importance(file_path: str,
     with open(f"{plot_path}/feature_selection.txt", 'w', encoding='utf-8') as file:
         for line in selected_names:
             file.write(line + '\n')
-
-
-
-
 
     return selected_names
 
