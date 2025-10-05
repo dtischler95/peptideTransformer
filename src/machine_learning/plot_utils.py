@@ -112,7 +112,7 @@ def plot_permutation_importance_from_est(estimator,
 
 
 
-def make_regression(y_true, y_pred, file_name, path, model_name):
+def make_regression(y_true, y_pred, file_name, path, model_name, tag):
 
     if file_name.startswith("acineto"):
         file_name = "Acinetobacter baumannii"
@@ -171,7 +171,7 @@ def make_regression(y_true, y_pred, file_name, path, model_name):
     ax_res.set_title(f'Residuen vs. Vorhersage')
     ax_res.legend(loc='best')
 
-    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f})\nModel: {model_name} Daten: {file_name}")
+    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) ({tag})\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(path)
     plt.close()

@@ -119,7 +119,7 @@ def get_model_stats(model,
 
     # plot regression train
     plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
-                               file_name=file_name, model_name=model_name)
+                               file_name=file_name, model_name=model_name, tag=tag)
 
     return r2, mse
 
