@@ -121,6 +121,38 @@ class PlotMetricsCallback(TrainerCallback):
                           train_metrics: list,
                           eval_metrics: list,
                           metric_name: str):
+
+        file_name = args.train_file.split('/')[-1]
+
+        if file_name.startswith("acineto"):
+            file_name = "Acinetobacter baumannii"
+        elif file_name.startswith("bacillus"):
+            file_name = "Bacillus subtilis"
+        elif file_name.startswith("candida"):
+            file_name = "Candida albicans"
+        elif file_name.startswith("enterobacter"):
+            file_name = "Enterobacter sp."
+        elif file_name.startswith("enterococc"):
+            file_name = "Enterococcus faecalis"
+        elif file_name.startswith("escher"):
+            file_name = "Escherichia coli"
+        elif file_name.startswith("klebsie"):
+            file_name = "Klebsiella pneumoniae"
+        elif file_name.startswith("micro"):
+            file_name = "Micrococcus luteus"
+        elif file_name.startswith("pseudo"):
+            file_name = "Pseudomonas aeruginosa"
+        elif file_name.startswith("salmonella"):
+            file_name = "Salmonella enterica"
+        elif file_name.startswith("staphylococcus_aureus"):
+            file_name = "Staphylococcus aureus"
+        elif file_name.startswith("staphylococcus_epi"):
+            file_name = "Staphylococcus epidermidis"
+        elif file_name == 'happen_style':
+            file_name = 'Eigener Schwellenwert-Datensatz'
+        else:
+            file_name = 'WhiteLab-Datensatz'
+
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
@@ -132,7 +164,7 @@ class PlotMetricsCallback(TrainerCallback):
 
         plt.xticks(epochs)
 
-        plt.title(f"{metric_name}")
+        plt.title(f"{metric_name}\nDaten: {file_name}")
         plt.legend()
 
         plt.savefig(os.path.join(args.plot_path, f"{args.model_class}_{metric_name}_curves.png"))
