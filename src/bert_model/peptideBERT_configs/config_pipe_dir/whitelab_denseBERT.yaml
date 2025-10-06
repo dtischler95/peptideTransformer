@@ -12,7 +12,7 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 10            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
-add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Model and Optimizer Settings
 learning_rate: 0.00001            # Learning rate for optimizer
