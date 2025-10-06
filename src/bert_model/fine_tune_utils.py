@@ -18,7 +18,8 @@ from sklearn.metrics import (r2_score,
                              f1_score,
                              precision_score,
                              recall_score,
-                             matthews_corrcoef)
+                             matthews_corrcoef,
+                             classification_report, roc_auc_score)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
@@ -467,7 +468,7 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
                          tag: str,
                          file_name: str):
     if file_name == 'happen_style':
-        file_name = 'Eigener Schwellenwert-Datensatz'
+        file_name = 'Schwellenwert-Datensatz'
     else:
         file_name = 'WhiteLab-Datensatz'
 
@@ -505,6 +506,11 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     print(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
           f'(P={p_best:.4f}, R={r_best:.4f})')
 
+    mcc = matthews_corrcoef(y_true, format_logit_to_label(logits=logits, threshold=thr))
+    print(f"MCC: {mcc:.4f}")
+    auc = roc_auc_score(y_true, y_score)
+    print(f'AUROC: {auc:.4f}')
+    print(classification_report(y_true, format_logit_to_label(logits=logits, threshold=thr), digits=3))
     confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits, threshold=thr))
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
@@ -724,7 +730,7 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
-    plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
+    plt.ylabel("Residuen (log$_{10}$ µM)")
     plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts ({tag})\nDaten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')

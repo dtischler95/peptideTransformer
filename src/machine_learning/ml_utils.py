@@ -245,7 +245,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
     sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
 
     plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
-    plt.ylabel("Residuen (tatsächlich – vorhergesagt) (log$_{10}$ µM)")
+    plt.ylabel("Residuen (log$_{10}$ µM)")
     plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts {tag}\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
@@ -416,7 +416,7 @@ def _best_f1_threshold(y_true, y_score, plot_path):
 
 def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
     if data_name == 'happen_style':
-        data_name = 'Eigener Schwellenwert-Datensatz'
+        data_name = 'Schwellenwert-Datensatz'
     else:
         data_name = 'WhiteLab-Datensatz'
 
@@ -494,8 +494,8 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
-        (f"Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        (f"Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"Konfusionsmatrix", confusion_matrix),
+        (f"Konfusionsmatrix, Normalisiert", confusion_matrix_normalized),
     ]
 
     for title, matrix in titles_options:
@@ -638,7 +638,7 @@ def get_feature_importance(file_path: str,
 
     """
     if file_name == 'happen_style':
-        file_name = 'Eigener Schwellenwert-Datensatz'
+        file_name = 'Schwellenwert-Datensatz'
     elif file_name == 'whitelab_hemo':
         file_name = 'WhiteLab-Datensatz'
     elif file_name.startswith("acineto"):
