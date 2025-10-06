@@ -9,11 +9,19 @@ import sys
 import ml_utils
 import config
 import logging
+import matplotlib as mpl
 
 from pathlib import Path
 from typing import Iterable, Any
 
 logger = logging.getLogger(__name__)
+mpl.rcParams.update({
+    'font.size': 16,        # Basisgröße für alles,
+    'axes.titlesize': 18,       # Titel der Achsen
+    'axes.labelsize': 15,       # Achsenbeschriftungen (xlabel, ylabel)
+    'xtick.labelsize': 14,      # Tick-Beschriftungen X-Achse
+    'ytick.labelsize': 14,      # Tick-Beschriftungen Y-Achse
+})
 
 # --------------------- Setup logging and configs ---------------------
 # Setup logging

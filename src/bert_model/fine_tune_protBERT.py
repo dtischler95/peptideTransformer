@@ -12,6 +12,15 @@ from src.bert_model.fine_tune_utils import prepare_datasets, load_training_argum
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
+import matplotlib as mpl
+mpl.rcParams.update({
+    'font.size': 13,        # Basisgröße für alles,
+    'axes.titlesize': 18,       # Titel der Achsen
+    'axes.labelsize': 15,       # Achsenbeschriftungen (xlabel, ylabel)
+    'xtick.labelsize': 14,      # Tick-Beschriftungen X-Achse
+    'ytick.labelsize': 14,      # Tick-Beschriftungen Y-Achse
+})
+
 # this line should be included in the TrainingArguments
 logger = logging.getLogger(__name__)
 
@@ -109,11 +118,11 @@ def fine_tune(config_path: str):
     )
 
     # --------------------- Train, evaluate and predict ---------------------
-    if training_args.do_train:
-        trainer.train()
-        trainer.save_model(training_args.model_save_path)
-        tokenizer.save_pretrained(training_args.model_save_path)
-        logger.info(f"*** Model saved to {training_args.model_save_path} ***")
+    # if training_args.do_train:
+    #     trainer.train()
+    #     trainer.save_model(training_args.model_save_path)
+    #     tokenizer.save_pretrained(training_args.model_save_path)
+    #     logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
         file_name = training_args.train_file.split('/')[-1].split('.')[0]
@@ -238,4 +247,4 @@ def fine_tune(config_path: str):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='peptideBERT_configs/debug_regBERT_config.yaml')  # Path to the config file

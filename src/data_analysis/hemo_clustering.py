@@ -11,7 +11,6 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from transformers import BertTokenizer, BertModel
 
-
 """
 This code is an to my usecase adapted version of the code from Lukas Bayerle 
 of the workgroup i work in for Prof. Dr. Franz Cemic.
@@ -52,11 +51,11 @@ def seperate_points(data, labels):
             positive.append(data[label])
         else:
             negative.append(data[label])
-    #return np.array(positive), np.array(negative)
+    # return np.array(positive), np.array(negative)
     return np.array(positive).reshape(-1, 2), np.array(negative).reshape(-1, 2)
 
 
-def plot_pca(pca, pca_fit, labels, plot_path=""):
+def plot_pca22(pca, pca_fit, labels, plot_path=""):
     """
     Plot PCA analysis of the data points.
 
@@ -118,7 +117,112 @@ def plot_pca(pca, pca_fit, labels, plot_path=""):
         plt.show()
 
 
-def plot_tsne(tsne_fit, labels, plot_path=""):
+def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
+    """
+    Plot PCA analysis of the data points.
+
+    :param pca: PCA object (scikit-learn)
+    :param pca_fit: PCA transformed data (n_samples, n_components)
+    :param labels: class labels (optional)
+    :param lengths: sequence lengths (optional) -> wenn gesetzt, wird nach Länge eingefärbt
+    :param plot_path: path to save the plot (ohne Endung)
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
+
+    if lengths is not None:
+        lengths = np.asarray(lengths, dtype=float)
+        sc = ax1.scatter(
+            pca_fit[:, 0], pca_fit[:, 1],
+            c=lengths, cmap="viridis",
+            s=12, alpha=0.85, edgecolors="none"
+        )
+        cb = fig.colorbar(sc, ax=ax1)
+        cb.set_label("Sequenzlänge (AAs)")
+        # optional: Labelzahlen in Legende
+        if labels is not None:
+            ax1.legend([f"Positive: {int(np.sum(np.asarray(labels)==1))}",
+                        f"Negative: {int(np.sum(np.asarray(labels)==0))}"],
+                       frameon=True, loc="best")
+    else:
+        assert labels is not None, "Für Klassenplot 'labels' übergeben oder 'lengths' setzen."
+        labels_arr = np.asarray(labels)
+        pos = pca_fit[labels_arr == 1]
+        neg = pca_fit[labels_arr == 0]
+        ax1.scatter(pos[:, 0], pos[:, 1], c="lawngreen", alpha=0.7,
+                    label=f"Positive: {int(np.sum(labels_arr==1))}", s=12)
+        ax1.scatter(neg[:, 0], neg[:, 1], c="darkgrey", alpha=0.7,
+                    label=f"Negative: {int(np.sum(labels_arr==0))}", s=12)
+        ax1.legend(loc="best")
+
+    ax1.set_title("PCA auf Sequenz-Embeddings")
+    ax1.set_xlabel("Komponente 1")
+    ax1.set_ylabel("Komponente 2")
+
+    # rechte Seite: erklärte Varianz
+    ax2.set_title("Erklärte Varianz der PCA")
+    ax2.set_ylabel("Anteil erklärte Varianz")
+    ax2.set_xlabel("Hauptkomponenten")
+    # zeige z. B. die ersten 10 Komponenten
+    ncomps = min(10, len(pca.explained_variance_ratio_))
+    ax2.plot(np.arange(ncomps) + 1, pca.explained_variance_ratio_[:ncomps],
+             "o-", linewidth=2)
+
+    plt.suptitle("PCA-Analyse der Sequenzen")
+
+    if plot_path:
+        plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="TSNE auf Sequenz-Embeddings"):
+    """
+    tsne_fit : array (n,2) – t-SNE-Koordinaten
+    labels   : Liste/Array aus {0,1} (optional, für Klassen-Plot)
+    lengths  : Liste/Array Sequenzlängen (optional, für Längen-Plot)
+               -> Wenn gesetzt, wird nach Länge eingefärbt und 'labels' nur für Legendenzahlen genutzt.
+    plot_path: ohne Endung; speichert als PDF wenn gesetzt
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
+
+    if lengths is not None:
+        lengths = np.asarray(lengths, dtype=float)
+        sc = ax.scatter(
+            tsne_fit[:, 0], tsne_fit[:, 1],
+            c=lengths, s=12, alpha=0.85, cmap="viridis", edgecolors="none"
+        )
+        cb = fig.colorbar(sc, ax=ax)
+        cb.set_label("Sequenzlänge (AAs)")
+        # optional: zusätzliche Info in der Legende
+        if labels is not None:
+            ax.legend([f"Positive: {int(np.sum(np.asarray(labels) == 1))}",
+                       f"Negative: {int(np.sum(np.asarray(labels) == 0))}"],
+                      frameon=True, loc="best")
+    else:
+        # klassischer Klassen-Plot
+        assert labels is not None, "Für Klassen-Plot 'labels' übergeben oder 'lengths' setzen."
+        labels_arr = np.asarray(labels)
+        pos = tsne_fit[labels_arr == 1]
+        neg = tsne_fit[labels_arr == 0]
+        ax.scatter(pos[:, 0], pos[:, 1], c="lawngreen", alpha=0.7,
+                   label=f"Positive: {int(np.sum(labels_arr == 1))}", s=12)
+        ax.scatter(neg[:, 0], neg[:, 1], c="darkgrey", alpha=0.7,
+                   label=f"Negative: {int(np.sum(labels_arr == 0))}", s=12)
+        ax.legend(loc="best")
+
+    ax.set_title(title)
+    ax.set_xlabel("Komponente 1")
+    ax.set_ylabel("Komponente 2")
+
+    if plot_path:
+        plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_tsne22(tsne_fit, labels, plot_path=""):
     """
     Plot TSNE analysis of the data points.
 
@@ -166,7 +270,7 @@ def plot_tsne(tsne_fit, labels, plot_path=""):
         plt.show()
 
 
-def plot_umap(data, labels, plot_path=""):
+def plot_umap22(data, labels, plot_path=""):
     """
     Plot UMAP analysis of the data points.
 
@@ -196,12 +300,6 @@ def plot_umap(data, labels, plot_path=""):
         s=10
     )
 
-    # plot_density(
-    #     x=umapped[:, 0],
-    #     y=umapped[:, 1],
-    #     ax=ax,
-    #     labels=labels,
-    # )
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
@@ -217,9 +315,69 @@ def plot_umap(data, labels, plot_path=""):
     return umapped
 
 
+def plot_umap(data, labels=None, lengths=None, plot_path=""):
+    """
+    Plot UMAP analysis of the data points.
+
+    :param data: high-dimensional data points
+    :param labels: class labels of the data points (optional)
+    :param lengths: sequence lengths (optional) -> wenn gesetzt, wird nach Länge eingefärbt
+    :param plot_path: path to save the plot (ohne Endung)
+    """
+    reducer = umap.UMAP(n_components=2, n_neighbors=15, random_state=42)
+    umapped = reducer.fit_transform(data)
+
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
+
+    if lengths is not None:
+        lengths = np.asarray(lengths, dtype=float)
+        sc = ax.scatter(
+            umapped[:, 0],
+            umapped[:, 1],
+            c=lengths,
+            cmap="viridis",
+            s=12,
+            alpha=0.85,
+            edgecolors="none"
+        )
+        cb = fig.colorbar(sc, ax=ax)
+        cb.set_label("Sequenzlänge (AAs)")
+
+        # optional Legende mit Labelzahlen
+        if labels is not None:
+            ax.legend([f"Positive: {int(np.sum(np.asarray(labels)==1))}",
+                       f"Negative: {int(np.sum(np.asarray(labels)==0))}"],
+                      frameon=True, loc="best")
+
+    else:
+        # klassischer Klassenplot wie bisher
+        assert labels is not None, "Für Klassenplot 'labels' übergeben oder 'lengths' setzen."
+        labels_arr = np.asarray(labels)
+        pos = umapped[labels_arr == 1]
+        neg = umapped[labels_arr == 0]
+        ax.scatter(pos[:, 0], pos[:, 1], c="lawngreen", alpha=0.7,
+                   label=f"Positive: {int(np.sum(labels_arr==1))}", s=12)
+        ax.scatter(neg[:, 0], neg[:, 1], c="darkgrey", alpha=0.7,
+                   label=f"Negative: {int(np.sum(labels_arr==0))}", s=12)
+        ax.legend(loc="best")
+
+    ax.set_title("UMAP auf Sequenz-Embeddings")
+    ax.set_xlabel("Komponente 1")
+    ax.set_ylabel("Komponente 2")
+
+    if plot_path:
+        plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
+        plt.close(fig)
+    else:
+        plt.show()
+
+    return umapped
+
+
 def perform_clustering(embedded_sequences,
                        sequence_labels,
                        plot_path: str,
+                       seq_lens,
                        logger: logging.Logger or None = None,
                        tag: str = ""):
     """
@@ -251,11 +409,11 @@ def perform_clustering(embedded_sequences,
             print(
                 f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
             print(f"Unique labels: {unique_labels}")
-            silhouette_score = None
-            return
+            silhouette_score = 'None'
+
         else:
             silhouette_score = metrics.silhouette_score(
-                data, cluster_labels, sample_size=10, random_state=42
+                data, cluster_labels, random_state=42
             )
 
         res = {
@@ -312,9 +470,9 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    # if logger:
-    #     logger.info("[Clustering] Starting clustering analysis PCA")
-    # pca, pca_fit = run_pca(embedded_sequences)
+    if logger:
+        logger.info("[Clustering] Starting clustering analysis PCA")
+    pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -324,20 +482,23 @@ def perform_clustering(embedded_sequences,
         logger.info("[Clustering] Starting clustering analysis UMAP")
     umap_fit = run_umap(embedded_sequences)
 
-    # # print("[Clustering] Running KMeans for PCA")
-    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    # print("[Clustering] Running KMeans for PCA")
+    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-    #
-    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}/{tag}_pca_plot")
+
+    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}{tag}_pca_plot")
+    plot_pca(pca, pca_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_pca_length_plot")
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
+    plot_tsne(tsne_fit, lengths=seq_lens,plot_path=f"{plot_path}{tag}_tsne_length_plot")
     print("[Clustering] Plotting UMAP")
     plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}{tag}_umap_plot")
+    plot_umap(umap_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_umap_length_plot")
 
 
 def encode_peptides(sequence_file,
@@ -346,7 +507,7 @@ def encode_peptides(sequence_file,
                     add_features: bool,
                     sequence_max_length: int,
                     logger: logging.Logger or None = None,
-                    scaler = None,
+                    scaler=None,
                     label_0_cluster_data: int = 500,
                     label_1_cluster_data: int = 500,
                     tokenizer_and_model: [BertTokenizer, BertModel] or None = None,
@@ -366,7 +527,7 @@ def encode_peptides(sequence_file,
 
     df = pd.DataFrame({'sequence': sequence_file.peptides, 'label': sequence_file.labels})
     # Shuffle the data to ensure labels are mixed
-    df = df.sample(frac=1).reset_index(drop=False).rename(columns={'index':'orig_idx'})
+    df = df.sample(frac=1).reset_index(drop=False).rename(columns={'index': 'orig_idx'})
 
     # ------------
     # Change number of datapoints used for clustering here.
@@ -375,7 +536,7 @@ def encode_peptides(sequence_file,
                                            label_1_data=label_1_cluster_data,
                                            plot_path=plot_path)
     # ------------
-
+    seq_lens = [len(seq) for seq in df['sequence']]
     # Prepare peptides
     # peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
@@ -391,16 +552,12 @@ def encode_peptides(sequence_file,
 
         outputs = model(**enc, return_pooler_output=True)
 
-
-
         embeddings.append(outputs.cpu().detach().numpy())
         progress += len(batch_peptides)
         if logger:
             logger.info(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
         else:
             print(f"[Embedding] Progress: {progress}/{len(df['sequence'])}")
-
-
 
     # Concatenate all batch embeddings
     embeddings = np.vstack(embeddings)
@@ -409,17 +566,14 @@ def encode_peptides(sequence_file,
         embeddings = scaler.fit_transform(embeddings)
     else:
         embeddings = scaler.transform(embeddings)
-    embeddings_to_return = [('seq_embedding',embeddings)]
+    embeddings_to_return = [('seq_embedding', embeddings)]
     if add_features:
         seq_feature_embedding = np.hstack([embeddings, sequence_file.features[df['orig_idx'].values]])
 
-        embeddings_to_return.append(('seq_feature_embedding' , seq_feature_embedding))
+        embeddings_to_return.append(('seq_feature_embedding', seq_feature_embedding))
         embeddings_to_return.append(('feature_vector', sequence_file.features[df['orig_idx'].values]))
 
-
-
-    return embeddings_to_return, df['label'].to_list(), scaler
-
+    return embeddings_to_return, df['label'].to_list(), seq_lens, scaler
 
 
 def cluster_model_embedding(file_path,
@@ -432,7 +586,7 @@ def cluster_model_embedding(file_path,
                             label_0_cluster_data: int = 500,
                             label_1_cluster_data: int = 500,
                             logger: logging.Logger or None = None,
-                            scaler = None,
+                            scaler=None,
                             tokenizer_and_model: [BertTokenizer, BertModel] or None = None):
     """
     Standalone Wrapper for clustering analysis if you run this file directly.
@@ -456,26 +610,29 @@ def cluster_model_embedding(file_path,
     if device is None:
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    embedding, labels, scaler = encode_peptides(sequence_file=file_path,
-                                        batch_size=batch_size,
-                                        tokenizer_and_model=tokenizer_and_model,
-                                        device=device,
-                                        sequence_max_length=sequence_max_length,
-                                        label_0_cluster_data=label_0_cluster_data,
-                                        label_1_cluster_data=label_1_cluster_data,
-                                        logger=logger,
-                                        scaler=scaler,
-                                        plot_path=plot_path,
-                                        add_features=add_features)
+    embedding, labels, seq_lens, scaler = encode_peptides(sequence_file=file_path,
+                                                          batch_size=batch_size,
+                                                          tokenizer_and_model=tokenizer_and_model,
+                                                          device=device,
+                                                          sequence_max_length=sequence_max_length,
+                                                          label_0_cluster_data=label_0_cluster_data,
+                                                          label_1_cluster_data=label_1_cluster_data,
+                                                          logger=logger,
+                                                          scaler=scaler,
+                                                          plot_path=plot_path,
+                                                          add_features=add_features)
 
     for emb in embedding:
         perform_clustering(embedded_sequences=emb[1],
                            sequence_labels=labels,
                            logger=logger,
                            tag=data_tag + emb[0],
+                           seq_lens=seq_lens,
                            plot_path=plot_path)
 
     return scaler
+
+
 def reduce_data_points_for_clustering(df: pd.DataFrame,
                                       plot_path: str,
                                       label_0_data: int = 500,
@@ -503,10 +660,8 @@ def reduce_data_points_for_clustering(df: pd.DataFrame,
     result_df.to_csv(f"{plot_path}data_used_for_clustering.csv", sep=';',
                      index=False)  # TODO maybe make this optional?
 
-
     return result_df
 
 
 if __name__ == "__main__":
-
     ...

@@ -10,6 +10,15 @@ import logging
 
 from pathlib import Path
 from typing import Iterable, Any
+import matplotlib as mpl
+
+mpl.rcParams.update({
+    'font.size': 15,        # Basisgröße für alles,
+    'axes.titlesize': 16,       # Titel der Achsen
+    'axes.labelsize': 15,       # Achsenbeschriftungen (xlabel, ylabel)
+    'xtick.labelsize': 14,      # Tick-Beschriftungen X-Achse
+    'ytick.labelsize': 14,      # Tick-Beschriftungen Y-Achse
+})
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +156,7 @@ if __name__ == "__main__":
         config.svc_cls_param_grid
     ]
 
-    run_all(calculate_features=True,
+    run_all(calculate_features=False,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)
