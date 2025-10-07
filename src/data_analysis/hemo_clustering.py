@@ -187,7 +187,7 @@ def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="TSNE auf
     fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
 
     if lengths is not None:
-        lengths = np.asarray(lengths, dtype=float)
+        lengths = np.asarray(lengths, dtype=int)
         sc = ax.scatter(
             tsne_fit[:, 0], tsne_fit[:, 1],
             c=lengths, s=12, alpha=0.85, cmap="viridis", edgecolors="none"
@@ -536,7 +536,7 @@ def encode_peptides(sequence_file,
                                            label_1_data=label_1_cluster_data,
                                            plot_path=plot_path)
     # ------------
-    seq_lens = [len(seq) for seq in df['sequence']]
+    seq_lens = [len(''.join(seq.split(' '))) for seq in df['sequence']]
     # Prepare peptides
     # peptides_prepared = [' '.join(pep) for pep in df['sequence'].to_list()]
 
