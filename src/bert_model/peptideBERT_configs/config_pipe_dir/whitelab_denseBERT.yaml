@@ -46,6 +46,7 @@ logging_dir: './logs_whitelab'           # Path to logging directory
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
+save_strategy: 'epoch'          # Save strategy (set to 'epoch' for this logic)
 
 # Reproducibility
 seed: 42                        # Random seed for reproducibility
