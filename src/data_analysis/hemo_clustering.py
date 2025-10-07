@@ -470,9 +470,9 @@ def perform_clustering(embedded_sequences,
         # scores.write_csv(output_path, separator=";", include_header=True)
         return kmeans, kmeans.labels_
 
-    if logger:
-        logger.info("[Clustering] Starting clustering analysis PCA")
-    pca, pca_fit = run_pca(embedded_sequences)
+    # if logger:
+    #     logger.info("[Clustering] Starting clustering analysis PCA")
+    # pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -483,15 +483,15 @@ def perform_clustering(embedded_sequences,
     umap_fit = run_umap(embedded_sequences)
 
     # print("[Clustering] Running KMeans for PCA")
-    pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
+    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-
-    plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}{tag}_pca_plot")
-    plot_pca(pca, pca_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_pca_length_plot")
+    #
+    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}{tag}_pca_plot")
+    # plot_pca(pca, pca_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_pca_length_plot")
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
