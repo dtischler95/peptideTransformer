@@ -13,7 +13,7 @@ early_stop_warm_up: 10            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
-add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Model and Optimizer Settings
 learning_rate: 0.00001            # Learning rate for optimizer
@@ -30,10 +30,10 @@ loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_log
 
 
 # Dataset and File Paths
-train_file: './data/hemo_train/happen_style_unvoted.csv'  # Path to training data
+train_file: './data/hemo_train/whitelab_hemo_data.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                               # Path to pretrained model
-model_save_path: './models/hemo_our'             # Path to save the model
-plot_path: './model_plots/hemo_our_plots'                                   # Path to save the plots
+model_save_path: './models/whitelab'             # Path to save the model
+plot_path: './model_plots/whitelab_plots'                                   # Path to save the plots
 
 # Validation and Test Settings
 validation_data_size: 0.2       # Validation dataset size (fraction)
@@ -41,8 +41,8 @@ test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
-output_dir: './results_our'         # Path to checkpoints
-logging_dir: './logs_our'           # Path to logging directory
+output_dir: './results_whitelab'         # Path to checkpoints
+logging_dir: './logs_whitelab'           # Path to logging directory
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
