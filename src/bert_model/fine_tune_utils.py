@@ -19,7 +19,7 @@ from sklearn.metrics import (r2_score,
                              precision_score,
                              recall_score,
                              matthews_corrcoef,
-                             classification_report, roc_auc_score)
+                             classification_report, roc_auc_score, roc_curve, average_precision_score)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
@@ -503,6 +503,10 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
 
     thr, f1_best, p_best, r_best = best_f1_threshold(y_true=y_true, y_score=logits.flatten(), plot_path=plot_path)
 
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+
+
+
     print(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
           f'(P={p_best:.4f}, R={r_best:.4f})')
 
@@ -510,6 +514,33 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     print(f"MCC: {mcc:.4f}")
     auc = roc_auc_score(y_true, y_score)
     print(f'AUROC: {auc:.4f}')
+
+    plt.figure()
+    plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
+    plt.plot([0, 1], [0, 1], linestyle='--')
+    plt.xlabel('Falsch-Positiven-Rate')
+    plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
+    plt.title(f'ROC-Kurve ({tag})\nDaten: {file_name}')
+    plt.legend(loc='lower right')
+    plt.grid(True)
+    roc_path = f'{plot_path}_roc_curve.png'
+    plt.savefig(roc_path)
+    plt.close()
+
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+    ap = average_precision_score(y_true, y_score)
+    plt.figure()
+    plt.plot(recall, precision, label=f'AP={ap:.3f}')
+    plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
+    plt.xlabel('Sensitivität')
+    plt.ylabel('Präzision')
+    plt.title(f'Präzisions-Sensitivität-Kurve ({tag})\nDaten: {file_name}')
+    plt.legend(loc='lower left')
+    plt.grid(True)
+    pr_path = f'{plot_path}_pr.png'
+    plt.savefig(pr_path)
+    plt.close()
+
     print(classification_report(y_true, format_logit_to_label(logits=logits, threshold=thr), digits=3))
     confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits, threshold=thr))
     with np.errstate(all='ignore'):
