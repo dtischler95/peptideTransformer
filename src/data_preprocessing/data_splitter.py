@@ -79,7 +79,12 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
 
 def main(file_dir: str, task: str, target_col: str,
          test_size=0.20, val_size=0.16, random_state=42):
-    for train_file in Path(file_dir).glob("*regression.csv"):
+
+    if task == "classification":
+        data_dir_suffix = '*.csv'
+    else:
+        data_dir_suffix = '*regression.csv'
+    for train_file in Path(file_dir).glob(data_dir_suffix):
         tmp_df = pd.read_csv(train_file, sep=';')
         if task == "classification":
             try:
