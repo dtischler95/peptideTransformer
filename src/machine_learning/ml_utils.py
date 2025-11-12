@@ -147,8 +147,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
         scoring = {
             'roc_auc': 'roc_auc',
             'ap': 'average_precision',
-            'f1': 'f1',
-            'bal_acc': 'balanced_accuracy',
+            'f1': 'f1'
         }
         refit = 'roc_auc'
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -212,7 +211,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
     plt.figure(figsize=(10, 6))
     sns.histplot(y_test, kde=True)
     plt.title(f'Verteilung der MIC-Werte ({tag})\nModel: {model_name} Daten: {file_name}')
-    plt.xlabel('MIC (log$_{10}$ µM)')
+    plt.xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}_target_distribution.pdf')
     plt.close()
@@ -227,7 +226,7 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
     plt.title(f'Verteilung der Residuen ({tag})\nModel: {model_name} Daten: {file_name}')
-    plt.xlabel('Residuen MIC (log$_{10}$ µM)')
+    plt.xlabel(r'Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
@@ -244,9 +243,9 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
     plt.figure(figsize=(8, 4))
     sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
 
-    plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
-    plt.ylabel("Residuen (log$_{10}$ µM)")
-    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts {tag}\nModel: {model_name} Daten: {file_name}")
+    plt.xlabel(r"Quartile des tatsächlichen Werts $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.title(f"Quartilplot des tatsächlichen MIC-Werts {tag}\nModel: {model_name} Daten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -348,7 +347,7 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
                                       target_data=y_val,
                                       logger=logger,
                                       file_name=file_name,
-                                      tag="Validierung",
+                                      tag="Test",
                                       model_name=model_name)
 
     overall_stats(best_estimator=best_estimator,
@@ -362,25 +361,29 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
                   x_test=x_val,
                   y_test=y_val,
                   save_path=plot_path,
-                  tag='Validierung',
+                  tag='Test',
                   file_name=file_name,
                   model_name=model_name)
     return train_mse, train_r2, val_mse, val_r2
 
 
 def prepare_df(file_path, task):
-    df = pd.read_csv(file_path, sep=';')
+
+
+    train_df = pd.read_csv(file_path.replace(".csv", "_train.csv"), sep=';')
+    test_df = pd.read_csv(file_path.replace(".csv", "_test.csv"), sep=';')
     if task == 'mic':
         target_col = 'mic_log10'
     elif task == 'hemo':
         try:
-            df = df.drop(columns=['hemo_percent', 'hemo_concentration'])
+            train_df = train_df.drop(columns=['hemo_percent', 'hemo_concentration'])
+            test_df = test_df.drop(columns=['hemo_percent', 'hemo_concentration'])
         except KeyError:
             pass
         target_col = 'label'
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
-    return df, target_col
+    return train_df, test_df, target_col
 
 
 def _get_scores(model, X):
@@ -428,28 +431,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
 
     fpr, tpr, _ = roc_curve(y_true, y_score)
 
-    thresholds = np.linspace(0.0, 1.0, 101)
-    f1s, precisions, recalls, mccs = [], [], [], []
 
-    for thr in thresholds:
-        preds_bin = (y_score >= thr).astype(int)
-        f1s.append(f1_score(y_true, preds_bin))
-        precisions.append(precision_score(y_true, preds_bin))
-        recalls.append(recall_score(y_true, preds_bin))
-        mccs.append(matthews_corrcoef(y_true, preds_bin))
-
-    # Plot F1 vs threshold
-    plt.plot(thresholds, f1s, label="F1")
-    plt.plot(thresholds, precisions, label="Präzision")
-    plt.plot(thresholds, recalls, label="Sensitivität")
-    plt.plot(thresholds, mccs, label="MCC")
-    plt.title(f"Schwellenwertanalyse der Modellmetriken ({tag})\nModel: {model_name} Daten: {data_name}")
-    plt.xlabel("Schwellenwert")
-    plt.ylabel("Wert")
-    plt.legend()
-    thres_curve = f'{plot_path}/{tag}_{model_name}_threshold_curves.png'
-    plt.savefig(thres_curve)
-    plt.close()
 
     plt.figure()
     plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
@@ -476,13 +458,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     plt.savefig(pr_path)
     plt.close()
 
-    # Threshold tuning for F1
-    thr, f1_best, p_best, r_best = _best_f1_threshold(y_true, y_score, plot_path)
-    logger.info(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
-                f'(P={p_best:.4f}, R={r_best:.4f})')
-
-    # Generating predictions based on calculated threshold
-    y_pred = (y_score >= thr).astype(int)
+    y_pred = (y_score >= 0.5).astype(int)
     mcc = matthews_corrcoef(y_true, y_pred)
     logger.info(f"MCC: {mcc:.4f}")
     logger.info(f'AUROC: {auc:.4f}')
@@ -494,26 +470,25 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
     titles_options = [
-        (f"Konfusionsmatrix", confusion_matrix),
-        (f"Konfusionsmatrix, Normalisiert", confusion_matrix_normalized),
+        (f"Konfusionsmatrix", 1, confusion_matrix),
+        (f"Konfusionsmatrix", 2, confusion_matrix_normalized),
     ]
 
-    for title, matrix in titles_options:
+    for title, i, matrix in titles_options:
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
         plt.title(f"{title} ({tag})\nModel: {model_name} Daten: {data_name}")
         plt.xlabel('Vorhergesagte Klasse')
         plt.ylabel('Tatsächliche Klasse')
-        plt.savefig(f"{plot_path}/{tag}_{title}.png")
+        plt.savefig(f"{plot_path}/{tag}_{i}_{title}.png")
         plt.close()
         plt.clf()
 
 
-def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_selection=None):
+def prepare_train_val_data(calculate_features, train_df, test_df, target_col, out_dir):
     if calculate_features:
-        # x_train, y_train, x_val, y_val = encode_onehot_with_features(df, target_col=target_col)
-        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(df, target_col=target_col,
-                                                                                  feature_selection=feature_selection)
+
+        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(train_df=train_df, val_df=test_df, target_col=target_col)
 
         if out_dir is not None:
             x_val_df = pd.DataFrame(x_val, columns=feature_names)
@@ -528,48 +503,27 @@ def prepare_train_val_data(calculate_features, df, target_col, out_dir, feature_
 
         return x_train, x_val, y_train, y_val, feature_names
     else:
-        # df_to_split = df['sequence'].unique()
-        #
-        # train, test = train_test_split(df_to_split,
-        #                                train_size=0.8,
-        #                                test_size=0.2,
-        #                                shuffle=True,
-        #                                random_state=42)
-        #
-        # train_df = df[df['sequence'].isin(train)]
-        # val_df = df[df['sequence'].isin(test)]
-        #
-        # x_train, y_train = enocde_onehot_without_features(train_df, target_col=target_col)
-        # x_val, y_val = enocde_onehot_without_features(val_df, target_col=target_col)
 
-        x_train, y_train, x_val, y_val = encode_kmer_no_features(df, target_col=target_col)
 
-        if out_dir is not None:
-            x_val_df = pd.DataFrame(x_val)
+        x_train, y_train, x_val, y_val = encode_kmer_no_features(train_df=train_df, val_df=test_df, target_col=target_col)
 
-            # y_val als DataFrame oder Series
-            y_val_df = pd.Series(y_val, name=target_col)  # oder DataFrame: pd.DataFrame(y_val, columns=[target_col])
-
-            # Kombinieren (falls du Features + Label in einem DF willst)
-            val_df = pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
-
-            val_df.to_csv(f"{out_dir}/val_data.csv", sep=';', index=False)
 
         return x_train, x_val, y_train, y_val, None
 
 
-def encode_kmer_with_features(df, target_col, n_components=128, feature_selection=None):
-    df = add_descriptors(df)  # <- deine Funktion für desc__*
-    df = df[feature_selection + ['sequence', target_col]] if feature_selection else df
+def encode_kmer_with_features(train_df, val_df, target_col, n_components=128):
+    train_df = add_descriptors(train_df)
+    val_df = add_descriptors(val_df)
 
-    desc_cols = [c for c in df.columns if c.startswith('desc__')]
 
-    # Split ohne Leckage: nach einzigartigen Sequenzen
-    uniq = df['sequence'].unique()
-    tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
-                                        random_state=42, shuffle=True)
-    train_df = df[df['sequence'].isin(tr_seqs)].copy()
-    val_df = df[df['sequence'].isin(va_seqs)].copy()
+    desc_cols = [c for c in train_df.columns if c.startswith('desc__')]
+
+    # # Split ohne Leckage: nach einzigartigen Sequenzen
+    # uniq = df['sequence'].unique()
+    # tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
+    #                                     random_state=42, shuffle=True)
+    # train_df = df[df['sequence'].isin(tr_seqs)].copy()
+    # val_df = df[df['sequence'].isin(va_seqs)].copy()
 
     y_train = train_df[target_col].astype(float).to_numpy()
     y_val = val_df[target_col].astype(float).to_numpy()
@@ -602,13 +556,8 @@ def encode_kmer_with_features(df, target_col, n_components=128, feature_selectio
     return X_train, y_train, X_val, y_val, feature_names
 
 
-def encode_kmer_no_features(df, target_col, n_components=128, feature_selection=None):
-    # Split ohne Leckage: nach einzigartigen Sequenzen
-    uniq = df['sequence'].unique()
-    tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
-                                        random_state=42, shuffle=True)
-    train_df = df[df['sequence'].isin(tr_seqs)].copy()
-    val_df = df[df['sequence'].isin(va_seqs)].copy()
+def encode_kmer_no_features(train_df, val_df, target_col, n_components=128, feature_selection=None):
+
 
     y_train = train_df[target_col].astype(float).to_numpy()
     y_val = val_df[target_col].astype(float).to_numpy()
@@ -626,134 +575,6 @@ def encode_kmer_no_features(df, target_col, n_components=128, feature_selection=
     x_val = svd.transform(x_val)
 
     return x_train, y_train, x_val, y_val
-
-
-def get_feature_importance(file_path: str,
-                           task,
-                           plot_path,
-                           file_name):
-    """
-    After
-    https://scikit-learn.org/stable/auto_examples/feature_selection/plot_rfe_with_cross_validation.html#sphx-glr-auto-examples-feature-selection-plot-rfe-with-cross-validation-py
-
-    """
-    if file_name == 'happen_style':
-        file_name = 'Schwellenwert-Datensatz'
-    elif file_name == 'whitelab_hemo':
-        file_name = 'WhiteLab-Datensatz'
-    elif file_name.startswith("acineto"):
-        file_name = "Acinetobacter baumannii"
-    elif file_name.startswith("bacillus"):
-        file_name = "Bacillus subtilis"
-    elif file_name.startswith("candida"):
-        file_name = "Candida albicans"
-    elif file_name.startswith("enterobacter"):
-        file_name = "Enterobacter sp."
-    elif file_name.startswith("enterococc"):
-        file_name = "Enterococcus faecalis"
-    elif file_name.startswith("escher"):
-        file_name = "Escherichia coli"
-    elif file_name.startswith("klebsie"):
-        file_name = "Klebsiella pneumoniae"
-    elif file_name.startswith("micro"):
-        file_name = "Micrococcus luteus"
-    elif file_name.startswith("pseudo"):
-        file_name = "Pseudomonas aeruginosa"
-    elif file_name.startswith("salmonella"):
-        file_name = "Salmonella enterica"
-    elif file_name.startswith("staphylococcus_aureus"):
-        file_name = "Staphylococcus aureus"
-    elif file_name.startswith("staphylococcus_epi"):
-        file_name = "Staphylococcus epidermidis"
-
-    if task == 'mic':
-        model = RandomForestRegressor(n_estimators=800,
-                                      max_depth=None,
-                                      max_features='sqrt',
-                                      min_samples_split=2,
-                                      random_state=42,
-                                      n_jobs=1)
-
-        model_for_pi = RandomForestRegressor(n_estimators=800,
-                                             max_depth=None,
-                                             max_features='sqrt',
-                                             min_samples_split=2,
-                                             random_state=42,
-                                             n_jobs=1)
-        scoring = 'r2'
-
-    else:
-        model = RandomForestClassifier(n_estimators=800,
-                                       max_depth=None,
-                                       max_features='sqrt',
-                                       min_samples_split=2,
-                                       random_state=42,
-                                       n_jobs=1)
-
-        model_for_pi = RandomForestClassifier(n_estimators=800,
-                                              max_depth=None,
-                                              max_features='sqrt',
-                                              min_samples_split=2,
-                                              random_state=42,
-                                              n_jobs=1)
-        scoring = 'roc_auc'
-
-    df, target_col = prepare_df(file_path, task)
-
-    x_train, x_val, y_train, y_val, feature_names = prepare_train_val_data(calculate_features, df, target_col, None)
-
-    desc_idx = [i for i, f in enumerate(feature_names) if f.startswith('desc__')]
-    desc_names = [desc for desc in feature_names if desc.startswith('desc__')]
-    x_desc = x_train[:, desc_idx]
-    x_val_desc = x_val[:, desc_idx]
-
-    print("Starting PI")
-    model_for_pi = model_for_pi.fit(x_desc, y_train)
-    plot_utils.plot_permutation_importance_from_est(estimator=model_for_pi,
-                                                    x_data=x_val_desc,
-                                                    y_data=y_val,
-                                                    plot_path=plot_path + '/feature_importance_est.png',
-                                                    summary_path=plot_path + '/feature_importance_summary.txt',
-                                                    feature_names=desc_names,
-                                                    file_name=file_name
-                                                    )
-
-    print("PI done")
-
-    rfecv = RFECV(estimator=model,
-                  cv=5,
-                  scoring=scoring,
-                  n_jobs=-1)
-    rfecv.fit(x_desc, y_train)
-
-    data = {
-        key: value
-        for key, value in rfecv.cv_results_.items()
-        if key in ["n_features", "mean_test_score", "std_test_score"]
-    }
-    cv_results = pd.DataFrame(data)
-    plt.figure()
-    plt.xlabel("Anzahl der gewählten Features")
-    plt.ylabel("Mittlere Testgenauigkeit")
-    plt.errorbar(
-        x=cv_results["n_features"],
-        y=cv_results["mean_test_score"],
-        yerr=cv_results["std_test_score"],
-    )
-    plt.title(f"Rekursive Feature Elimination\nModel: rf Daten: {file_name}")
-    plt.savefig(plot_path + '/Feature_elimination.png')
-    plt.close()
-    plt.clf()
-
-    # Auswahl der desc__ Features
-    selected_desc_idx = [i for i, keep in zip(desc_idx, rfecv.support_) if keep]
-    selected_names = [feature_names[i] for i in selected_desc_idx]
-
-    with open(f"{plot_path}/feature_selection.txt", 'w', encoding='utf-8') as file:
-        for line in selected_names:
-            file.write(line + '\n')
-
-    return selected_names
 
 
 if __name__ == '__main__':

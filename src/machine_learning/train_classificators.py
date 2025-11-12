@@ -37,17 +37,16 @@ def train_classificators(file_path: str,
                          param_grid,
                          plot_path: str,
                          model_name: str,
-                         feature_selection,
                          data_name: str,
                          calculate_features: bool = True
                          ):
-    df, target_col = ml_utils.prepare_df(file_path, 'hemo')
+    train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'hemo')
 
     x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        df,
+                                                                        train_df,
+                                                                        test_df,
                                                                         target_col,
-                                                                        plot_path,
-                                                                        feature_selection)
+                                                                        plot_path)
 
     logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}\n"
@@ -78,7 +77,7 @@ def train_classificators(file_path: str,
                                  plot_path=plot_path,
                                  x_data=x_val,
                                  y_true=y_val,
-                                 tag='Validierung',
+                                 tag='Test',
                                  logger=logger,
                                  data_name=data_name)
 
@@ -103,21 +102,12 @@ def run_all(
     data_dir = Path(data_dir)
     output_root = Path(output_root)
 
-    csv_files = sorted(data_dir.glob("*.csv"))
+    csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
         file_name = "_".join(parts[:2])  # if len(parts) >= 2 else csv_path.stem
-        if calculate_features:
-            tmp_file_path = output_root / file_name
-            tmp_file_path.mkdir(parents=True, exist_ok=True)
-            features = ml_utils.get_feature_importance(file_path=str(csv_path),
-                                                       task='hemo',
-                                                       plot_path=str(tmp_file_path),
-                                                       file_name=file_name)
-            logger.info(f"Anzahl verwenderter Features für {str(tmp_file_path)} ist : {len(features)}")
-        else:
-            features = None
+
 
         logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
 
@@ -133,27 +123,26 @@ def run_all(
                 param_grid=grid,
                 model_name=model_tag,
                 calculate_features=calculate_features,
-                feature_selection=features,
                 data_name=file_name,
                 plot_path=str(out_dir)
             )
 
 
 if __name__ == "__main__":
-    data_dir = './data/hemo_train/'
+    data_dir = '../../data/hemo_train/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
-        ('xtra', ExtraTreesClassifier()),
-        ('xgb', XGBClassifier()),
+        #('xtra', ExtraTreesClassifier()),
+        #('xgb', XGBClassifier()),
         ('rf', RandomForestClassifier()),
-        ('svc', SVC(probability=True)),
+        #('svc', SVC(probability=True)),
 
     ]
 
     param_grids = [  # config.gb_param_grid,
-        config.xtra_cls_param_grid,
-        config.xgb_cls_param_grid,
-        config.rf_cls_param_grid,
-        config.svc_cls_param_grid
+        #config.xtra_cls_param_grid,
+        #config.xgb_cls_param_grid,
+        config.rf_cls_test_param_grid,
+        #config.svc_cls_param_grid
     ]
 
     run_all(calculate_features=False,

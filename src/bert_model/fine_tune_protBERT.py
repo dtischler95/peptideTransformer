@@ -8,7 +8,7 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_fisher_exact, init_model, overall_stats, get_model_stats
+    prepare_hemo_eval, init_model, overall_stats, get_model_stats
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -97,8 +97,7 @@ def fine_tune(config_path: str):
 
     # Load the model, the model is a BertForSequenceClassification model based on the Rostlab/prot_bert_bfd model
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
-    # Only Difference is, that we initiate the model not from BertModel class but from BertForSequenceClassification
-    # Since this implementation integrated a classifier for the sequence classification task
+
 
     data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args, n_features)
 
@@ -171,21 +170,21 @@ def fine_tune(config_path: str):
                                     logger=logger
                                     )
 
-            prepare_fisher_exact(test_dataset=train_dataset,
-                                 trainer=trainer,
-                                 plot_path=training_args.plot_path + "/train_",
-                                 tag='Training',
-                                 file_name=file_name)
-            prepare_fisher_exact(test_dataset=val_dataset,
-                                 trainer=trainer,
-                                 plot_path=training_args.plot_path + "/val_",
-                                 tag='Validierung',
-                                 file_name=file_name)
-            prepare_fisher_exact(test_dataset=test_dataset,
-                                 trainer=trainer,
-                                 plot_path=training_args.plot_path + "/test_",
-                                 tag='Test',
-                                 file_name=file_name)
+            prepare_hemo_eval(test_dataset=train_dataset,
+                              trainer=trainer,
+                              plot_path=training_args.plot_path + "/train_",
+                              tag='Training',
+                              file_name=file_name)
+            prepare_hemo_eval(test_dataset=val_dataset,
+                              trainer=trainer,
+                              plot_path=training_args.plot_path + "/val_",
+                              tag='Validierung',
+                              file_name=file_name)
+            prepare_hemo_eval(test_dataset=test_dataset,
+                              trainer=trainer,
+                              plot_path=training_args.plot_path + "/test_",
+                              tag='Test',
+                              file_name=file_name)
 
         elif training_args.model_class.startswith('regression'):
 
