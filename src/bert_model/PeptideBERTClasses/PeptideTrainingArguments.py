@@ -43,7 +43,6 @@ class PeptideTrainingArguments(TrainingArguments):
 
         :param model_class: One of binary, mlm, custom.
         :param train_file: Path to the training file
-        :param val_file: Path to the validation file
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
         :param plot_path: Path to save the plots to
@@ -51,8 +50,6 @@ class PeptideTrainingArguments(TrainingArguments):
         :param mlm_probability: Probability of masking tokens in the input (only used for MLM)
         :param max_length: Maximum length of the input sequence
         :param fast_debug_mode: Cut the dataset to 500 samples for faster debugging (development only)
-        :param validation_data_size: Fraction of the data to be used for validation
-        :param test_data_size: Fraction of the data to be used for testing (this will take a faction of the validation data)
         :param early_stopping_patience: Number of epochs with no improvement after which training will be stopped
         :param early_stop_metric: Metric to watch for early stopping
         :param early_stop_mode: One of min, max. In min mode, training will be stopped when the metric stops decreasing; in max mode it will be stopped when the metric stops increasing
@@ -63,14 +60,12 @@ class PeptideTrainingArguments(TrainingArguments):
         :param mlm_curriculum_increase_step: Increase step for the curriculum learning
         :param mlm_curriculum_max_prob: Maximum probability for the curriculum learning
         :param loss_function: Loss function to be used for the model
-        :param data_shuffle: Shuffle the data before training
         :param add_features: Use concentration as input for the model
         :param kwargs: Additional arguments
         """
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file
-        self.val_file = val_file
         self.model_path = model_path
         self.model_save_path = model_save_path
         self.plot_path = plot_path
@@ -81,8 +76,6 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_probability = mlm_probability
         self.max_length = max_length
         self.fast_debug_mode = fast_debug_mode
-        self.validation_data_size = validation_data_size
-        self.test_data_size = test_data_size
         self.early_stopping_patience = early_stopping_patience
         self.early_stop_metric = early_stop_metric
         self.early_stop_mode = early_stop_mode
@@ -93,14 +86,10 @@ class PeptideTrainingArguments(TrainingArguments):
         self.mlm_curriculum_increase_step = mlm_curriculum_increase_step
         self.mlm_curriculum_max_prob = mlm_curriculum_max_prob
         self.loss_function = loss_function
-        self.data_shuffle = data_shuffle
         self.add_features = add_features
-        if not self.data_shuffle and self.val_file is None:
-            raise ValueError("Validation file (val_file) must be provided if data_shuffle is set to False.")
         if self.fast_debug_mode:
             print(
                 f"\033[31m[warning] fast_debug_mode is set to True. This will cut the dataset to 100 samples. Set only to True if you want to test functions!\033[0m")
         if self.train_file is None:
-            # TODO may raise an error here and make a different inference function
             print(
                 f"\033[31m[warning] If you use model for Inference you can ignore this warning. Otherwise, you should provide a train_file in the config file.\033[0m")

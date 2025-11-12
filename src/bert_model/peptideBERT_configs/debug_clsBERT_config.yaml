@@ -1,6 +1,6 @@
 # Training and Evaluation Settings
 model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
-do_train: false                # Train the model
+do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
 num_train_epochs: 1           # Number of epochs to train the model
@@ -26,20 +26,16 @@ max_length: 36                    # Maximum input sequence length
 label_0_cluster_data: 500         # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500         # Number of data points for label 1 used in downstream clustering
 loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_logit_loss']
-add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 
 # Dataset and File Paths
-data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
 train_file: '../../data/hemo_train/happen_style_unvoted.csv'  # Path to training data
-val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './test'                             # Path to save the model
 plot_path: './plots'                                    # Path to save the plots
 
 # Validation and Test Settings
-validation_data_size: 0.3       # Validation dataset size (fraction)
-test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings

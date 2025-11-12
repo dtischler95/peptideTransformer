@@ -232,7 +232,7 @@ def fine_tune(config_path: str):
                         f"Test R2: {round(test_r2, 4)}\n"
                         f"Test MSE: {round(test_mse, 4)}\n")
 
-    # not really needed for my case, I guess
+
     if training_args.do_predict:
         ...
         """
