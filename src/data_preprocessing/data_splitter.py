@@ -68,10 +68,14 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
         stratify=strat_trainval
     )
 
+    if task == "classification":
+        cls_strat = strat_df
+    else:
+        cls_strat = tmp_df[['sequence', target_col]]
 
-    train_df = strat_df[strat_df['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
-    val_df   = strat_df[strat_df['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
-    test_df  = strat_df[strat_df['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
+    train_df = cls_strat[strat_df['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
+    val_df   = cls_strat[strat_df['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
+    test_df  = cls_strat[strat_df['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
 
 
 
