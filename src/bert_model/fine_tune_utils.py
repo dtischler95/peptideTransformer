@@ -733,7 +733,7 @@ def get_model_stats(plot_dir: str,
                     logger: logging.Logger,
                     file_name: str,
                     tag: str):
-    r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger)
+    r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger, tag=tag)
 
     # plot regression train
     make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{file_name + tag}_regression.pdf",
@@ -742,8 +742,8 @@ def get_model_stats(plot_dir: str,
     return r2, mse
 
 
-def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
-    logger.info(f"Regression metrics: \n"
+def print_regression_metrics(y_true, y_pred, logger: logging.Logger, tag):
+    logger.info(f"{tag} Regression metrics: \n"
                 f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
                 f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
