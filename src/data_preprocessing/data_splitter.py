@@ -38,8 +38,6 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
                    test_size=0.20, val_size=0.16, random_state=42):
 
 
-    # 1) Sequenz-Tabelle + Stratifikationslabels
-    seq_df = tmp_df[['sequence', target_col]].copy()
 
     # nur eine Zeile pro Sequenz + strat label
     strat_df = make_seq_strat_labels(tmp_df, task=task, target_col=target_col)
@@ -70,20 +68,27 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
         stratify=strat_trainval
     )
 
-    train_df = seq_df[strat_df['sequence'].isin(seq_train['sequence'])]
-    val_df   = seq_df[strat_df['sequence'].isin(seq_val['sequence'])]
-    test_df  = seq_df[strat_df['sequence'].isin(seq_test['sequence'])]
+
+    train_df = strat_df[strat_df['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
+    val_df   = strat_df[strat_df['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
+    test_df  = strat_df[strat_df['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
+
 
 
     return train_df, val_df, test_df
 
-def main(file_dir: str, task: str, target_col: str,
+def main(task: str,
          test_size=0.20, val_size=0.16, random_state=42):
 
     if task == "classification":
-        data_dir_suffix = '*.csv'
+        data_dir_suffix = "*.csv"
+        file_dir = '../../data/hemo_train/'
+        target_col = 'label'
     else:
-        data_dir_suffix = '*regression.csv'
+        data_dir_suffix = "*regression.csv"
+        file_dir = '../../data/regression_data/'
+        target_col = 'mic_log10'
+
     for train_file in Path(file_dir).glob(data_dir_suffix):
         tmp_df = pd.read_csv(train_file, sep=';')
         if task == "classification":
@@ -104,5 +109,5 @@ def main(file_dir: str, task: str, target_col: str,
 
 if __name__ == '__main__':
 
-    main(file_dir='../../data/hemo_train/', task='classification', target_col='label')
-    # Für Klassifikation wäre: task='classification', target_col='label'
+    main(task='regression')
+    # Für Klassifikation wäre: task='classification'
