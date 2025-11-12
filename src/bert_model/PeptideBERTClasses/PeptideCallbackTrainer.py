@@ -148,7 +148,7 @@ class PlotMetricsCallback(TrainerCallback):
             file_name = "Staphylococcus aureus"
         elif file_name.startswith("staphylococcus_epi"):
             file_name = "Staphylococcus epidermidis"
-        elif file_name == 'happen_style':
+        elif file_name.startswith('happen_style'):
             file_name = 'Schwellenwert-Datensatz'
         else:
             file_name = 'WhiteLab-Datensatz'

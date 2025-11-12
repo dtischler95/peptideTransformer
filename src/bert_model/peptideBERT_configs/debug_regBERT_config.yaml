@@ -52,6 +52,5 @@ seed: 42                        # Random seed for reproducibility
 use_cpu: true                  # Use CPU for training
 
 # Miscellaneous Settings
-classification_weighted_labels: false  # Use weighted labels for classification
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
 fast_debug_mode: true                  # Developer mode for pipeline testing

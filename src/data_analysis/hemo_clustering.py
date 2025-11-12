@@ -566,14 +566,10 @@ def encode_peptides(sequence_file,
         embeddings = scaler.fit_transform(embeddings)
     else:
         embeddings = scaler.transform(embeddings)
-    embeddings_to_return = [('seq_embedding', embeddings)]
-    if add_features:
-        seq_feature_embedding = np.hstack([embeddings, sequence_file.features[df['orig_idx'].values]])
 
-        embeddings_to_return.append(('seq_feature_embedding', seq_feature_embedding))
-        embeddings_to_return.append(('feature_vector', sequence_file.features[df['orig_idx'].values]))
 
-    return embeddings_to_return, df['label'].to_list(), seq_lens, scaler
+
+    return embeddings, df['label'].to_list(), seq_lens, scaler
 
 
 def cluster_model_embedding(file_path,
@@ -622,13 +618,13 @@ def cluster_model_embedding(file_path,
                                                           plot_path=plot_path,
                                                           add_features=add_features)
 
-    for emb in embedding:
-        perform_clustering(embedded_sequences=emb[1],
-                           sequence_labels=labels,
-                           logger=logger,
-                           tag=data_tag + emb[0],
-                           seq_lens=seq_lens,
-                           plot_path=plot_path)
+
+    perform_clustering(embedded_sequences=embedding,
+                       sequence_labels=labels,
+                       logger=logger,
+                       tag=data_tag,
+                       seq_lens=seq_lens,
+                       plot_path=plot_path)
 
     return scaler
 
