@@ -156,7 +156,7 @@ class PlotMetricsCallback(TrainerCallback):
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
-        plt.plot(epochs, eval_metrics, label=f"Evaluierungs {metric_name}", color='blue')
+        plt.plot(epochs, eval_metrics, label=f"Validierungs {metric_name}", color='blue')
         plt.plot(epochs, train_metrics, label=f"Trainings {metric_name}", color='red')
         plt.xlabel('Epoche')
         plt.ylabel(metric_name, color='blue')

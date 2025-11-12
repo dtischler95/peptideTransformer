@@ -108,14 +108,11 @@ def prepare_datasets(model_class: str,
 
     # Load and preprocess data
     df = load_and_sample_data(train_file, cut_df_for_faster_debug)
-    selected_features = []
     if add_features:
         df_train = add_descriptors(df)
 
-        with open(file=f"{train_file.replace('.csv', '.txt')}") as f:
-            selected_features = [line.strip() for line in f]
 
-        df_train = pd.concat([df_train[selected_features], df.reset_index()], axis=1).drop(columns='index')
+        df_train = pd.concat([df_train, df.reset_index()], axis=1).drop(columns='index')
 
     else:
         df_train = df
@@ -186,7 +183,7 @@ def prepare_datasets(model_class: str,
             for peptide in dataset.peptides:
                 f.write(f"{''.join(peptide.split(' '))}\n")
 
-    return tokenizer, train_dataset, val_dataset, test_dataset, len(selected_features)
+    return tokenizer, train_dataset, val_dataset, test_dataset, df_train.shape[1] - df.shape[1]
 
 
 def get_encoding(tokenizer: BertTokenizer):
@@ -290,12 +287,12 @@ def load_training_arguments(config_file: str, logger: logging.Logger) -> Peptide
     return PeptideTrainingArguments(**config)
 
 
-def format_logit_to_label(logits, threshold: float = 0.5):
+def format_logit_to_label(logits):
     """
     Format the given logit tensor to a list of labels.
     0.5 is a typical threshold
     """
-    return (logits > threshold).astype(int).flatten()
+    return (logits > 0.5).astype(int).flatten()
 
 
 def format_one_hot_to_label(one_hot_tensor):
@@ -397,13 +394,16 @@ early_stop_metric: 'eval_loss'                         # Metric for early stoppi
 early_stop_mode: 'min'                                 # Mode for early stopping
 early_stop_warm_up: 30                                 # Warm-up period for early stopping
 dataloader_drop_last: false                            # Drop last batch if smaller than batch size
-dataloader_num_workers: 2                              # Number of dataloader workers (higher can affect performance)
+dataloader_num_workers: 1                              # Number of dataloader workers (higher can affect performance)
 show_encoding: False                                   # Show the encoding of the sequences from the tokenizer
+load_best_model_at_end: true                           # Load the best model at the end of training
+add_features: true                                     # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+
 
 # Model and Optimizer Settings
 learning_rate: 0.00005                                 # Learning rate for optimizer
 weight_decay: 0.01                                     # Weight decay for optimizer
-lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
+lr_scheduler_type: 'reduce_lr_on_plateau'              # Learning rate scheduler type
 lr_scheduler_kwargs:                                   # Additional scheduler arguments
   patience: 4                                          # Patience for ReduceLROnPlateau scheduler
 max_length: 36                                         # Maximum input sequence length
@@ -411,18 +411,10 @@ max_length: 36                                         # Maximum input sequence 
 # Binary Classification Settings
 label_0_cluster_data: 500                              # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500                              # Number of data points for label 1 used in downstream clustering
-loss_function: 'bce'                                   # Possible Choices ['bce', 'bce_logit_loss']
 
-# MLM Settings
-mlm_probability: 0.15                                  # Masking probability for MLM
-mlm_curriculum_learning: false                         # Enable curriculum learning for MLM
-mlm_curriculum_increase_step: 0.0000001                # Step size for curriculum learning
-mlm_curriculum_max_prob: 0.15                          # Maximum masking probability for MLM
 
 # Dataset and File Paths
-data_shuffle: true or false                            # [True] Randomly splits train/val/test data from one given input [false] if train and test data are already split beforehand
 train_file: SET TRAIN DATA PATH HERE                   # Path to training data
-val_file: SET VAL DATA PATH HERE                       # Path to validation data
 model_path: SET MODEL PATH HERE                        # Path to pretrained model
 model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
 plot_path: './plots'                                   # Path to save the plots
@@ -462,11 +454,11 @@ fast_debug: false                                      # Use fast debug mode (on
         print(f"Error while creating YAML file: {e}")
 
 
-def prepare_fisher_exact(test_dataset: PeptideDataset,
-                         trainer,
-                         plot_path: str,
-                         tag: str,
-                         file_name: str):
+def prepare_hemo_eval(test_dataset: PeptideDataset,
+                      trainer,
+                      plot_path: str,
+                      tag: str,
+                      file_name: str):
     if file_name == 'happen_style':
         file_name = 'Schwellenwert-Datensatz'
     else:
@@ -476,41 +468,14 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     y_true = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
 
-    thresholds = np.linspace(0.0, 1.0, 101)
-    f1s, precisions, recalls, mccs = [], [], [], []
-
     y_score = logits.flatten()
 
-    for thr in thresholds:
-        preds_bin = (y_score >= thr).astype(int)
-        f1s.append(f1_score(y_true, preds_bin))
-        precisions.append(precision_score(y_true, preds_bin))
-        recalls.append(recall_score(y_true, preds_bin))
-        mccs.append(matthews_corrcoef(y_true, preds_bin))
 
-    # Plot F1 vs threshold
-    plt.plot(thresholds, f1s, label="F1")
-    plt.plot(thresholds, precisions, label="Präzision")
-    plt.plot(thresholds, recalls, label="Sensitivität")
-    plt.plot(thresholds, mccs, label="MCC")
-    plt.xlabel("Schwellenwert")
-    plt.ylabel("Wert")
-    plt.title(f"Schwellenwertanalyse der Modellmetriken ({tag})\nDaten: {file_name}")
-    plt.legend()
-    thres_curve = f'{plot_path}_threshold_curves.png'
-    plt.savefig(thres_curve)
-    plt.close()
-
-    thr, f1_best, p_best, r_best = best_f1_threshold(y_true=y_true, y_score=logits.flatten(), plot_path=plot_path)
 
     fpr, tpr, _ = roc_curve(y_true, y_score)
 
 
-
-    print(f'Best F1 on val by thresholding: F1={f1_best:.4f} at thr={thr:.4f} '
-          f'(P={p_best:.4f}, R={r_best:.4f})')
-
-    mcc = matthews_corrcoef(y_true, format_logit_to_label(logits=logits, threshold=thr))
+    mcc = matthews_corrcoef(y_true, format_logit_to_label(logits=logits))
     print(f"MCC: {mcc:.4f}")
     auc = roc_auc_score(y_true, y_score)
     print(f'AUROC: {auc:.4f}')
@@ -541,17 +506,17 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
     plt.savefig(pr_path)
     plt.close()
 
-    print(classification_report(y_true, format_logit_to_label(logits=logits, threshold=thr), digits=3))
-    confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits, threshold=thr))
+    print(classification_report(y_true, format_logit_to_label(logits=logits), digits=3))
+    confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits))
     with np.errstate(all='ignore'):
         confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
 
     titles_options = [
-        (f"Konfusionsmatrix, ohne Normalisierung", confusion_matrix),
-        (f"Konfusionsmatrix, mit Normalisierung", confusion_matrix_normalized),
+        (f"Konfusionsmatrix", 1, confusion_matrix),
+        (f"Konfusionsmatrix", 2, confusion_matrix_normalized),
     ]
 
-    for title, matrix in titles_options:
+    for title, i, matrix in titles_options:
         cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
 
@@ -559,7 +524,7 @@ def prepare_fisher_exact(test_dataset: PeptideDataset,
         plt.xlabel("Vorhergesagte Klasse")
         plt.ylabel("Wahre Klasse")
         plt.title(title + f" ({tag})\nDaten: {file_name}")
-        plt.savefig(f"{plot_path}{title}_{tag}_confusion_matrix.png", dpi=300, bbox_inches="tight")
+        plt.savefig(f"{plot_path}{title}_{i}_{tag}_confusion_matrix.png", dpi=300, bbox_inches="tight")
         plt.close()
         plt.clf()
 
@@ -728,7 +693,7 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     plt.figure(figsize=(10, 6))
     sns.histplot(y_true, kde=True)
     plt.title(f'Verteilung der MIC-Werte ({tag})\nDaten: {file_name}')
-    plt.xlabel(f'MIC (log$_{10}$ µM)')
+    plt.xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}target_distribution.pdf')
     plt.close()
@@ -743,7 +708,7 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
     plt.title(f'Verteilung der Residuen ({tag})\nDaten: {file_name}')
-    plt.xlabel('Residuen MIC (log$_{10}$ µM)')
+    plt.xlabel(r'Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     plt.ylabel('Häufigkeit')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
@@ -755,14 +720,14 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     })
 
     # Einteilung in 4 Quantile – du kannst q=5 oder q=[0,.25,.5,.75,1.] nehmen
-    df["MIC-Quantil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
+    df["MIC-Quartil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
 
     plt.figure(figsize=(8, 4))
-    sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
+    sns.boxplot(x="MIC-Quartil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
 
-    plt.xlabel("Quantile des tatsächlichen MIC-Werts (log$_{10}$ µM)")
-    plt.ylabel("Residuen (log$_{10}$ µM)")
-    plt.title(f"Residuenverteilung nach Quantilen des tatsächlichen MIC-Werts ({tag})\nDaten: {file_name}")
+    plt.xlabel("Quartile der Tatsächlichen MIC-Werte $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.title(f"Residuen-Quartilsplot ({tag})\nDaten: {file_name}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -848,35 +813,43 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
 
-    fig, (ax_reg, ax_res) = plt.subplots(1, 2, figsize=(16, 6))
+    # --- Regression: Tatsächlich vs. vorhergesagt ---
+    fig_reg, ax_reg = plt.subplots(figsize=(8, 6))
 
-    # --- Regression (y_true vs y_pred)
     ax_reg.scatter(y_pred, y_true, alpha=0.6, edgecolor='none')
+
     lo, hi = np.nanpercentile(np.concatenate([y_true, y_pred]), [0.5, 99.5])
-    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green')
-    x_vals = np.linspace(lo, hi, endpoint=True)
+    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green', label='Ideal')
+
+    x_vals = np.linspace(lo, hi, 100)
     ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
-    ax_reg.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
-    ax_reg.set_ylabel('Tatsächlicher Wert MIC (log$_{10}$ µM)')
-    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt ')
+
+    ax_reg.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_reg.set_ylabel(r'Tatsächlicher Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     ax_reg.legend(loc='best')
 
-    # --- Residuen (eigene Berechnung, kein residplot)
+    fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
+    plt.tight_layout()
+    plt.savefig(path.replace('.png', '_regression.png'))
+    plt.close(fig_reg)
+
+    # --- Residuenplot ---
+    fig_res, ax_res = plt.subplots(figsize=(8, 6))
+
     ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
     ax_res.axhline(0, color='k', ls=':')
     ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
     ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
-    ax_res.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
-    ax_res.set_ylabel('Residuum MIC (log$_{10}$ µM)')
-    ax_res.set_title('Residuen vs. Vorhersage')
+
+    ax_res.set_xlabel('Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_res.set_ylabel('Residuum (Tatsächlich - Vorhersage)')
     ax_res.legend(loc='best')
 
-    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
+    fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
     plt.tight_layout()
-    plt.savefig(path)
-    plt.close()
-    plt.clf()
+    plt.savefig(path.replace('.png', '_residuals.png'))
+    plt.close(fig_res)
 
 
 if __name__ == '__main__':

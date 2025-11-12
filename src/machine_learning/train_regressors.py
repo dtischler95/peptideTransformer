@@ -38,17 +38,16 @@ def train_regressors(file_path: str,
                      param_grid,
                      plot_path: str,
                      model_name: str,
-                     feature_selection,
                      file_name: str,
                      calculate_features: bool = True
                      ):
-    df, target_col = ml_utils.prepare_df(file_path, 'mic')
+    train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'mic')
 
     x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        df,
+                                                                        train_df,
+                                                                        test_df,
                                                                         target_col,
-                                                                        plot_path,
-                                                                        feature_selection)
+                                                                        plot_path)
 
     logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
@@ -99,23 +98,12 @@ def run_all(
 
     results = []
 
-    csv_files = sorted(data_dir.glob("*.csv"))
+    csv_files = sorted(data_dir.glob("*regression.csv"))
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
         file_name = "_".join(parts[:2])  # if len(parts) >= 2 else csv_path.stem
         logger.info(f"Running {file_name}")
-
-        if calculate_features:
-            tmp_file_path = output_root / file_name
-            tmp_file_path.mkdir(parents=True, exist_ok=True)
-            features = ml_utils.get_feature_importance(file_path=str(csv_path),
-                                                       task='mic',
-                                                       plot_path=str(tmp_file_path),
-                                                       file_name=file_name)
-            logger.info(f"Anzahl verwenderter Features für {str(tmp_file_path)} ist : {len(features)}")
-        else:
-            features = None
 
         logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
 
@@ -130,7 +118,6 @@ def run_all(
                 param_grid=grid,
                 model_name=model_tag,
                 calculate_features=calculate_features,
-                feature_selection=features,
                 plot_path=str(out_dir),
                 file_name=file_name
             )
@@ -147,19 +134,19 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = './data/regression_data/'
+    data_dir = '../../data/regression_data/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
-        ('xtra', ExtraTreesRegressor(n_jobs=1)),
-        ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
+        #('xtra', ExtraTreesRegressor(n_jobs=1)),
+        #('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
         ('rf', RandomForestRegressor(n_jobs=1)),
-        ('svr', SVR(n_jobs=1))
+        #('svr', SVR(n_jobs=1))
     ]
 
     param_grids = [  # config.gb_param_grid,
-        config.xtra_param_grid,
-        config.xgb_param_grid,
-        config.rf_param_grid,
-        config.svr_param_grid
+        #config.xtra_param_grid,
+        #config.xgb_param_grid,
+        config.rf_test_param_grid,
+        #config.svr_param_grid
     ]
 
     run_all(calculate_features=False,

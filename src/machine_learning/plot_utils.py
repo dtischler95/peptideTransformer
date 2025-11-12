@@ -146,33 +146,42 @@ def make_regression(y_true, y_pred, file_name, path, model_name, tag):
     resid = y_true - y_pred
     sigma = resid.std(ddof=1)
 
+    # --- Regression ---
+    fig_reg, ax_reg = plt.subplots(figsize=(8, 6))
 
-    fig, (ax_reg, ax_res) = plt.subplots(1, 2, figsize=(16, 6))
-
-    # --- Regression (y_true vs y_pred)
     ax_reg.scatter(y_pred, y_true, alpha=0.6, edgecolor='none')
+
     lo, hi = np.nanpercentile(np.concatenate([y_true, y_pred]), [0.5, 99.5])
     ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green')
-    x_vals = np.linspace(lo, hi, endpoint=True)
+
+    x_vals = np.linspace(lo, hi, 100)
     ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
-    ax_reg.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
-    ax_reg.set_ylabel('Tatsächlicher Wert MIC (log$_{10}$ µM)')
-    ax_reg.set_title(f'Tatsächlich vs. vorhergesagt')
+
+    ax_reg.set_xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$ (vorhergesagt)')
+    ax_reg.set_ylabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$ (tatsächlich)')
     ax_reg.legend(loc='best')
 
-    # --- Residuen (eigene Berechnung, kein residplot)
+    fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
+    plt.tight_layout()
+    plt.savefig(path.replace('.pdf', '_regression.pdf'))
+    plt.close(fig_reg)
+
+    # --- Residuen ---
+    fig_res, ax_res = plt.subplots(figsize=(8, 6))
+
     ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
     ax_res.axhline(0, color='k', ls=':')
     ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
     ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
-    ax_res.set_xlabel('Vorhergesagter Wert MIC (log$_{10}$ µM)')
-    ax_res.set_ylabel('Residuum MIC (log$_{10}$ µM)')
-    ax_res.set_title(f'Residuen vs. Vorhersage')
+
+    ax_res.set_xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$ (vorhergesagt)')
+    ax_res.set_ylabel(r'Residuum $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     ax_res.legend(loc='best')
 
-    fig.suptitle(f"Regressions- und Residuenplot (σ={sigma:.2f}) ({tag})\nModel: {model_name} Daten: {file_name}")
+    fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
     plt.tight_layout()
-    plt.savefig(path)
-    plt.close()
-    plt.clf()
+    plt.savefig(path.replace('.pdf', '_residuals.pdf'))
+    plt.close(fig_res)
+
+
