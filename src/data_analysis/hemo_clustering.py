@@ -491,14 +491,14 @@ def perform_clustering(embedded_sequences,
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
     #
     # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}{tag}_pca_plot")
-    # plot_pca(pca, pca_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_pca_length_plot")
+
 
     print("[Clustering] Plotting TSNE")
     plot_tsne(tsne_fit, sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
-    plot_tsne(tsne_fit, lengths=seq_lens,plot_path=f"{plot_path}{tag}_tsne_length_plot")
+
     print("[Clustering] Plotting UMAP")
     plot_umap(umap_fit, sequence_labels, plot_path=f"{plot_path}{tag}_umap_plot")
-    plot_umap(umap_fit, lengths=seq_lens, plot_path=f"{plot_path}{tag}_umap_length_plot")
+
 
 
 def encode_peptides(sequence_file,

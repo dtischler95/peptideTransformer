@@ -13,7 +13,7 @@ early_stop_warm_up: 8            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
-add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Model and Optimizer Settings
 learning_rate: 0.00001            # Learning rate for optimizer
@@ -25,16 +25,11 @@ max_length: 36                    # Maximum input sequence length
 
 
 # Dataset and File Paths
-data_shuffle: true                  # True: Shuffle the dataset[No val file needed] False: Used prefiltered files.[Please provide a validation file path]
 train_file: './data/regression_data/pseudomonas_aeruginosa_for_regression.csv'  # Path to training data
-val_file: ''      # Path to validation data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './models/pseudomonas_aeruginosa'                             # Path to save the model
 plot_path: './model_plots/pseudomonas_aeruginosa_plots'                                    # Path to save the plots
 
-# Validation and Test Settings
-validation_data_size: 0.3       # Validation dataset size (fraction)
-test_data_size: 0.5             # Test dataset size (fraction)
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
