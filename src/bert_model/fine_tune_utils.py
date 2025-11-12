@@ -35,16 +35,11 @@ from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regr
 def prepare_datasets(model_class: str,
                      model_path: str,
                      train_file: str,
-                     val_file: str,
                      logger: logging.Logger,
-                     save_path: str,
                      show_encoding: bool = False,
                      ignore_leakage: bool = False,
                      max_length: int = 36,
                      cut_df_for_faster_debug: bool = False,
-                     validation_data_size: float = 0.2,
-                     test_data_size: float = 0.5,
-                     random_data_shuffle: bool = False,
                      add_features: bool = False
                      ) -> tuple[
     BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset, int]:
@@ -71,26 +66,25 @@ def prepare_datasets(model_class: str,
     :return: Tokenizer, train_dataset, val_dataset, test_dataset
     """
 
-    # Load the data
+
     def compute_desc_row(sequence):
         p = pep.Peptide(sequence)
-        d = p.descriptors()  # dict -> nur Zahlen
+        d = p.descriptors()
         return {f"desc__{k}": float(v) for k, v in d.items()}
 
     def add_descriptors(df):
         desc_rows = [compute_desc_row(s) for s in df["sequence"]]
         desc_df = pd.DataFrame(desc_rows).reset_index(drop=True)
         df = df.reset_index(drop=True).join(desc_df)
-        # sauber halten:
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         return df
 
     def load_and_sample_data(file, sample=False):
-        df = pd.read_csv(file, sep=';')
-        return df.sample(frac=1)[:100] if sample else df
+        train_df = pd.read_csv(file.replace('.csv', "_train.csv"), sep=';')
+        test_df = pd.read_csv(file.replace('.csv', "_test.csv"), sep=';')
+        val_df = pd.read_csv(file.replace('.csv', "_val.csv"), sep=';')
+        return train_df.sample(frac=1)[:100] if sample else train_df, test_df, val_df
 
-    def split_sequences(data, test_size, shuffle=True):
-        return train_test_split(data, test_size=test_size, shuffle=shuffle, random_state=42)
 
     def get_labels_and_features(data, concentration):
 
@@ -106,39 +100,21 @@ def prepare_datasets(model_class: str,
         concentrations = data.drop(columns=columns_to_drop) if concentration else None
         return labels, concentrations
 
-    # Load and preprocess data
-    df = load_and_sample_data(train_file, cut_df_for_faster_debug)
+    df_train, df_test, df_val = load_and_sample_data(train_file, cut_df_for_faster_debug)
+
+    no_feature_size = df_train.shape[1]
     if add_features:
-        df_train = add_descriptors(df)
+        df_train = add_descriptors(df_train)
+        df_test = add_descriptors(df_test)
+        df_val = add_descriptors(df_val)
+
+    feature_size = df_train.shape[1] - no_feature_size
 
 
-        df_train = pd.concat([df_train, df.reset_index()], axis=1).drop(columns='index')
+    label_data_train, feature_data_train = get_labels_and_features(df_train, add_features)
+    label_data_val, feature_data_val = get_labels_and_features(df_val, add_features)
+    label_data_test, feature_data_test = get_labels_and_features(df_test, add_features)
 
-    else:
-        df_train = df
-    df_to_split = df_train if ignore_leakage else df_train['sequence'].unique()
-
-    if random_data_shuffle:
-        train_sequences, val_handler = split_sequences(df_to_split, validation_data_size)
-        val_sequences, test_sequences = split_sequences(val_handler, test_data_size)
-        all_sequence_df = df_train
-    else:
-        train_sequences = df_to_split
-        df_val = load_and_sample_data(val_file)
-        val_sequences, test_sequences = split_sequences(df_val['sequence'].unique(), test_data_size)
-        all_sequence_df = pd.concat([df_train, df_val], ignore_index=True)
-
-    if not ignore_leakage:
-        train_sequences = all_sequence_df[all_sequence_df['sequence'].isin(train_sequences)]
-        val_sequences = all_sequence_df[all_sequence_df['sequence'].isin(val_sequences)]
-        test_sequences = all_sequence_df[all_sequence_df['sequence'].isin(test_sequences)]
-
-    # Extract labels and concentrations
-    label_data_train, feature_data_train = get_labels_and_features(train_sequences, add_features)
-    label_data_val, feature_data_val = get_labels_and_features(val_sequences, add_features)
-    label_data_test, feature_data_test = get_labels_and_features(test_sequences, add_features)
-
-    # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
     if add_features:
@@ -149,41 +125,35 @@ def prepare_datasets(model_class: str,
         feature_data_val = scaler.transform(imp.transform(feature_data_val.values)).astype(np.float32)
         feature_data_test = scaler.transform(imp.transform(feature_data_test.values)).astype(np.float32)
 
-    # Create datasets
-    train_dataset = PeptideDataset(peptides=train_sequences['sequence'],
+    train_dataset = PeptideDataset(peptides=df_train['sequence'],
                                    features=feature_data_train,
                                    tokenizer=tokenizer,
                                    labels=label_data_train,
                                    max_length=max_length,
                                    model_class=model_class)
-    val_dataset = PeptideDataset(peptides=val_sequences['sequence'],
+    val_dataset = PeptideDataset(peptides=df_val['sequence'],
                                  features=feature_data_val,
                                  tokenizer=tokenizer,
                                  labels=label_data_val,
                                  max_length=max_length,
                                  model_class=model_class)
-    test_dataset = PeptideDataset(peptides=test_sequences['sequence'],
+    test_dataset = PeptideDataset(peptides=df_test['sequence'],
                                   features=feature_data_test,
                                   tokenizer=tokenizer,
                                   labels=label_data_test,
                                   max_length=max_length,
                                   model_class=model_class)
 
-    # Optional: Show encoding
+
     if show_encoding:
         get_encoding(tokenizer)
 
-    # Check for data leakage
+
     check_data_loader_for_leakage(train_data_loader=train_dataset, val_data_loader=val_dataset,
                                   test_data_loader=test_dataset, ignore_leakage=ignore_leakage, logger=logger)
 
-    for dataset, tag in zip([train_dataset, val_dataset, test_dataset], ['train', 'val', 'test']):
-        with open(f"{save_path}/{tag}_sequences.csv", "w") as f:
-            f.write('sequence\n')
-            for peptide in dataset.peptides:
-                f.write(f"{''.join(peptide.split(' '))}\n")
 
-    return tokenizer, train_dataset, val_dataset, test_dataset, df_train.shape[1] - df.shape[1]
+    return tokenizer, train_dataset, val_dataset, test_dataset, feature_size
 
 
 def get_encoding(tokenizer: BertTokenizer):
@@ -459,7 +429,7 @@ def prepare_hemo_eval(test_dataset: PeptideDataset,
                       plot_path: str,
                       tag: str,
                       file_name: str):
-    if file_name == 'happen_style':
+    if file_name.startswith('happen_style'):
         file_name = 'Schwellenwert-Datensatz'
     else:
         file_name = 'WhiteLab-Datensatz'
@@ -725,7 +695,7 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     plt.figure(figsize=(8, 4))
     sns.boxplot(x="MIC-Quartil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
 
-    plt.xlabel("Quartile der Tatsächlichen MIC-Werte $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.xlabel(r"Quartile der Tatsächlichen MIC-Werte $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
     plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
     plt.title(f"Residuen-Quartilsplot ({tag})\nDaten: {file_name}")
     plt.tight_layout()
@@ -842,7 +812,7 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
     ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
 
-    ax_res.set_xlabel('Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_res.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     ax_res.set_ylabel('Residuum (Tatsächlich - Vorhersage)')
     ax_res.legend(loc='best')
 

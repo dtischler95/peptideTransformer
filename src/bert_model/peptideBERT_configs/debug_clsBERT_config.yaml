@@ -1,6 +1,6 @@
 # Training and Evaluation Settings
 model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
-do_train: true                # Train the model
+do_train: false                # Train the model
 do_eval: true                 # Evaluate the model
 do_predict: true              # Predict with the model
 num_train_epochs: 1           # Number of epochs to train the model
@@ -57,6 +57,6 @@ seed: 42                        # Random seed for reproducibility
 use_cpu: true                  # Use CPU for training
 
 # Miscellaneous Settings
-classification_weighted_labels: false  # Use weighted labels for classification
+
 ignore_leakage: false                   # Ignore leakage in training data (only if certain)
 fast_debug_mode: true                  # Developer mode for pipeline testing

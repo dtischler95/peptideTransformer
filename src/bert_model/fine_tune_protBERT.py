@@ -83,15 +83,10 @@ def fine_tune(config_path: str):
         model_class=training_args.model_class,
         model_path=training_args.model_path,
         train_file=training_args.train_file,
-        val_file=training_args.val_file,
-        save_path=training_args.plot_path,
         ignore_leakage=training_args.ignore_leakage,
         max_length=training_args.max_length,
         logger=logger,
         cut_df_for_faster_debug=training_args.fast_debug_mode,
-        validation_data_size=training_args.validation_data_size,
-        test_data_size=training_args.test_data_size,
-        random_data_shuffle=training_args.data_shuffle,
         add_features=training_args.add_features
     )
 
