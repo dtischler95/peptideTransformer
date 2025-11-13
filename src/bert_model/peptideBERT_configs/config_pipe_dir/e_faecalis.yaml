@@ -13,7 +13,7 @@ early_stop_warm_up: 8            # Warm-up period for early stopping
 dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
-add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+add_features: true          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 # Model and Optimizer Settings
 learning_rate: 0.00001            # Learning rate for optimizer
@@ -25,16 +25,16 @@ max_length: 36                    # Maximum input sequence length
 
 
 # Dataset and File Paths
-train_file: './data/regression_data/klebsiella_pneumoniae_for_regression.csv'  # Path to training data
+train_file: './data/regression_data/enterococcus_faecalis_for_regression.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './models/klebsiella_pneumoniae'                             # Path to save the model
-plot_path: './model_plots/klebsiella_pneumoniae_plots'                                    # Path to save the plots
+model_save_path: './models/e_faecalis'                             # Path to save the model
+plot_path: './model_plots/e_faecalis_plots'                                    # Path to save the plots
 
 metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
-output_dir: './results_klebsiella_pneumoniae'         # Path to checkpoints
-logging_dir: './logs_klebsiella_pneumoniae'           # Path to logging directory
+output_dir: './results_efaecalis'         # Path to checkpoints
+logging_dir: './logs_efaecalis'           # Path to logging directory
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
