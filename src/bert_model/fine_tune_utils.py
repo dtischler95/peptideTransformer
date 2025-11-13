@@ -801,7 +801,7 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
 
     fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
     plt.tight_layout()
-    plt.savefig(path.replace('.png', '_regression.png'))
+    plt.savefig(path.replace('.pdf', '_regression.pdf'))
     plt.close(fig_reg)
 
     # --- Residuenplot ---
@@ -818,7 +818,7 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
 
     fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
     plt.tight_layout()
-    plt.savefig(path.replace('.png', '_residuals.png'))
+    plt.savefig(path.replace('.pdf', '_residuals.pdf'))
     plt.close(fig_res)
 
 
