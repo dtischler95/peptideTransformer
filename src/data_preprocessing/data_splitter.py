@@ -16,9 +16,9 @@ def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: 
         seq_y = (
             df.groupby('sequence', as_index=False)[target_col]
             .agg(lambda x: x.value_counts().idxmax())  # Mehrheitslabel
-            .rename(columns={target_col: 'majority_label'})
+            .rename(columns={target_col: 'strat'})
         )
-        seq_y = seq_y.rename(columns={'majority_label': 'strat'})
+
 
     if task == "regression":
         seq_y = seq_grp[target_col].median().rename(columns={target_col: 'y_median'})
@@ -31,6 +31,8 @@ def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: 
             # Fallback: alle in eine Bin (keine sinnvolle Stratifikation möglich)
             seq_y['strat'] = 0
 
+    if task == 'gram':
+        seq_y = df.rename(columns={target_col: "strat"})
 
     return seq_y[['sequence', 'strat']]
 
@@ -88,10 +90,15 @@ def main(task: str,
         data_dir_suffix = "*.csv"
         file_dir = '../../data/hemo_train/'
         target_col = 'label'
-    else:
+    elif task == "regression":
         data_dir_suffix = "*regression.csv"
         file_dir = '../../data/regression_data/'
         target_col = 'mic_log10'
+    else:
+        data_dir_suffix = "*dataset.csv"
+        file_dir = '../../data/gram/'
+        target_col = 'label'
+
 
     for train_file in Path(file_dir).glob(data_dir_suffix):
         tmp_df = pd.read_csv(train_file, sep=';')
@@ -113,5 +120,5 @@ def main(task: str,
 
 if __name__ == '__main__':
 
-    main(task='regression')
+    main(task='gram')
     # Für Klassifikation wäre: task='classification'

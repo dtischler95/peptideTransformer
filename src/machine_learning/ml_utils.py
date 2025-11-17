@@ -163,7 +163,7 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
         raise NotImplementedError
 
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
-                               n_jobs=-1, verbose=0, cv=cv, scoring=scoring).fit(x_train, y_train)
+                               n_jobs=-1, verbose=3, cv=cv, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
@@ -420,6 +420,8 @@ def _best_f1_threshold(y_true, y_score, plot_path):
 def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
     if data_name == 'happen_style':
         data_name = 'Schwellenwert-Datensatz'
+    if data_name == 'gram_dataset':
+        dataset_name = 'Gram-Datensatz'
     else:
         data_name = 'WhiteLab-Datensatz'
 

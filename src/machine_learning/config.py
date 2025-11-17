@@ -73,10 +73,18 @@ rf_cls_test_param_grid = {
 }
 
 xtra_cls_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
+    'n_estimators': [100, 200, 300],
     'min_samples_split': [2, 4, 8],
     'min_samples_leaf': [1, 2, 5],
     'class_weight': [None, 'balanced'],
+}
+xtra_gram_param_grid = {
+    'n_estimators': [200, 400, 700, 1000],
+    'min_samples_split': [2, 4, 8, 16],
+    'min_samples_leaf': [1, 2, 4, 8],
+    'max_features': ['sqrt', 'log2', 0.2, 0.5],
+    'bootstrap': [False],   # typisch für ExtraTrees
+    'class_weight': [None, 'balanced']
 }
 
 gb_cls_param_grid = {
