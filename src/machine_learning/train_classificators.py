@@ -83,7 +83,7 @@ def train_classificators(file_path: str,
 
 
 def run_all(
-        data_dir: str | Path = "../../data/regression_data",
+        data_dir: str | Path = "../../data/hemo_train/",
         output_root: str | Path = "./final_plots/",
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
@@ -98,11 +98,16 @@ def run_all(
     # Prevent silent truncation if lengths differ
     models = list(models)
     grids = list(grids)
+    if data_dir.endswith("hemo_train/"):
+        data_dir = Path(data_dir)
+        output_root = Path(output_root)
 
-    data_dir = Path(data_dir)
-    output_root = Path(output_root)
+        csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
+    else:
+        data_dir = Path(data_dir)
+        output_root = Path(output_root)
+        csv_files = sorted(list(data_dir.glob("*dataset.csv")))
 
-    csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
@@ -129,23 +134,23 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = '../../data/hemo_train/'
+    data_dir = '../../data/gram/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
-        #('xtra', ExtraTreesClassifier()),
+        ('xtra', ExtraTreesClassifier()),
         #('xgb', XGBClassifier()),
-        ('rf', RandomForestClassifier()),
+        #('rf', RandomForestClassifier()),
         #('svc', SVC(probability=True)),
 
     ]
 
     param_grids = [  # config.gb_param_grid,
-        #config.xtra_cls_param_grid,
+        config.xtra_gram_param_grid,
         #config.xgb_cls_param_grid,
-        config.rf_cls_test_param_grid,
+        #config.rf_cls_param_grid,
         #config.svc_cls_param_grid
     ]
 
-    run_all(calculate_features=True,
+    run_all(calculate_features=False,
             data_dir=data_dir,
             models=model_list,
             grids=param_grids)
