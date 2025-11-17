@@ -421,7 +421,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
     if data_name == 'happen_style':
         data_name = 'Schwellenwert-Datensatz'
     if data_name == 'gram_dataset':
-        dataset_name = 'Gram-Datensatz'
+        data_name = 'Gram-Datensatz'
     else:
         data_name = 'WhiteLab-Datensatz'
 
