@@ -431,6 +431,8 @@ def prepare_hemo_eval(test_dataset: PeptideDataset,
                       file_name: str):
     if file_name.startswith('happen_style'):
         file_name = 'Schwellenwert-Datensatz'
+    elif file_name.startswith("gram"):
+        file_name = 'Gram-Datensatz'
     else:
         file_name = 'WhiteLab-Datensatz'
 
@@ -509,7 +511,7 @@ def get_bce_label_weight(labels):
     return torch.tensor([label_0 / label_1])
 
 
-def init_model(tokenizer, train_dataset, training_args, n_features):
+def init_model(train_dataset, training_args, n_features):
     if training_args.model_class == 'binary_dense':
 
         # ('GrimSqueaker/proteinBERT')
@@ -524,25 +526,6 @@ def init_model(tokenizer, train_dataset, training_args, n_features):
         run_metric = binary_metrics
 
 
-
-    # Load the model, the model is a BertForMaskedLM model based on the Rostlab/prot_bert_bfd model
-    # Our Idea is to 'fine tune' the ProtBERT model on MLM to further introduce the model to the peptide sequences instead
-    # of the protein sequences. We hope to increase the binary classification performance by fine-tuning the model on MLM
-    # first.
-    elif training_args.model_class == 'mlm':
-        config = BertConfig.from_pretrained(training_args.model_path)
-        model = BertForMaskedLM.from_pretrained(training_args.model_path, config=config)
-        # data_collator = PeptideCurriculumDataCollator(tokenizer=tokenizer,
-        #                                               initial_prob=training_args.mlm_probability,
-        #                                               increase_step=training_args.mlm_curriculum_increase_step,
-        #                                               max_prob=training_args.mlm_curriculum_max_prob)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True,
-                                                        mlm_probability=training_args.mlm_probability)
-
-        # Add Curriculum Learning Callback if enabled
-        # This callback can be adjusted if another metric for increasing/decreasing mlm_probability is needed
-        # callback_list.append(CurriculumLearningCallback()) if training_args.mlm_curriculum_learning else ...
-        run_metric = mlm_metrics
     elif training_args.model_class == 'regression':
         # raise NotImplementedError("Custom task not implemented yet")
         config = BertConfig.from_pretrained(training_args.model_path)

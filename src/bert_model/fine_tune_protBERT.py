@@ -94,7 +94,7 @@ def fine_tune(config_path: str):
     # Based on https://pubs.acs.org/doi/10.1021/acs.jpclett.3c02398 PeptideBERT
 
 
-    data_collator, model, run_metric = init_model(tokenizer, train_dataset, training_args, n_features)
+    data_collator, model, run_metric = init_model(train_dataset, training_args, n_features)
 
     # Initialize the Trainer class most of the stuff should be handled by the PeptideTrainer class when an appropriate
     # configured PeptideTrainingArguments class is provided
