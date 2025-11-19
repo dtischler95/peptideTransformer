@@ -391,57 +391,6 @@ def perform_clustering(embedded_sequences,
     :param tag: tag for the output files
     """
 
-    def cluster_metrics(data, labels, cluster_labels, cluster_tag=""):
-        """
-        Print and return clustering metrics.
-
-        :param data: data points
-        :param labels: true labels
-        :param cluster_labels: predicted labels
-        :param cluster_tag: tag for prints
-        """
-
-        print(
-            f"[Clustering]: Positive class: {list(cluster_labels).count(1)} Negative class: {list(cluster_labels).count(0)}"
-        )
-        unique_labels = set(cluster_labels)
-        if len(unique_labels) < 2:
-            print(
-                f"Skipping silhouette score calculation for {cluster_tag} clustering due to insufficient unique labels.")
-            print(f"Unique labels: {unique_labels}")
-            silhouette_score = 'None'
-
-        else:
-            silhouette_score = metrics.silhouette_score(
-                data, cluster_labels, random_state=42
-            )
-
-        res = {
-            "hom": metrics.homogeneity_score(labels, cluster_labels),
-            "comp": metrics.completeness_score(labels, cluster_labels),
-            "v_score": metrics.v_measure_score(labels, cluster_labels),
-            "adj_rand_idx": metrics.adjusted_rand_score(labels, cluster_labels),
-            "shil": silhouette_score,
-            "mifs": metrics.mutual_info_score(labels, cluster_labels),
-        }
-
-        print("----------------------------------------------------")
-        print(f"\t Metrics Report for {cluster_tag} Clustering")
-        print("----------------------------------------------------")
-        print(f"Homogeneity:\t\t{res['hom']:4f}")
-        print(f"Completness:\t\t{res['comp']:4f}")
-        print(f"V-measure:\t\t{res['v_score']:4f}")
-        print(f"Adjusted Rand-Index:\t\t{res['adj_rand_idx']:4f}")
-        if silhouette_score is not None:
-            print(f"Silhouette Score:\t\t{res['shil']:4f}")
-        print(f"Mutual Information Score: {res['mifs']:4f}")
-        print("----------------------------------------------------")
-
-    def run_pca(data, comps=10):  # need to be the same as in line 93
-        print("[Clustering] Running PCA")
-        _pca = PCA(n_components=comps, random_state=42)
-        return _pca, _pca.fit(data).transform(data)
-
     def run_tsne(data):
         print("[Clustering] Running TSNE")
         tsne = manifold.TSNE(
@@ -466,13 +415,9 @@ def perform_clustering(embedded_sequences,
         kmeans = KMeans(n_clusters=2, max_iter=100, n_init=5, random_state=42)
         kmeans.fit(data)
 
-        cluster_metrics(data, labels, kmeans.labels_, cluster_tag="KMeans")
-        # scores.write_csv(output_path, separator=";", include_header=True)
+
         return kmeans, kmeans.labels_
 
-    # if logger:
-    #     logger.info("[Clustering] Starting clustering analysis PCA")
-    # pca, pca_fit = run_pca(embedded_sequences)
 
     if logger:
         logger.info("[Clustering] Starting clustering analysis TSNE")
@@ -482,15 +427,12 @@ def perform_clustering(embedded_sequences,
         logger.info("[Clustering] Starting clustering analysis UMAP")
     umap_fit = run_umap(embedded_sequences)
 
-    # print("[Clustering] Running KMeans for PCA")
-    # pca_kmeans, pca_kmeans_labels = clustering(pca_fit, sequence_labels)
 
     print("[Clustering] Running KMeans for TSNE")
     tsne_kmeans, tnse_kmeans_labels = clustering(tsne_fit, sequence_labels)
     print("[Clustering] Running KMeans for UMAP")
     umap_kmeans, umap_kmeans_labels = clustering(umap_fit, sequence_labels)
-    #
-    # plot_pca(pca, pca_fit, sequence_labels, plot_path=f"{plot_path}{tag}_pca_plot")
+
 
 
     print("[Clustering] Plotting TSNE")

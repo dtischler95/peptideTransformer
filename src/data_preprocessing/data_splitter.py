@@ -33,6 +33,7 @@ def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: 
 
     if task == 'gram':
         seq_y = df.rename(columns={target_col: "strat"})
+        return seq_y[['sequence', 'mic_log10', 'strat']]
 
     return seq_y[['sequence', 'strat']]
 
@@ -72,6 +73,8 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
 
     if task == "classification":
         cls_strat = strat_df
+    elif task == "gram":
+        cls_strat = tmp_df[['sequence', 'mic_log10' ,target_col]]
     else:
         cls_strat = tmp_df[['sequence', target_col]]
 

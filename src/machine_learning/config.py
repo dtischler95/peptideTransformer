@@ -113,3 +113,8 @@ svc_cls_param_grid = {
     'svc__gamma': ['scale', 'auto'],
     'svc__class_weight': [None, 'balanced'],
 }
+
+
+xtra_gram = {'bootstrap': [False], 'max_features': ['log2'], 'min_samples_leaf': [1], 'min_samples_split': [4], 'n_estimators': [1000]}
+
+xtra_gram_feat = {'bootstrap': [False], 'max_features': ['log2'], 'min_samples_leaf': [1], 'min_samples_split': [4], 'n_estimators': [1000]}
