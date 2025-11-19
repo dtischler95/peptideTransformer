@@ -115,6 +115,19 @@ svc_cls_param_grid = {
 }
 
 
-xtra_gram = {'bootstrap': [False], 'max_features': ['log2'], 'min_samples_leaf': [1], 'min_samples_split': [4], 'n_estimators': [1000]}
+xtra_gram = {
+    'n_estimators': [300, 800],
+    'max_features': ['sqrt', 'log2'],
+    'max_depth': [None, 20, 40],
+    'min_samples_split': [2, 4, 8],
+    'min_samples_leaf': [1, 2]
+}
 
-xtra_gram_feat = {'bootstrap': [False], 'max_features': ['log2'], 'min_samples_leaf': [1], 'min_samples_split': [4], 'n_estimators': [1000]}
+
+xtra_gram_feat = {
+    'n_estimators': [300, 800],
+    'max_features': ['sqrt', 'log2'],
+    'max_depth': [None, 20, 40],
+    'min_samples_split': [2, 4, 8],
+    'min_samples_leaf': [1, 2]
+}
