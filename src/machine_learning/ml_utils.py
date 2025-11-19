@@ -554,7 +554,7 @@ def prepare_train_val_data(calculate_features, train_df, test_df, target_col, ou
             # Kombinieren (falls du Features + Label in einem DF willst)
             val_df = pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
 
-            val_df.to_csv(f"{out_dir}/val_data_features.csv", sep=';', index=False)
+
 
         return x_train, x_val, y_train, y_val, feature_names
     else:
