@@ -43,8 +43,8 @@ def train_classificators(file_path: str,
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'hemo')
 
     x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        train_df,
-                                                                        test_df,
+                                                                        train_df[['sequence', target_col]],
+                                                                        test_df[['sequence', target_col]],
                                                                         target_col,
                                                                         plot_path)
 
@@ -61,6 +61,10 @@ def train_classificators(file_path: str,
     test_score = best_estimator.score(x_val, y_val)
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
+
+
+
+
 
 
     ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
@@ -101,7 +105,6 @@ def run_all(
     if data_dir.endswith("hemo_train/"):
         data_dir = Path(data_dir)
         output_root = Path(output_root)
-
         csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
     else:
         data_dir = Path(data_dir)

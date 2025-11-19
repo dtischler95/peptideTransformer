@@ -417,6 +417,60 @@ def _best_f1_threshold(y_true, y_score, plot_path):
     return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
+def plot_residuals_vs_length_from_df(model,
+                                     df,
+                                     target_col,
+                                     plot_path,
+                                     calculate_features,
+                                     title="Residuen vs. Sequenzlänge"):
+    df["label"] = df["label"].map({0: "Gram–", 1: "Gram+"})
+
+    sequences = df["sequence"].astype(str)
+    y_true = df[target_col].astype(float)
+
+
+    lengths = sequences.str.len()
+
+    # Feature-Matrix erzeugen (hier musst du deine eigene Featurizer-Funktion nutzen!)
+    # Beispiel:
+    _, x_test, _, y_test, _  = prepare_train_val_data(
+        calculate_features=calculate_features,
+        train_df=df,
+        test_df=df,
+        target_col=target_col,
+        out_dir='')
+    # Ich lasse hier einen Platzhalter:
+
+
+
+    # Modellvorhersagen
+    y_pred = model.predict(x_test)
+
+    # Residuen
+    resid = y_true - y_pred
+
+    # Plot erzeugen
+    plt.figure(figsize=(7, 5))
+
+
+
+    for lab in df['label'].unique():
+        mask = df['label'] == lab
+        plt.scatter(lengths[mask], resid[mask], alpha=0.6, label=str(lab))
+    plt.legend(title='label')
+
+
+    plt.axhline(0, color="black", linewidth=1)
+    plt.xlabel("Sequenzlänge (Aminosäuren)")
+    plt.ylabel("Residuum")
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(plot_path + '/residual_vs_length.png')
+    plt.close()
+
+    return resid  # falls du später noch Auswertungen willst
+
+
 def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
     if data_name == 'happen_style':
         data_name = 'Schwellenwert-Datensatz'

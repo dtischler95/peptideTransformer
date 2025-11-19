@@ -16,11 +16,11 @@ from typing import Iterable, Any
 
 logger = logging.getLogger(__name__)
 mpl.rcParams.update({
-    'font.size': 16,        # Basisgröße für alles,
-    'axes.titlesize': 18,       # Titel der Achsen
-    'axes.labelsize': 15,       # Achsenbeschriftungen (xlabel, ylabel)
-    'xtick.labelsize': 14,      # Tick-Beschriftungen X-Achse
-    'ytick.labelsize': 14,      # Tick-Beschriftungen Y-Achse
+    'font.size': 16,  # Basisgröße für alles,
+    'axes.titlesize': 18,  # Titel der Achsen
+    'axes.labelsize': 15,  # Achsenbeschriftungen (xlabel, ylabel)
+    'xtick.labelsize': 14,  # Tick-Beschriftungen X-Achse
+    'ytick.labelsize': 14,  # Tick-Beschriftungen Y-Achse
 })
 
 # --------------------- Setup logging and configs ---------------------
@@ -39,13 +39,14 @@ def train_regressors(file_path: str,
                      plot_path: str,
                      model_name: str,
                      file_name: str,
-                     calculate_features: bool = True
+                     calculate_features: bool = True,
+                     gram_mode: bool = False
                      ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'mic')
 
     x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        train_df,
-                                                                        test_df,
+                                                                        train_df[['sequence', target_col]],
+                                                                        test_df[['sequence', target_col]],
                                                                         target_col,
                                                                         plot_path)
 
@@ -62,6 +63,16 @@ def train_regressors(file_path: str,
     test_score = best_estimator.score(x_val, y_val)
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
+
+    if gram_mode:
+        ml_utils.plot_residuals_vs_length_from_df(
+            model=best_estimator,
+            df=test_df,
+            target_col=target_col,
+            plot_path=plot_path,
+            calculate_features=calculate_features,
+
+        )
 
     train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator,
                                                                         plot_path,
@@ -93,12 +104,19 @@ def run_all(
     models = list(models)
     grids = list(grids)
 
-    data_dir = Path(data_dir)
     output_root = Path(output_root)
 
     results = []
 
-    csv_files = sorted(data_dir.glob("*regression.csv"))
+    gram_mode = False
+    if data_dir.endswith('regression/'):
+        data_dir = Path(data_dir)
+        csv_files = sorted(data_dir.glob("*regression.csv"))
+    else:
+        data_dir = Path(data_dir)
+        csv_files = sorted(list(data_dir.glob("*dataset.csv")))
+        gram_mode = True
+
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
         parts = csv_path.stem.split("_")
@@ -119,7 +137,8 @@ def run_all(
                 model_name=model_tag,
                 calculate_features=calculate_features,
                 plot_path=str(out_dir),
-                file_name=file_name
+                file_name=file_name,
+                gram_mode=gram_mode
             )
             results.append({
                 "name": file_name,
@@ -134,19 +153,19 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = './data/regression_data/'
+    data_dir = '../../data/gram/'
     model_list = [  # ('gb', GradientBoostingRegressor()),
         ('xtra', ExtraTreesRegressor(n_jobs=1)),
-        ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
-        ('rf', RandomForestRegressor(n_jobs=1)),
-        ('svr', SVR(n_jobs=1))
+        #('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
+        #('rf', RandomForestRegressor(n_jobs=1)),
+        #('svr', SVR(n_jobs=1))
     ]
 
     param_grids = [  # config.gb_param_grid,
-        config.xtra_param_grid,
-        config.xgb_param_grid,
-        config.rf_test_param_grid,
-        config.svr_param_grid
+        config.xtra_gram,
+        #config.xgb_param_grid,
+        #config.rf_param_grid,
+        #config.svr_param_grid
     ]
 
     run_all(calculate_features=False,
