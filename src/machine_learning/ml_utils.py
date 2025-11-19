@@ -418,57 +418,56 @@ def _best_f1_threshold(y_true, y_score, plot_path):
 
 
 def plot_residuals_vs_length_from_df(model,
-                                     df,
-                                     target_col,
-                                     plot_path,
-                                     calculate_features,
-                                     title="Residuen vs. Sequenzlänge"):
+                      df,
+                      target_col,
+                      plot_path,
+                      calculate_features,
+                      title="Dichteplot der Residuen"):
+    # Labels mappen
+    df = df.copy()
     df["label"] = df["label"].map({0: "Gram–", 1: "Gram+"})
 
-    sequences = df["sequence"].astype(str)
     y_true = df[target_col].astype(float)
 
-
-    lengths = sequences.str.len()
-
-    # Feature-Matrix erzeugen (hier musst du deine eigene Featurizer-Funktion nutzen!)
-    # Beispiel:
-    _, x_test, _, y_test, _  = prepare_train_val_data(
+    # Feature-Matrix erzeugen
+    _, x_test, _, y_test, _ = prepare_train_val_data(
         calculate_features=calculate_features,
         train_df=df,
         test_df=df,
         target_col=target_col,
-        out_dir='')
-    # Ich lasse hier einen Platzhalter:
+        out_dir=''
+    )
 
-
-
-    # Modellvorhersagen
+    # Vorhersagen + Residuen
     y_pred = model.predict(x_test)
-
-    # Residuen
     resid = y_true - y_pred
 
-    # Plot erzeugen
+    # Für seaborn zusammenführen
+    plot_df = df.assign(resid=resid)
+
+    # Figure
     plt.figure(figsize=(7, 5))
 
+    sns.kdeplot(
+        data=plot_df,
+        x="resid",
+        hue="label",
+        fill=True,
+        common_norm=False,
+        alpha=0.35,
+        linewidth=1.8
+    )
 
-
-    for lab in df['label'].unique():
-        mask = df['label'] == lab
-        plt.scatter(lengths[mask], resid[mask], alpha=0.6, label=str(lab))
-    plt.legend(title='label')
-
-
-    plt.axhline(0, color="black", linewidth=1)
-    plt.xlabel("Sequenzlänge (Aminosäuren)")
-    plt.ylabel("Residuum")
+    plt.axvline(0, color='black', linewidth=1)
+    plt.xlabel("Residuum")
+    plt.ylabel("Dichte")
     plt.title(title)
     plt.tight_layout()
-    plt.savefig(plot_path + '/residual_vs_length.png')
+
+    plt.savefig(plot_path + "/residual_kde.png")
     plt.close()
 
-    return resid  # falls du später noch Auswertungen willst
+    return resid
 
 
 def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
