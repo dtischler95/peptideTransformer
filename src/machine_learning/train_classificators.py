@@ -1,13 +1,10 @@
-from sklearnex import patch_sklearn
 from xgboost import XGBClassifier
 from sklearn.svm import SVC
-patch_sklearn(verbose=False)
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 import sys
 import ml_utils
 import config
 import logging
-
 from pathlib import Path
 from typing import Iterable, Any
 import matplotlib as mpl
@@ -140,17 +137,17 @@ if __name__ == "__main__":
     data_dir = '../../data/gram/'
     model_list = [  # ('gb',   GradientBoostingClassifier()),
         ('xtra', ExtraTreesClassifier()),
-        #('xgb', XGBClassifier()),
-        #('rf', RandomForestClassifier()),
-        #('svc', SVC(probability=True)),
+        ('xgb', XGBClassifier()),
+        ('rf', RandomForestClassifier()),
+        ('svc', SVC(probability=True)),
 
     ]
 
     param_grids = [  # config.gb_param_grid,
         config.xtra_gram_param_grid,
-        #config.xgb_cls_param_grid,
-        #config.rf_cls_param_grid,
-        #config.svc_cls_param_grid
+        config.xgb_cls_param_grid,
+        config.rf_cls_param_grid,
+        config.svc_cls_param_grid
     ]
 
     run_all(calculate_features=False,

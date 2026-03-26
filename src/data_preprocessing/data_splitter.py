@@ -86,8 +86,8 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
 
     return train_df, val_df, test_df
 
-def main(task: str,
-         test_size=0.20, val_size=0.16, random_state=42):
+def data_splitter(task: str,
+                  test_size=0.20, val_size=0.16, random_state=42):
 
     if task == "classification":
         data_dir_suffix = "*.csv"
@@ -123,5 +123,5 @@ def main(task: str,
 
 if __name__ == '__main__':
 
-    main(task='gram')
+    data_splitter(task='gram')
     # Für Klassifikation wäre: task='classification'
