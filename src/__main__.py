@@ -3,15 +3,11 @@ import os
 import sys
 
 from src.bert_model.fine_tune_protBERT import fine_tune
+from src.data_preprocessing.data_splitter import data_splitter
 
 # Adding the src folder to python path so the module is runnable
 sys.path.append(os.path.dirname(__file__))
 
-
-# Import your data_preprocess and data_analysis functions here
-def reproduce_our_work_steps():
-    # Call your reproduce function here
-    pass
 
 
 def main():
@@ -43,9 +39,9 @@ def main():
             )
 
 
-    elif args.command == 'data_preprocess':
-        # Call your data_preprocess function here
-        pass
+    elif args.command == 'data_init':
+        data_splitter(task=args.task)
+
     elif args.command == 'data_analysis':
         ...
         # from src.data_analysis.hemo_clustering import cluster_model_embedding
@@ -66,8 +62,7 @@ def main():
         #                             plot_path=args.out_plot_path,
         #                             tokenizer_and_model=(tokenizer, model),
         #                             device=)  # Assuming you have a tokenizer and model to pass
-    elif args.command == 'reproduce':
-        reproduce_our_work_steps()
+
     elif args.command == 'generate_bert_model_config':
         # Call your config generation function here
         from src.bert_model.fine_tune_utils import generate_custom_yaml_file
@@ -85,7 +80,8 @@ def parse_inputs():
     fine_tune_parser.add_argument('--config_path', type=str, required=False, help='Path to the config file')
     fine_tune_parser.add_argument('--pipe_configs', type=str, required=False, help='Path to the Directory containing config files. Will use every config inside this dir.')
     # Subparser for data_preprocess
-    data_preprocess_parser = subparsers.add_parser('data_preprocess', help='Preprocess the data')
+    data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
+    data_preprocess_parser.add_argument('--task', type=str, help='task of the train data ["classification", "regression", "gram"]')
     # Add arguments for data_preprocess here
     # Subparser for data_analysis
     data_analysis_parser = subparsers.add_parser('data_analysis', help='Analyze the data')
