@@ -14,21 +14,12 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from evaluation import eval_utils
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_selection import RFECV
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.decomposition import TruncatedSVD
-from sklearn import metrics
-from sklearn.metrics import (r2_score,
-                             mean_absolute_error,
-                             explained_variance_score,
-                             mean_squared_error, precision_recall_curve, roc_auc_score, average_precision_score,
-                             roc_curve, classification_report, ConfusionMatrixDisplay, PrecisionRecallDisplay, f1_score,
-                             precision_score, recall_score, matthews_corrcoef)
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 alphabet = {
     "-": 0,
