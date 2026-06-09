@@ -11,6 +11,7 @@ early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 8            # Warm-up period for early stopping
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
+add_features: false
 
 # Model and Optimizer Settings
 learning_rate: 0.00001            # Learning rate for optimizer
@@ -22,15 +23,14 @@ max_length: 36                    # Maximum input sequence length
 
 
 # Dataset and File Paths
-train_file: '../../data/regression_data/acinetobacter_baumannii_for_regression.csv'  # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './test'                             # Path to save the model
-plot_path: './plots'                                    # Path to save the plots
-add_features: false
+train_file: 'data/regression_data/acinetobacter_baumannii_for_regression.csv'
+model_path: 'Rostlab/prot_bert_bfd'
+model_save_path: 'models/debug'
+plot_path: 'model_plots/debug'
 
 # Logging Settings
-output_dir: './results'         # Path to checkpoints
-logging_dir: './logs'           # Path to logging directory
+output_dir: 'results/debug'
+logging_dir: 'logs/debug'
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
