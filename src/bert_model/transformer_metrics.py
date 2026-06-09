@@ -1,5 +1,4 @@
 import evaluate
-import numpy as np
 from sklearn.metrics import (
     matthews_corrcoef,
     roc_auc_score,

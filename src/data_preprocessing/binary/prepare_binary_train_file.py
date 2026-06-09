@@ -7,7 +7,7 @@ from peptides import Peptide as Pep
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
-from src.data_preprocessing.binary.happenn_preprocess import label_after_happen_style, label_after_happenn
+from src.data_preprocessing.binary.happenn_preprocess import label_after_happenn
 
 
 """

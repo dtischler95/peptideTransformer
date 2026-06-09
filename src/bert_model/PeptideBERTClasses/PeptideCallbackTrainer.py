@@ -4,7 +4,7 @@ import evaluate
 import matplotlib.pyplot as plt
 from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute_error, r2_score, roc_auc_score, \
     average_precision_score
-from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
+from transformers import TrainerCallback, TrainerState, TrainerControl
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.evaluation.eval_utils import get_pretty_name

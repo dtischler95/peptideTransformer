@@ -2,11 +2,9 @@ import logging
 import torch
 import umap
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn import manifold, metrics
+from sklearn import manifold
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from transformers import BertTokenizer, BertModel
