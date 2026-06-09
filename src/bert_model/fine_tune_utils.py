@@ -236,39 +236,23 @@ def format_one_hot_to_label(one_hot_tensor):
     return np.argmax(one_hot_tensor, axis=1).flatten()
 
 # TODO Update this function for all new parameters and formats
-def generate_custom_yaml_file(config_name: str,
-                              file_path: str = './bert_model/peptideBERT_configs/'):
-    """
-    Generates a custom-formatted YAML file with grouped settings and comments.
-    This is for much easier configuration and readability of the YAML file for new runs.
-
-    Parameters:
-    - config_name (str): Name of the current setup for easier identification.
-    - file_path (str): The path where the YAML file will be saved. !Should be the peptideBERT_config folder.!
-    """
-
-    yaml_content = """
+_CLS_YAML_TEMPLATE = """\
 # Training and Evaluation Settings
-model_class: 'ENTER MODELTYPE HERE'                    # Model class to use, either 'binary_dense' or 'regression'
+model_class: 'binary_dense'                            # 'binary_dense' for hemolysis classification
 do_train: true                                         # Train the model
 do_eval: true                                          # Evaluate the model
-do_predict: true                                       # Predict with the model
 num_train_epochs: 50                                   # Number of epochs to train the model
-per_device_train_batch_size: 256                       # Batch size for training
+per_device_train_batch_size: 64                        # Batch size for training
 per_device_eval_batch_size: 64                         # Batch size for evaluation
-early_stopping_patience: 7                             # Patience for early stopping
+early_stopping_patience: 5                             # Patience for early stopping
 early_stop_metric: 'eval_loss'                         # Metric for early stopping
 early_stop_mode: 'min'                                 # Mode for early stopping
-early_stop_warm_up: 30                                 # Warm-up period for early stopping
-dataloader_drop_last: false                            # Drop last batch if smaller than batch size
+early_stop_warm_up: 8                                  # Warm-up period for early stopping
 dataloader_num_workers: 1                              # Number of dataloader workers (higher can affect performance)
-show_encoding: False                                   # Show the encoding of the sequences from the tokenizer
 load_best_model_at_end: true                           # Load the best model at the end of training
-add_features: true                                     # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
-
 
 # Model and Optimizer Settings
-learning_rate: 0.00005                                 # Learning rate for optimizer
+learning_rate: 0.00001                                 # Learning rate for optimizer
 weight_decay: 0.01                                     # Weight decay for optimizer
 lr_scheduler_type: 'reduce_lr_on_plateau'              # Learning rate scheduler type
 lr_scheduler_kwargs:                                   # Additional scheduler arguments
@@ -278,18 +262,15 @@ max_length: 36                                         # Maximum input sequence 
 # Binary Classification Settings
 label_0_cluster_data: 500                              # Number of data points for label 0 used in downstream clustering
 label_1_cluster_data: 500                              # Number of data points for label 1 used in downstream clustering
+loss_function: 'bce_logit_loss'                        # Possible Choices ['bce', 'bce_logit_loss']
+add_features: false                                    # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
 
 
 # Dataset and File Paths
 train_file: SET TRAIN DATA PATH HERE                   # Path to training data
-model_path: SET MODEL PATH HERE                        # Path to pretrained model
+model_path: 'Rostlab/prot_bert_bfd'                   # Path to pretrained model
 model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
 plot_path: './plots'                                   # Path to save the plots
-
-# Validation and Test Settings
-validation_data_size: 0.2                              # Validation dataset size (fraction)
-test_data_size: 0.5                                    # Test dataset size (fraction)
-metric_for_best_model: 'loss'                          # Metric for selecting best model ['loss', 'accuracy']
 
 # Logging Settings
 output_dir: './results'                                # Path to checkpoints
@@ -297,26 +278,89 @@ logging_dir: './logs'                                  # Path to logging directo
 logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'                                      # Log level
 eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
-
-# Reproducibility
-seed: 42                                               # Random seed for reproducibility
+save_strategy: 'epoch'                                 # Save strategy (set to 'epoch' for this logic)
 
 # Hardware Settings
 use_cpu: false                                         # Use CPU for training
 
 # Miscellaneous Settings
-classification_weighted_labels: false                  # Use weighted labels for classification
 ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
-fast_debug: false                                      # Use fast debug mode (only if certain)
+fast_debug_mode: false                                 # Developer mode for pipeline testing
 """
 
+_REG_YAML_TEMPLATE = """\
+# Training and Evaluation Settings
+model_class: 'regression'                              # 'regression' for MIC regression
+do_train: true                                         # Train the model
+do_eval: true                                          # Evaluate the model
+num_train_epochs: 50                                   # Number of epochs to train the model
+per_device_train_batch_size: 64                        # Batch size for training
+per_device_eval_batch_size: 64                         # Batch size for evaluation
+early_stopping_patience: 5                             # Patience for early stopping
+early_stop_metric: 'eval_loss'                         # Metric for early stopping
+early_stop_mode: 'min'                                 # Mode for early stopping
+early_stop_warm_up: 8                                  # Warm-up period for early stopping
+dataloader_num_workers: 1                              # Number of dataloader workers (higher can affect performance)
+load_best_model_at_end: true                           # Load the best model at the end of training
+add_features: false                                    # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+
+# Model and Optimizer Settings
+learning_rate: 0.00001                                 # Learning rate for optimizer
+weight_decay: 0.01                                     # Weight decay for optimizer
+lr_scheduler_type: 'reduce_lr_on_plateau'              # Learning rate scheduler type
+lr_scheduler_kwargs:                                   # Additional scheduler arguments
+  patience: 4                                          # Patience for ReduceLROnPlateau scheduler
+max_length: 36                                         # Maximum input sequence length
+
+
+# Dataset and File Paths
+train_file: SET TRAIN DATA PATH HERE                   # Path to training data
+model_path: 'Rostlab/prot_bert_bfd'                   # Path to pretrained model
+model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
+plot_path: './plots'                                   # Path to save the plots
+
+# Logging Settings
+output_dir: './results'                                # Path to checkpoints
+logging_dir: './logs'                                  # Path to logging directory
+logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
+log_level: 'info'                                      # Log level
+eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
+save_strategy: 'epoch'                                 # Save strategy (set to 'epoch' for this logic)
+
+# Hardware Settings
+use_cpu: false                                         # Use CPU for training
+
+# Miscellaneous Settings
+ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
+fast_debug_mode: false                                 # Developer mode for pipeline testing
+"""
+
+
+def generate_custom_yaml_file(config_name: str,
+                              model_class: str = 'binary_dense',
+                              file_path: str = './bert_model/peptideBERT_configs/'):
+    """
+    Generates a YAML config file template for a new training run.
+    The template mirrors the current production config structure exactly.
+
+    Parameters:
+    - config_name (str): Filename of the YAML to create (e.g. 'my_organism.yaml').
+    - model_class (str): Task type — 'binary_dense' for hemolysis classification,
+                         'regression' for MIC regression.
+    - file_path (str): Directory where the YAML will be saved. Should be the peptideBERT_configs folder.
+    """
+    if model_class == 'binary_dense':
+        yaml_content = _CLS_YAML_TEMPLATE
+    elif model_class == 'regression':
+        yaml_content = _REG_YAML_TEMPLATE
+    else:
+        raise ValueError(f"model_class must be 'binary_dense' or 'regression', got: {model_class!r}")
+
+    out_path = Path(file_path) / config_name
     try:
-        # Write the YAML content to a file
-        with open(file_path + config_name, 'w') as file:
-            file.write(yaml_content.strip())
-        print(f"YAML file successfully created at: {file_path + config_name}. "
-              f"Please set all needed data file Paths and review the settings of this file for proper usage."
-              f"Parameters provided here are just used as an example.")
+        out_path.write_text(yaml_content, encoding='utf-8')
+        print(f"YAML template created at: {out_path}\n"
+              f"Set train_file, model_save_path, output_dir, and logging_dir before use.")
     except Exception as e:
         print(f"Error while creating YAML file: {e}")
 
