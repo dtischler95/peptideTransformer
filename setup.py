@@ -8,7 +8,6 @@ setup(
         'torch',
         'transformers',
         # Add other dependencies here
-        # TODO: Add the dependencies for the data_preprocess and data_analysis functions
     ],
     entry_points={
         'console_scripts': [

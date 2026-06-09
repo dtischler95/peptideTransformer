@@ -469,7 +469,7 @@ def init_model(train_dataset, training_args, n_features):
                                          model_path=training_args.model_path,
                                          n_features=n_features)
         data_collator = DefaultDataCollator()
-        run_metric = regression_metrics  # TODO implement regression metrics
+        run_metric = regression_metrics
 
     else:
         raise ValueError(

@@ -49,7 +49,6 @@ def train_classificators(file_path: str,
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}\n"
                 f"For File {file_path}")
 
-    # TODO SAFE EVAL DATA TO FILE!!
     best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
                                                                     x_train,
                                                                     y_train,
