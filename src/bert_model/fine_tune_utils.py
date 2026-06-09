@@ -18,6 +18,42 @@ from src.bert_model.transformer_metrics import binary_metrics, regression_metric
 from src.evaluation.eval_utils import overall_stats, get_model_stats, evaluate_hemo
 
 
+def _compute_desc_row(sequence: str) -> dict:
+    p = pep.Peptide(sequence)
+    return {f"desc__{k}": float(v) for k, v in p.descriptors().items()}
+
+
+def _add_descriptors(df: pd.DataFrame) -> pd.DataFrame:
+    desc_df = pd.DataFrame([_compute_desc_row(s) for s in df["sequence"]]).reset_index(drop=True)
+    df = df.reset_index(drop=True).join(desc_df)
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    return df
+
+
+def _load_split_files(base_file: str, debug_sample: bool = False) -> tuple:
+    """Loads pre-split train/val/test CSVs derived from a base file path."""
+    train_df = pd.read_csv(base_file.replace('.csv', "_train.csv"), sep=';')
+    val_df = pd.read_csv(base_file.replace('.csv', "_val.csv"), sep=';')
+    test_df = pd.read_csv(base_file.replace('.csv', "_test.csv"), sep=';')
+    if debug_sample:
+        train_df = train_df.sample(frac=1)[:100]
+    return train_df, val_df, test_df
+
+
+def _get_labels_and_features(data: pd.DataFrame, model_class: str, use_features: bool):
+    if model_class.startswith('regression'):
+        target_column = 'mic_log10'
+        drop_cols = ['sequence', target_column]
+    else:
+        target_column = 'label'
+        drop_cols = ['sequence', target_column]
+        if 'hemo_percent' in data.columns:
+            drop_cols += ['hemo_percent', 'hemo_concentration']
+    labels = data[target_column].values
+    features = data.drop(columns=drop_cols) if use_features else None
+    return labels, features
+
+
 def prepare_datasets(model_class: str,
                      model_path: str,
                      train_file: str,
@@ -27,117 +63,57 @@ def prepare_datasets(model_class: str,
                      max_length: int = 36,
                      cut_df_for_faster_debug: bool = False,
                      add_features: bool = False
-                     ) -> tuple[
-    BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset, int]:
+                     ) -> tuple[BertTokenizer, PeptideDataset, PeptideDataset, PeptideDataset, int]:
     """
-    Creates the datasets for training, validation and testing. For the given transformers Dataset class
-    Differentiates between binary classification and masked language modeling in this case.
-    Update the Dataset class if you want to use a different model or a different task so the Dataset class fits the
-    data and the task.
+    Loads pre-split train/val/test CSVs and builds PeptideDatasets for the given model class.
 
-    :param model_class: Model class to use, either 'binary_dense' or 'regression'
-    :param model_path: Path to the pretrained model
-    :param show_encoding: If the encoding of the vocabulary should be shown
-    :param train_file: Path to the training data
-    :param val_file: Path to the validation data
-    :param logger: Logger for logging
-    :param ignore_leakage: If data leakage should be ignored or cause an error to stop training
-    :param max_length: Maximum length for padding/truncation.
-    :param cut_df_for_faster_debug: If the dataframe should be cut for faster debugging. Default is False.
-    :param validation_data_size: Size of the validation data. Default is 0.2.
-    :param test_data_size: Size of the test data. Default is 0.5.
-    :param random_data_shuffle: If the data should be shuffled randomly or data previewed via like CD-Hit
-    :param add_features: If the concentration data should be used for training. Default is False.
-
-    :return: Tokenizer, train_dataset, val_dataset, test_dataset
+    :param model_class: One of 'binary_dense' or 'regression'
+    :param model_path: HuggingFace repo or local path to the pretrained model
+    :param train_file: Path to the base CSV (expects _train/_val/_test variants alongside it)
+    :param logger: Logger instance
+    :param show_encoding: Print the tokenizer vocabulary encoding
+    :param ignore_leakage: Suppress the ValueError on data leakage (keeps a warning)
+    :param max_length: Padding/truncation length for the tokenizer
+    :param cut_df_for_faster_debug: Slice train set to 100 rows for quick iteration
+    :param add_features: Append peptide descriptors as additional input features
+    :return: (tokenizer, train_dataset, val_dataset, test_dataset, n_extra_features)
     """
+    df_train, df_val, df_test = _load_split_files(train_file, debug_sample=cut_df_for_faster_debug)
 
-
-    def compute_desc_row(sequence):
-        p = pep.Peptide(sequence)
-        d = p.descriptors()
-        return {f"desc__{k}": float(v) for k, v in d.items()}
-
-    def add_descriptors(df):
-        desc_rows = [compute_desc_row(s) for s in df["sequence"]]
-        desc_df = pd.DataFrame(desc_rows).reset_index(drop=True)
-        df = df.reset_index(drop=True).join(desc_df)
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        return df
-
-    def load_and_sample_data(file, sample=False):
-        train_df = pd.read_csv(file.replace('.csv', "_train.csv"), sep=';')
-        test_df = pd.read_csv(file.replace('.csv', "_test.csv"), sep=';')
-        val_df = pd.read_csv(file.replace('.csv', "_val.csv"), sep=';')
-        return train_df.sample(frac=1)[:100] if sample else train_df, test_df, val_df
-
-
-    def get_labels_and_features(data, concentration):
-
-        if model_class.startswith('regression'):
-            target_column = 'mic_log10'
-            columns_to_drop = ['sequence', target_column]
-        elif model_class.startswith('binary'):
-            target_column = 'label'
-            columns_to_drop = ['sequence', target_column]
-            if 'hemo_percent' in data.keys():
-                columns_to_drop += ['hemo_percent', 'hemo_concentration']
-        labels = data[target_column].values
-        concentrations = data.drop(columns=columns_to_drop) if concentration else None
-        return labels, concentrations
-
-    df_train, df_test, df_val = load_and_sample_data(train_file, cut_df_for_faster_debug)
-
-    no_feature_size = df_train.shape[1]
     if add_features:
-        df_train = add_descriptors(df_train)
-        df_test = add_descriptors(df_test)
-        df_val = add_descriptors(df_val)
+        df_train = _add_descriptors(df_train)
+        df_val = _add_descriptors(df_val)
+        df_test = _add_descriptors(df_test)
 
-    feature_size = df_train.shape[1] - no_feature_size
+    desc_cols = [c for c in df_train.columns if c.startswith('desc__')]
+    feature_size = len(desc_cols)
 
-
-    label_data_train, feature_data_train = get_labels_and_features(df_train, add_features)
-    label_data_val, feature_data_val = get_labels_and_features(df_val, add_features)
-    label_data_test, feature_data_test = get_labels_and_features(df_test, add_features)
+    label_train, feat_train = _get_labels_and_features(df_train, model_class, add_features)
+    label_val, feat_val = _get_labels_and_features(df_val, model_class, add_features)
+    label_test, feat_test = _get_labels_and_features(df_test, model_class, add_features)
 
     tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
     if add_features:
         imp = SimpleImputer(strategy='median')
         scaler = StandardScaler()
+        feat_train = scaler.fit_transform(imp.fit_transform(feat_train.values)).astype(np.float32)
+        feat_val = scaler.transform(imp.transform(feat_val.values)).astype(np.float32)
+        feat_test = scaler.transform(imp.transform(feat_test.values)).astype(np.float32)
 
-        feature_data_train = scaler.fit_transform(imp.fit_transform(feature_data_train.values)).astype(np.float32)
-        feature_data_val = scaler.transform(imp.transform(feature_data_val.values)).astype(np.float32)
-        feature_data_test = scaler.transform(imp.transform(feature_data_test.values)).astype(np.float32)
+    def _make_dataset(df, labels, features):
+        return PeptideDataset(peptides=df['sequence'], features=features, tokenizer=tokenizer,
+                              labels=labels, max_length=max_length, model_class=model_class)
 
-    train_dataset = PeptideDataset(peptides=df_train['sequence'],
-                                   features=feature_data_train,
-                                   tokenizer=tokenizer,
-                                   labels=label_data_train,
-                                   max_length=max_length,
-                                   model_class=model_class)
-    val_dataset = PeptideDataset(peptides=df_val['sequence'],
-                                 features=feature_data_val,
-                                 tokenizer=tokenizer,
-                                 labels=label_data_val,
-                                 max_length=max_length,
-                                 model_class=model_class)
-    test_dataset = PeptideDataset(peptides=df_test['sequence'],
-                                  features=feature_data_test,
-                                  tokenizer=tokenizer,
-                                  labels=label_data_test,
-                                  max_length=max_length,
-                                  model_class=model_class)
-
+    train_dataset = _make_dataset(df_train, label_train, feat_train)
+    val_dataset = _make_dataset(df_val, label_val, feat_val)
+    test_dataset = _make_dataset(df_test, label_test, feat_test)
 
     if show_encoding:
         get_encoding(tokenizer)
 
-
     check_data_loader_for_leakage(train_data_loader=train_dataset, val_data_loader=val_dataset,
                                   test_data_loader=test_dataset, ignore_leakage=ignore_leakage, logger=logger)
-
 
     return tokenizer, train_dataset, val_dataset, test_dataset, feature_size
 
