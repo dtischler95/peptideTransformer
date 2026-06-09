@@ -67,34 +67,6 @@ def load_model(path):
     return model
 
 
-def check_label_col(label_col, data: pd.DataFrame):
-    # Check single target col
-    # Check multiple target cols
-    # Some did you mean xy output?
-
-    # print(f"-> Checking for label column: {label_col}")
-    sleep(0.75)
-    print(f"[green]Checking for label column: {label_col}")
-    all_columns = data.columns
-
-    if label_col not in all_columns:
-
-        # print(f"-> Column: {label_col} not found in Dataframe")
-        # sleep(0.75)
-        print(f"[red]Column: {label_col} not found in Dataframe")
-    else:
-        print(f"[green]Select label column: {label_col}")
-
-    print(f"[green]Removing labels from original data")
-    target = data[label_col]
-    data_df = data.drop(columns=label_col)  # Labels aus Daten entfernen
-    features = data_df.columns
-
-    if not len(all_columns) > len(features):
-        print(f"[red]Removing Labelcolumn didnt work properly!")
-
-    return data_df, target, features
-
 
 def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
     logger.info(f"Regression metrics: \n"
@@ -168,14 +140,6 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
     save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
     return best_estimator, grid_search, model
 
-
-def enocde_onehot_without_features(sequences: pd.DataFrame, target_col: str):
-    df = add_pos_columns(sequences, L=MAX_LEN)
-    pos_cols = [f"pos{i + 1}" for i in range(MAX_LEN)]
-    ohe = OneHotEncoder(categories=[CATEGORIES] * 36, handle_unknown="ignore", sparse_output=False)
-    onehot = ohe.fit_transform(df[pos_cols])
-    label = sequences[target_col].tolist()
-    return onehot, label
 
 
 def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, model_name):
@@ -256,58 +220,12 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
 
 
-def calculate_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculates the features for a given sequence inside the DataFrame
-    """
-
-    peptide_df = pd.DataFrame()
-
-    for sequence in df['sequence']:
-        peptide_object = pep.Peptide(sequence)
-
-        tmp_peptide_df = pd.DataFrame([list(peptide_object.descriptors().values())],
-                                      columns=list(peptide_object.descriptors().keys()))
-        tmp_peptide_df['sequence_checker_2'] = sequence
-
-        peptide_df = pd.concat([peptide_df, tmp_peptide_df])
-
-        # aa_dipeptide_composition_df = pd.concat([aa_dipeptide_composition_df, tmp_aa_dipeptide_composition_df])
-
-    peptide_df.reset_index(drop=True, inplace=True)
-
-    df = pd.concat([df, peptide_df], axis=1)
-
-    df = df.drop(columns=['sequence_checker_2'])
-
-    return df
-
 
 PAD = "-"
 MAX_LEN = 36
 AA = list("ACDEFGHIKLMNPQRSTVWY")  # Standard-20
 CATEGORIES = AA + [PAD]
 
-
-def pad_seq(seq, L=MAX_LEN, pad=PAD):
-    seq = str(seq)
-    return seq[:L] + pad * max(0, L - len(seq))
-
-
-def add_pos_columns(df, L=MAX_LEN, pad=PAD):
-    # keine Inplace-Änderung am Slice; wir bauen neue Spalten und geben ein neues DF zurück
-    seq_pad = (
-        df["sequence"].astype(str)
-        .str.slice(0, L)  # trunkieren
-        .str.ljust(L, fillchar=pad)  # rechts padden
-    )
-    # Vektorisierter Bau der Positionsspalten
-    pos_df = pd.DataFrame(
-        {f"pos{i + 1}": seq_pad.str[i] for i in range(L)},
-        index=df.index
-    )
-    # neues DF zurückgeben
-    return pd.concat([df.copy(), pos_df], axis=1)
 
 
 def compute_desc_row(sequence):
@@ -396,25 +314,6 @@ def _get_scores(model, X):
         return (s - smin) / (smax - smin + 1e-12)
     # last resort – not ideal for curves
     return model.predict(X).astype(float)
-
-
-def _best_f1_threshold(y_true, y_score, plot_path):
-    p, r, thr = precision_recall_curve(y_true, y_score)
-
-    display = PrecisionRecallDisplay.from_predictions(y_true, y_score, plot_chance_level=True, pos_label=1)
-    _ = display.ax_.set_title("2-Klassen Precision-Recall Kurve")
-    display.plot()
-    plt.xlabel("Recall (Positive Klasse: 1)")
-    plt.ylabel("Precision (Positive Klasse: 1)")
-    plt.savefig(plot_path + '/precision_recall_curve.png')
-    plt.close()
-    plt.clf()
-
-    f1 = 2 * p * r / (p + r + 1e-12)
-    i = np.nanargmax(f1)
-    # thresholds has length = len(p)-1; clamp index
-    use_i = min(i, len(thr) - 1) if len(thr) > 0 else 0
-    return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
 def plot_residuals_vs_length_from_df(model,
