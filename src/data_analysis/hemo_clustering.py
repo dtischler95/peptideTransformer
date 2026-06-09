@@ -195,7 +195,6 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
 
 def perform_clustering(embedded_sequences,
                        plot_path: str,
-                       sequence_labels=None,
                        logger: logging.Logger or None = None,
                        tag: str = ""):
     """
@@ -248,10 +247,10 @@ def perform_clustering(embedded_sequences,
     clustering(umap_fit)
 
     print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, labels=sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
+    plot_tsne(tsne_fit, plot_path=f"{plot_path}{tag}_tsne_plot")
 
     print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, labels=sequence_labels, plot_path=f"{plot_path}{tag}_umap_plot")
+    plot_umap(umap_fit, plot_path=f"{plot_path}{tag}_umap_plot")
 
 
 def encode_peptides(sequence_file,
@@ -364,7 +363,6 @@ def cluster_model_embedding(file_path,
                                                           plot_path=plot_path)
 
     perform_clustering(embedded_sequences=embedding,
-                       sequence_labels=labels,
                        logger=logger,
                        tag=data_tag,
                        plot_path=plot_path)
