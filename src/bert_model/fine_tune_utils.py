@@ -1,10 +1,10 @@
 import logging
-import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import peptides as pep
+import torch
 import yaml
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -393,7 +393,6 @@ def get_bce_label_weight(labels):
     """
     Get the label weights for binary cross-entropy loss.
     """
-    import torch
     label_0 = np.count_nonzero(labels == 0)
     label_1 = np.count_nonzero(labels == 1)
     return torch.tensor([label_0 / label_1])

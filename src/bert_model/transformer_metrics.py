@@ -1,6 +1,13 @@
 import evaluate
 import numpy as np
-from sklearn.metrics import matthews_corrcoef, roc_auc_score, average_precision_score
+from sklearn.metrics import (
+    matthews_corrcoef,
+    roc_auc_score,
+    average_precision_score,
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+)
 
 
 def regression_metrics(eval_preds) -> dict:
@@ -11,8 +18,6 @@ def regression_metrics(eval_preds) -> dict:
 
     :return: dictionary with the metrics
     """
-
-    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
     predictions, labels = eval_preds
     # Get predicted labels from logits
