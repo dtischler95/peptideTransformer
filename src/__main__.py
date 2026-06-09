@@ -1,12 +1,16 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 from src.bert_model.fine_tune_protBERT import fine_tune
 from src.data_preprocessing.data_splitter import data_splitter
 
 # Adding the src folder to python path so the module is runnable
 sys.path.append(os.path.dirname(__file__))
+
+_SRC_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _SRC_DIR.parent
 
 
 
@@ -23,7 +27,7 @@ def main():
         # If we have configs in our config dir we can just pass the config name.
         if args.pipe_configs:
             # If no path provides use a default path
-            path = './src/bert_model/peptideBERT_configs/config_pipe_dir/' if args.pipe_configs == 'default' else args.pipe_configs
+            path = str(_SRC_DIR / 'bert_model' / 'peptideBERT_configs' / 'config_pipe_dir') if args.pipe_configs == 'default' else args.pipe_configs
 
             for file in os.listdir(path):
                 if file.endswith('.yaml'):
@@ -32,7 +36,7 @@ def main():
 
         if args.config_path:
             if '/' not in args.config_path:
-                args.config_path = f"./src/bert_model/peptideBERT_configs/{args.config_path}"
+                args.config_path = str(_SRC_DIR / 'bert_model' / 'peptideBERT_configs' / args.config_path)
             # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
             fine_tune(
                 config_path=args.config_path
@@ -40,7 +44,59 @@ def main():
 
 
     elif args.command == 'data_init':
-        data_splitter(task=args.task)
+        data_splitter(task=args.task, data_dir=args.data_dir if args.data_dir else None)
+
+    elif args.command == 'ml_classify':
+        from src.machine_learning.train_classificators import run_all
+        from src.machine_learning import config
+        from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+        from sklearn.svm import SVC
+        from xgboost import XGBClassifier
+        model_list = [
+            ('xtra', ExtraTreesClassifier()),
+            ('xgb', XGBClassifier()),
+            ('rf', RandomForestClassifier()),
+            ('svc', SVC(probability=True)),
+        ]
+        param_grids = [
+            config.xtra_gram_param_grid,
+            config.xgb_cls_param_grid,
+            config.rf_cls_param_grid,
+            config.svc_cls_param_grid,
+        ]
+        run_all(
+            data_dir=args.data_dir or (_REPO_ROOT / "data" / "hemo_train"),
+            output_root=args.output_dir or (_REPO_ROOT / "final_plots"),
+            models=model_list,
+            grids=param_grids,
+            calculate_features=not args.no_features,
+        )
+
+    elif args.command == 'ml_regress':
+        from src.machine_learning.train_regressors import run_all
+        from src.machine_learning import config
+        from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+        from sklearn.svm import SVR
+        from xgboost import XGBRegressor
+        model_list = [
+            ('xtra', ExtraTreesRegressor(n_jobs=1)),
+            ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
+            ('rf', RandomForestRegressor(n_jobs=1)),
+            ('svr', SVR()),
+        ]
+        param_grids = [
+            config.xtra_gram,
+            config.xgb_param_grid,
+            config.rf_param_grid,
+            config.svr_param_grid,
+        ]
+        run_all(
+            data_dir=args.data_dir or (_REPO_ROOT / "data" / "regression_data"),
+            output_root=args.output_dir or (_REPO_ROOT / "final_plots"),
+            models=model_list,
+            grids=param_grids,
+            calculate_features=not args.no_features,
+        )
 
     elif args.command == 'data_analysis':
         ...
@@ -81,8 +137,18 @@ def parse_inputs():
     fine_tune_parser.add_argument('--pipe_configs', type=str, required=False, help='Path to the Directory containing config files. Will use every config inside this dir.')
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
-    data_preprocess_parser.add_argument('--task', type=str, help='task of the train data ["classification", "regression", "gram"]')
-    # Add arguments for data_preprocess here
+    data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["classification", "regression", "gram"]')
+    data_preprocess_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory (uses repo default if omitted)')
+    # Subparser for ml_classify
+    ml_classify_parser = subparsers.add_parser('ml_classify', help='Train classical ML classification models')
+    ml_classify_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory')
+    ml_classify_parser.add_argument('--output_dir', type=str, default=None, help='Path to output directory')
+    ml_classify_parser.add_argument('--no_features', action='store_true', help='Disable biochemical feature engineering')
+    # Subparser for ml_regress
+    ml_regress_parser = subparsers.add_parser('ml_regress', help='Train classical ML regression models')
+    ml_regress_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory')
+    ml_regress_parser.add_argument('--output_dir', type=str, default=None, help='Path to output directory')
+    ml_regress_parser.add_argument('--no_features', action='store_true', help='Disable biochemical feature engineering')
     # Subparser for data_analysis
     data_analysis_parser = subparsers.add_parser('data_analysis', help='Analyze the data')
     # Add arguments for data_analysis here
