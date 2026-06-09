@@ -29,7 +29,7 @@ def regression_metrics(eval_preds) -> dict:
     return {
         "MSE": round(mse, 4),
         "MAE": round(mae, 4),
-        "R2": round(r2, 4)
+        "r2": round(r2, 4)
     }
 
 
@@ -63,25 +63,25 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
     if debug_print:
         label_0_counter, label_1_counter = _debug_predicted_labels(predictions)
         return {
-            "Genauigkeit": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
+            "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
             "MCC": round(mcc, 4),
-            "Präzision": round(precision, 4),
-            "F1-Wert": round(f1, 4),
+            "precision": round(precision, 4),
+            "f1": round(f1, 4),
             "recall": round(recall, 4),
             "ROC-AUC": round(auroc, 4),
-            "Durchschnittliche Präzision": round(average_precision, 4),
+            "average_precision": round(average_precision, 4),
             "label_0_count_on_epoch_end": label_0_counter,
             "label_1_count_on_epoch_end": label_1_counter
         }
 
     return {
-        "Genauigkeit": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
+        "accuracy": round(accuracy.compute(predictions=predictions, references=labels)["accuracy"], 4),
         "MCC": round(mcc, 4),
-        "Präzision": round(precision, 4),
-        "F1-Wert": round(f1, 4),
+        "precision": round(precision, 4),
+        "f1": round(f1, 4),
         "recall": round(recall, 4),
         "ROC-AUC": round(auroc, 4),
-        "Durchschnittliche Präzision": round(average_precision, 4)
+        "average_precision": round(average_precision, 4)
     }
 
 
