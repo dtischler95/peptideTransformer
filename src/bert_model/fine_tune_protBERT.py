@@ -133,7 +133,6 @@ def fine_tune(config_path: str):
                                              sequence_max_length=training_args.max_length,
                                              label_0_cluster_data=training_args.label_0_cluster_data,
                                              label_1_cluster_data=training_args.label_1_cluster_data,
-                                             add_features=training_args.add_features,
                                              logger=logger
                                              )
 
@@ -147,7 +146,6 @@ def fine_tune(config_path: str):
                                     sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data,
-                                    add_features=training_args.add_features,
                                     logger=logger
                                     )
 
@@ -161,7 +159,6 @@ def fine_tune(config_path: str):
                                     sequence_max_length=training_args.max_length,
                                     label_0_cluster_data=training_args.label_0_cluster_data,
                                     label_1_cluster_data=training_args.label_1_cluster_data,
-                                    add_features=training_args.add_features,
                                     logger=logger
                                     )
 
