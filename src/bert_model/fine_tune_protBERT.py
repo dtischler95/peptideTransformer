@@ -101,7 +101,7 @@ def fine_tune(config_path: str):
     trainer = PeptideTrainer(
         model=model,  # The model to be trained
         args=training_args,  # Training arguments from above
-        data_collator=data_collator,  # Data collator for masking sequences if mlm is used
+        data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         compute_metrics=run_metric,
@@ -232,12 +232,6 @@ def fine_tune(config_path: str):
                         f"Test R2: {round(test_r2, 4)}\n"
                         f"Test MSE: {round(test_mse, 4)}\n")
 
-
-    if training_args.do_predict:
-        ...
-        """
-        This part is only for debugging purposes.        
-        """
 
 
 if __name__ == '__main__':

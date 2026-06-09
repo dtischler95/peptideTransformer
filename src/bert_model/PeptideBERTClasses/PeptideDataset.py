@@ -12,7 +12,7 @@ class PeptideDataset(Dataset):
         """
         Args:
             peptides: List of peptide sequences.
-            labels: List of labels (for binary classification), can be None for self-supervised tasks like MLM.
+            labels: List of labels (for binary classification or regression).
             tokenizer: Tokenizer to tokenize the peptide sequences.
             max_length: Maximum length for padding/truncation.
         """
@@ -21,7 +21,7 @@ class PeptideDataset(Dataset):
 
         self.features = features
         if labels is not None:
-            self.labels = labels  # Labels are optional for self-supervised learning tasks
+            self.labels = labels
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.model_class = model_class
