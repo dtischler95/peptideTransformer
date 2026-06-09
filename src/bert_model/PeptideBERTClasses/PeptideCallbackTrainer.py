@@ -128,9 +128,9 @@ class PlotMetricsCallback(TrainerCallback):
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
 
-        plt.plot(epochs, eval_metrics, label=f"Validierungs {metric_name}", color='blue')
-        plt.plot(epochs, train_metrics, label=f"Trainings {metric_name}", color='red')
-        plt.xlabel('Epoche')
+        plt.plot(epochs, eval_metrics, label=f"Val {metric_name}", color='blue')
+        plt.plot(epochs, train_metrics, label=f"Train {metric_name}", color='red')
+        plt.xlabel('Epoch')
         plt.ylabel(metric_name, color='blue')
         plt.tick_params(axis='y', labelcolor='blue')
 
