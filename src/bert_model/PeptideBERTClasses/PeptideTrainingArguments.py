@@ -28,7 +28,6 @@ class PeptideTrainingArguments(TrainingArguments):
                  label_0_cluster_data: int = 500,
                  label_1_cluster_data: int = 500,
                  loss_function: str = 'bce',
-                 data_shuffle: bool = True,
                  add_features: bool = False,
                  **kwargs):
         """
