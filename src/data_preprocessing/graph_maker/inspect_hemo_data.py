@@ -14,34 +14,6 @@ happenn_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "happen_styl
 white_lab_train_data = str(_REPO_ROOT / "data" / "train_data" / "whitelab_hemo_data.csv")
 
 
-def label_comparison():
-
-
-    df_happen = pd.read_csv(happenn_style_train_data, sep=';')
-    label_counts_happen = df_happen["label"].value_counts()
-
-    df_whitelab = pd.read_csv(white_lab_train_data, sep=';')
-    label_counts_whitelab = df_whitelab["label"].value_counts()
-
-    plt.figure(figsize=(10, 5))
-    plt.suptitle(f"Label Verteilung für Hämotoxische Datensätze")
-    plt.subplot(1, 2, 1)
-    plt.bar(label_counts_whitelab.index, label_counts_whitelab.values / df_whitelab.shape[0] * 100, color=['blue', 'orange'])
-    plt.xticks([0, 1])
-    plt.title(f"Verteilung der Label Klassen (Whitelab)")
-    plt.xlabel('Label')
-    plt.ylabel("Häufigkeit [%")
-    plt.subplot(1, 2, 2)
-    plt.bar(label_counts_happen.index, label_counts_happen.values / df_happen.shape[0] * 100, color=['blue', 'orange'])
-    plt.title(f"Verteilung der Label Klassen (HAPPENN)")
-    plt.xlabel('Label')
-    plt.ylabel("Häufigkeit [%]")
-    plt.tight_layout()
-    plt.xticks([0, 1])
-    plt.savefig(f"{_PLOTS_ROOT}/hemo_label_comparison.png")
-    plt.close()
-
-
 def length_per_label_comparison():
     df_happen = pd.read_csv(happenn_style_train_data, sep=';')
     df_happen['length'] = df_happen['sequence'].apply(len)
@@ -157,10 +129,6 @@ def mic_amino_frequency_comparison_multi(
 
 
 def main():
-    df = pd.read_csv(happenn_style_train_data, sep=';')
-
-    sequences_0 = df[df["label"] == 0]["sequence"].tolist()
-    sequences_1 = df[df["label"] == 1]["sequence"].tolist()
     mic_amino_frequency_comparison_multi([white_lab_train_data, happenn_style_train_data])
 
 
