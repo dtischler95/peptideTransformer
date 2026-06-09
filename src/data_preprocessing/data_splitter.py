@@ -13,7 +13,7 @@ def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: 
     """
     seq_grp = df.groupby('sequence', as_index=False)
 
-    if task == "classification":
+    if task == "cls":
         # Mehrheitslabel pro Sequenz bilden und Duplikate entfernen
         seq_y = (
             df.groupby('sequence', as_index=False)[target_col]
@@ -73,7 +73,7 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
         stratify=strat_trainval
     )
 
-    if task == "classification":
+    if task == "cls":
         cls_strat = strat_df
     elif task == "gram":
         cls_strat = tmp_df[['sequence', 'mic_log10' ,target_col]]
@@ -92,7 +92,7 @@ def data_splitter(task: str,
                   data_dir: Path | str | None = None,
                   test_size=0.20, val_size=0.16, random_state=42):
 
-    if task == "classification":
+    if task == "cls":
         data_dir_suffix = "*.csv"
         file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "hemo_train"
         target_col = 'label'
@@ -108,7 +108,7 @@ def data_splitter(task: str,
 
     for train_file in file_dir.glob(data_dir_suffix):
         tmp_df = pd.read_csv(train_file, sep=';')
-        if task == "classification":
+        if task == "cls":
             try:
                 tmp_df = tmp_df.drop(columns=["hemo_concentration", "hemo_percent"])
             except KeyError:
@@ -125,5 +125,4 @@ def data_splitter(task: str,
         test_df.to_csv(out_base.with_name(out_base.name + "_test.csv"), sep=';', index=False)
 
 if __name__ == '__main__':
-    data_splitter(task='gram')
-    # Für Klassifikation wäre: task='classification'
+    data_splitter(task='cls')
