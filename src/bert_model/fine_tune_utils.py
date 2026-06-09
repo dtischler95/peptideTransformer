@@ -18,6 +18,9 @@ from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTr
 from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
 from src.evaluation.eval_utils import overall_stats, get_model_stats, evaluate_hemo
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_FILE_PATH_KEYS = frozenset({'train_file', 'model_save_path', 'plot_path', 'output_dir', 'logging_dir'})
+
 
 def _compute_desc_row(sequence: str) -> dict:
     p = pep.Peptide(sequence)
@@ -194,29 +197,37 @@ def check_data_loader_for_leakage(train_data_loader: PeptideDataset or None,
         logger.info("\n-------------- No Data Leakage Detected --------------\n")
 
 
-def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
+def _resolve_paths(config: dict) -> None:
+    """Resolve relative file paths in the config dict against the repo root in-place.
+
+    This allows configs to be launched from any working directory. Paths in
+    _FILE_PATH_KEYS are treated as repo-root-relative if not absolute.
+    model_path is left untouched unless it starts with '.' (HuggingFace model
+    IDs such as 'Rostlab/prot_bert_bfd' are passed through unchanged).
     """
-    Function to load the training arguments from a config file for the given training type.
-    You can implement more config checks here if needed.
-    Training Configuration will be logged.
+    for key in _FILE_PATH_KEYS:
+        value = config.get(key)
+        if value and not Path(str(value)).is_absolute():
+            config[key] = str(_REPO_ROOT / value)
+    mp = config.get('model_path', '')
+    if mp and not Path(mp).is_absolute() and mp.startswith('.'):
+        config['model_path'] = str(_REPO_ROOT / mp)
+
+
+def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
+    """Load training arguments from a YAML config file.
+
+    Relative file paths are resolved against the repository root so the script
+    can be launched from any working directory.
     """
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
-    logger.info("Logger wont log this anymore :(")
-    # more logging, we all love logging
+    _resolve_paths(config)
 
     print("Set Parameters for this training run:")
     for k, v in config.items():
         print(f"  {k}: {v}")
-
-    if config['plot_path'] is None:
-        config.plot_path = './plots'
-        logger.info(f"Plot path not set. Using default path: {config.plot_path}")
-
-    if not os.path.exists(config['plot_path']):
-        os.makedirs(config['plot_path'])
-        logger.info(f"Created directory: {config['plot_path']}")
 
     return PeptideTrainingArguments(**config)
 
@@ -267,14 +278,14 @@ add_features: false                                    # Use concentration as ex
 
 
 # Dataset and File Paths
-train_file: SET TRAIN DATA PATH HERE                   # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                   # Path to pretrained model
-model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
-plot_path: './plots'                                   # Path to save the plots
+train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
+model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
+model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
+plot_path: 'model_plots/MY_RUN_NAME'                   # Where to save evaluation plots
 
 # Logging Settings
-output_dir: './results'                                # Path to checkpoints
-logging_dir: './logs'                                  # Path to logging directory
+output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints
+logging_dir: 'logs/MY_RUN_NAME'                        # Path to logging directory
 logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'                                      # Log level
 eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
@@ -314,14 +325,14 @@ max_length: 36                                         # Maximum input sequence 
 
 
 # Dataset and File Paths
-train_file: SET TRAIN DATA PATH HERE                   # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                   # Path to pretrained model
-model_save_path: SET MODEL SAVE PATH HERE              # Path to save the model
-plot_path: './plots'                                   # Path to save the plots
+train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
+model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
+model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
+plot_path: 'model_plots/MY_RUN_NAME'                   # Where to save evaluation plots
 
 # Logging Settings
-output_dir: './results'                                # Path to checkpoints
-logging_dir: './logs'                                  # Path to logging directory
+output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints
+logging_dir: 'logs/MY_RUN_NAME'                        # Path to logging directory
 logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'                                      # Log level
 eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)

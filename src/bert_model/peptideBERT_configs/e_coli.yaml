@@ -23,14 +23,14 @@ max_length: 36                    # Maximum input sequence length
 
 
 # Dataset and File Paths
-train_file: './data/regression_data/escherichia_coli_for_regression.csv'  # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './models/e_coli'                             # Path to save the model
-plot_path: './model_plots/e_coli_plots'                        # Path to save the plots
+train_file: 'data/regression_data/escherichia_coli_for_regression.csv'
+model_path: 'Rostlab/prot_bert_bfd'
+model_save_path: 'models/e_coli'
+plot_path: 'model_plots/e_coli'
 
 # Logging Settings
-output_dir: './results_ecoli'         # Path to checkpoints
-logging_dir: './logs_ecoli'           # Path to logging directory
+output_dir: 'results/e_coli'
+logging_dir: 'logs/e_coli'
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)

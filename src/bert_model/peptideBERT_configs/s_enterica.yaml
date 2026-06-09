@@ -23,14 +23,14 @@ max_length: 36                    # Maximum input sequence length
 
 
 # Dataset and File Paths
-train_file: './data/regression_data/salmonella_enterica_for_regression.csv'  # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
-model_save_path: './models/salmonella_enterica'                             # Path to save the model
-plot_path: './model_plots/salmonella_enterica_plots'                        # Path to save the plots
+train_file: 'data/regression_data/salmonella_enterica_for_regression.csv'
+model_path: 'Rostlab/prot_bert_bfd'
+model_save_path: 'models/s_enterica'
+plot_path: 'model_plots/s_enterica'
 
 # Logging Settings
-output_dir: './results_salmonella_enterica'         # Path to checkpoints
-logging_dir: './logs_salmonella_enterica'           # Path to logging directory
+output_dir: 'results/s_enterica'
+logging_dir: 'logs/s_enterica'
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)

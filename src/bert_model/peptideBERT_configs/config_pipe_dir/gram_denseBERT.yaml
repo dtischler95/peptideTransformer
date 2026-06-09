@@ -28,14 +28,14 @@ loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_log
 
 
 # Dataset and File Paths
-train_file: './data/gram/gram_dataset.csv'  # Path to training data
-model_path: 'Rostlab/prot_bert_bfd'                               # Path to pretrained model
-model_save_path: './models/gram'             # Path to save the model
-plot_path: './model_plots/gram_plots'        # Path to save the plots
+train_file: 'data/gram/gram_dataset.csv'
+model_path: 'Rostlab/prot_bert_bfd'
+model_save_path: 'models/gram'
+plot_path: 'model_plots/gram'
 
 # Logging Settings
-output_dir: './results_gram'         # Path to checkpoints
-logging_dir: './logs_gram'           # Path to logging directory
+output_dir: 'results/gram'
+logging_dir: 'logs/gram'
 logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
