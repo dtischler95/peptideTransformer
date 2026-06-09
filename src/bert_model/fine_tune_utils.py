@@ -16,7 +16,7 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBe
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
-from src.evaluation.eval_utils import overall_stats, get_model_stats, evaluate_hemo
+from src.evaluation.eval_utils import evaluate_hemo
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _FILE_PATH_KEYS = frozenset({'train_file', 'model_save_path', 'plot_path', 'output_dir', 'logging_dir'})

@@ -1,13 +1,9 @@
 from typing import Union, Optional, Dict, Any
-from datasets import Dataset
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import Trainer, PreTrainedModel
-from transformers.utils.import_utils import is_datasets_available
-from transformers.trainer_utils import seed_worker
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.fine_tune_utils import format_logit_to_label, format_one_hot_to_label
+from src.bert_model.fine_tune_utils import format_logit_to_label
 
 
 
