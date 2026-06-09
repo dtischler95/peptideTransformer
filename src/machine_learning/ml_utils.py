@@ -229,7 +229,7 @@ def plot_residuals_vs_length_from_df(model,
                       target_col,
                       plot_path,
                       calculate_features,
-                      title="Dichteplot der Residuen"):
+                      title="Residual Density Plot"):
     # Labels mappen
     df = df.copy()
     df["label"] = df["label"].map({0: "Gram–", 1: "Gram+"})
@@ -266,8 +266,8 @@ def plot_residuals_vs_length_from_df(model,
     )
 
     plt.axvline(0, color='black', linewidth=1)
-    plt.xlabel("Residuum")
-    plt.ylabel("Dichte")
+    plt.xlabel("Residual")
+    plt.ylabel("Density")
     plt.title(title)
     plt.tight_layout()
 

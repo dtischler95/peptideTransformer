@@ -28,31 +28,31 @@ def length_per_label_comparison():
     df_whitelab_active = df_whitelab[df_whitelab['label'] == 1]
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-    fig.suptitle("Längenverteilung für Hämotoxische Datensätze")
+    fig.suptitle("Sequence Length Distribution for Hemolytic Datasets")
 
-    # Top left: Whitelab Inaktiv
+    # Top left: Whitelab Inactive
     sns.histplot(data=df_whitelab_inactive, x='length', hue='label', multiple='stack', bins=30, ax=axes[0, 0])
-    axes[0, 0].set_title("Längenverteilung Inaktiv (Whitelab)")
-    axes[0, 0].set_xlabel("Länge der Sequenz")
-    axes[0, 0].set_ylabel("Häufigkeit")
+    axes[0, 0].set_title("Length Distribution Inactive (Whitelab)")
+    axes[0, 0].set_xlabel("Sequence Length")
+    axes[0, 0].set_ylabel("Count")
 
-    # Top right: Whitelab Aktiv
+    # Top right: Whitelab Active
     sns.histplot(data=df_whitelab_active, x='length', hue='label', multiple='stack', bins=30, ax=axes[0, 1])
-    axes[0, 1].set_title("Längenverteilung Aktiv (Whitelab)")
-    axes[0, 1].set_xlabel("Länge der Sequenz")
-    axes[0, 1].set_ylabel("Häufigkeit")
+    axes[0, 1].set_title("Length Distribution Active (Whitelab)")
+    axes[0, 1].set_xlabel("Sequence Length")
+    axes[0, 1].set_ylabel("Count")
 
-    # Bottom left: HAPPENN Inaktiv
+    # Bottom left: HAPPENN Inactive
     sns.histplot(data=df_happen_inactive, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 0])
-    axes[1, 0].set_title("Längenverteilung Inaktiv (HAPPENN)")
-    axes[1, 0].set_xlabel("Länge der Sequenz")
-    axes[1, 0].set_ylabel("Häufigkeit")
+    axes[1, 0].set_title("Length Distribution Inactive (HAPPENN)")
+    axes[1, 0].set_xlabel("Sequence Length")
+    axes[1, 0].set_ylabel("Count")
 
-    # Bottom right: HAPPENN Aktiv
+    # Bottom right: HAPPENN Active
     sns.histplot(data=df_happen_active, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 1])
-    axes[1, 1].set_title("Längenverteilung Aktiv (HAPPENN)")
-    axes[1, 1].set_xlabel("Länge der Sequenz")
-    axes[1, 1].set_ylabel("Häufigkeit")
+    axes[1, 1].set_title("Length Distribution Active (HAPPENN)")
+    axes[1, 1].set_xlabel("Sequence Length")
+    axes[1, 1].set_ylabel("Count")
 
     plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
     plt.savefig(f"{_PLOTS_ROOT}/hemo_length_comparison.png")
@@ -103,25 +103,25 @@ def mic_amino_frequency_comparison_multi(
         x = np.arange(len(tick_labels))
 
         #fig2, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-        fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=12)
-        ax_left.bar(x - 0.2, vec_0, 0.4, label="Inaktiv")
-        ax_left.bar(x + 0.2, vec_1, 0.4, label="Aktiv")
+        fig.suptitle("Amino Acid Frequency Comparison", fontsize=12)
+        ax_left.bar(x - 0.2, vec_0, 0.4, label="Inactive")
+        ax_left.bar(x + 0.2, vec_1, 0.4, label="Active")
         plt.xticks(x, tick_labels)
-        ax_left.set_ylabel("AS Häufigkeit", size=12)
+        ax_left.set_ylabel("AA Frequency", size=12)
         ax_left.legend(fontsize=5)
         ax_left.set_xticks(x, tick_labels)
-        ax_left.set_xlabel("Aminosäuren")
+        ax_left.set_xlabel("Amino Acids")
 
-        # Train - gen
+        # Frequency difference
         ax_right.bar(x, vec_0 - vec_1, alpha=0.75)
-        ax_right.set_ylabel("Differenz in der Häufigkeit", size=12)
+        ax_right.set_ylabel("Frequency Difference", size=12)
         ax_right.set_xticks(x, tick_labels)
-        ax_right.set_xlabel("Aminosäuren")
+        ax_right.set_xlabel("Amino Acids")
         fig.text((ax_left.get_position().x0 + ax_right.get_position().x1) / 2,
                  ax_left.get_position().y1 + 0.01,
                  file_name, ha="center", va="bottom", fontsize=12, fontweight="bold")
 
-    fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=20)
+    fig.suptitle("Amino Acid Frequency Comparison", fontsize=20)
 
     plt.savefig(f"{_PLOTS_ROOT}/hemo_aa_frequency_comparison.png")
     plt.close()

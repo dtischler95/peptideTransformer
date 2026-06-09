@@ -27,10 +27,10 @@ _NAME_MAP = [
     ("micro", "Micrococcus luteus"),
     ("pseudo", "Pseudomonas aeruginosa"),
     ("salmonella", "Salmonella enterica"),
-    ("happen_style", "Schwellenwert-Datensatz"),
-    ("gram_dataset", "Gram-Datensatz"),
-    ("gram", "Gram-Datensatz"),
-    ("whitelab", "WhiteLab-Datensatz"),
+    ("happen_style", "Threshold Dataset"),
+    ("gram_dataset", "Gram Dataset"),
+    ("gram", "Gram Dataset"),
+    ("whitelab", "WhiteLab Dataset"),
 ]
 
 
@@ -72,10 +72,10 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     x_vals = np.linspace(lo, hi, 100)
     ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
     ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
-    ax_reg.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    ax_reg.set_ylabel(r'Tatsächlicher Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_reg.set_xlabel(r'Predicted Value $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_reg.set_ylabel(r'Actual Value $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
     ax_reg.legend(loc='best')
-    fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {label}")
+    fig_reg.suptitle(f"Regression Plot (σ={sigma:.2f}) ({tag})\nData: {label}")
     plt.tight_layout()
     base = Path(path).with_suffix('')
     plt.savefig(f"{base}_regression.pdf")
@@ -86,10 +86,10 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     ax_res.axhline(0, color='k', ls=':')
     ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
     ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
-    ax_res.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    ax_res.set_ylabel('Residuum (Tatsächlich - Vorhersage)')
+    ax_res.set_xlabel(r'Predicted Value $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    ax_res.set_ylabel('Residual (Actual - Predicted)')
     ax_res.legend(loc='best')
-    fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {label}")
+    fig_res.suptitle(f"Residual Plot (σ={sigma:.2f}) ({tag})\nData: {label}")
     plt.tight_layout()
     plt.savefig(f"{base}_residuals.pdf")
     plt.close(fig_res)
@@ -101,9 +101,9 @@ def overall_stats(y_true, predictions, save_path, tag, file_name, model_name=Non
 
     plt.figure(figsize=(10, 6))
     sns.histplot(y_true, kde=True)
-    plt.title(f'Verteilung der MIC-Werte ({tag})\nDaten: {label}{model_suffix}')
+    plt.title(f'MIC Value Distribution ({tag})\nData: {label}{model_suffix}')
     plt.xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
+    plt.ylabel('Count')
     plt.savefig(save_path + f'/{tag}_target_distribution.pdf')
     plt.close()
     plt.clf()
@@ -112,24 +112,24 @@ def overall_stats(y_true, predictions, save_path, tag, file_name, model_name=Non
 
     plt.figure(figsize=(10, 6))
     sns.histplot(residuals, kde=True)
-    plt.title(f'Verteilung der Residuen ({tag})\nDaten: {label}{model_suffix}')
-    plt.xlabel(r'Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
+    plt.title(f'Residual Distribution ({tag})\nData: {label}{model_suffix}')
+    plt.xlabel(r'Residuals $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
+    plt.ylabel('Count')
     plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
     plt.close()
     plt.clf()
 
     df = pd.DataFrame({
         "MIC (log$_{10}$ µM)": y_true,
-        "Residuen (log$_{10}$ µM)": residuals,
+        "Residuals (log$_{10}$ µM)": residuals,
     })
-    df["MIC-Quartil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
+    df["MIC Quartile"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
 
     plt.figure(figsize=(8, 4))
-    sns.boxplot(x="MIC-Quartil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
-    plt.xlabel(r"Quartile der Tatsächlichen MIC-Werte $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.title(f"Residuen-Quartilsplot ({tag})\nDaten: {label}{model_suffix}")
+    sns.boxplot(x="MIC Quartile", y="Residuals (log$_{10}$ µM)", data=df, color="skyblue")
+    plt.xlabel(r"Quartiles of Actual MIC Values $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.ylabel(r"Residuals $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
+    plt.title(f"Residual Quartile Plot ({tag})\nData: {label}{model_suffix}")
     plt.tight_layout()
     plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
     plt.close()
@@ -153,7 +153,7 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
     :param model_name: Optional model name included in plot titles and filenames.
     """
     label = get_pretty_name(file_name)
-    title_suffix = f"\nModel: {model_name} Daten: {label}" if model_name else f"\nDaten: {label}"
+    title_suffix = f"\nModel: {model_name} Data: {label}" if model_name else f"\nData: {label}"
     name_infix = f"_{model_name}" if model_name else ""
 
     def _log(msg):
@@ -175,9 +175,9 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
     plt.figure()
     plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
     plt.plot([0, 1], [0, 1], linestyle='--')
-    plt.xlabel('Falsch-Positiven-Rate')
-    plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
-    plt.title(f'ROC-Kurve ({tag}){title_suffix}')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate (Recall)')
+    plt.title(f'ROC Curve ({tag}){title_suffix}')
     plt.legend(loc='lower right')
     plt.grid(True)
     plt.savefig(f'{plot_path}/{tag}{name_infix}_roc.png')
@@ -187,9 +187,9 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
     plt.figure()
     plt.plot(recall, precision, label=f'AP={ap:.3f}')
     plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
-    plt.xlabel('Sensitivität')
-    plt.ylabel('Präzision')
-    plt.title(f'Präzisions-Sensitivität-Kurve ({tag}){title_suffix}')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(f'Precision-Recall Curve ({tag}){title_suffix}')
     plt.legend(loc='lower left')
     plt.grid(True)
     plt.savefig(f'{plot_path}/{tag}{name_infix}_pr.png')
@@ -201,9 +201,9 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
     for i, matrix in enumerate([confusion_matrix, confusion_matrix_normalized], start=1):
         cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
         cm_display.plot()
-        plt.title(f"Konfusionsmatrix ({tag}){title_suffix}")
-        plt.xlabel('Vorhergesagte Klasse')
-        plt.ylabel('Tatsächliche Klasse')
+        plt.title(f"Confusion Matrix ({tag}){title_suffix}")
+        plt.xlabel('Predicted Class')
+        plt.ylabel('True Class')
         plt.savefig(f'{plot_path}/{tag}_{i}_confusion_matrix{name_infix}.png')
         plt.close()
         plt.clf()

@@ -38,8 +38,8 @@ def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
     :param pca: PCA object (scikit-learn)
     :param pca_fit: PCA transformed data (n_samples, n_components)
     :param labels: class labels (optional)
-    :param lengths: sequence lengths (optional) -> wenn gesetzt, wird nach Länge eingefärbt
-    :param plot_path: path to save the plot (ohne Endung)
+    :param lengths: sequence lengths (optional) -> if set, color-codes by sequence length
+    :param plot_path: path to save the plot (without extension)
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
 
@@ -51,13 +51,13 @@ def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
             s=12, alpha=0.85, edgecolors="none"
         )
         cb = fig.colorbar(sc, ax=ax1)
-        cb.set_label("Sequenzlänge (AAs)")
+        cb.set_label("Sequence Length (AAs)")
         if labels is not None:
             ax1.legend([f"Positive: {int(np.sum(np.asarray(labels) == 1))}",
                         f"Negative: {int(np.sum(np.asarray(labels) == 0))}"],
                        frameon=True, loc="best")
     else:
-        assert labels is not None, "Für Klassenplot 'labels' übergeben oder 'lengths' setzen."
+        assert labels is not None, "Provide 'labels' for class plot or set 'lengths'."
         labels_arr = np.asarray(labels)
         pos = pca_fit[labels_arr == 1]
         neg = pca_fit[labels_arr == 0]
@@ -67,20 +67,20 @@ def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
                     label=f"Negative: {int(np.sum(labels_arr == 0))}", s=12)
         ax1.legend(loc="best")
 
-    ax1.set_title("PCA auf Sequenz-Embeddings")
-    ax1.set_xlabel("Komponente 1")
-    ax1.set_ylabel("Komponente 2")
+    ax1.set_title("PCA on Sequence Embeddings")
+    ax1.set_xlabel("Component 1")
+    ax1.set_ylabel("Component 2")
 
-    # rechte Seite: erklärte Varianz
-    ax2.set_title("Erklärte Varianz der PCA")
-    ax2.set_ylabel("Anteil erklärte Varianz")
-    ax2.set_xlabel("Hauptkomponenten")
-    # zeige z. B. die ersten 10 Komponenten
+    # right side: explained variance
+    ax2.set_title("PCA Explained Variance")
+    ax2.set_ylabel("Explained Variance Ratio")
+    ax2.set_xlabel("Principal Components")
+    # show the first 10 components
     ncomps = min(10, len(pca.explained_variance_ratio_))
     ax2.plot(np.arange(ncomps) + 1, pca.explained_variance_ratio_[:ncomps],
              "o-", linewidth=2)
 
-    plt.suptitle("PCA-Analyse der Sequenzen")
+    plt.suptitle("PCA Analysis of Sequences")
 
     if plot_path:
         plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
@@ -89,13 +89,13 @@ def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
         plt.show()
 
 
-def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="TSNE auf Sequenz-Embeddings"):
+def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="t-SNE on Sequence Embeddings"):
     """
-    tsne_fit : array (n,2) – t-SNE-Koordinaten
-    labels   : Liste/Array aus {0,1} (optional, für Klassen-Plot)
-    lengths  : Liste/Array Sequenzlängen (optional, für Längen-Plot)
-               -> Wenn gesetzt, wird nach Länge eingefärbt und 'labels' nur für Legendenzahlen genutzt.
-    plot_path: ohne Endung; speichert als PDF wenn gesetzt
+    tsne_fit : array (n,2) – t-SNE coordinates
+    labels   : list/array of {0,1} (optional, for class plot)
+    lengths  : list/array of sequence lengths (optional, for length plot)
+               -> if set, color-codes by length; 'labels' used only for legend counts.
+    plot_path: without extension; saves as PDF if set
     """
     fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
 
@@ -106,8 +106,8 @@ def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="TSNE auf
             c=lengths, s=12, alpha=0.85, cmap="viridis", edgecolors="none"
         )
         cb = fig.colorbar(sc, ax=ax)
-        cb.set_label("Sequenzlänge (AAs)")
-        # optional: zusätzliche Info in der Legende
+        cb.set_label("Sequence Length (AAs)")
+        # optional: additional info in legend
         if labels is not None:
             ax.legend([f"Positive: {int(np.sum(np.asarray(labels) == 1))}",
                        f"Negative: {int(np.sum(np.asarray(labels) == 0))}"],
@@ -123,8 +123,8 @@ def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="TSNE auf
         ax.legend(loc="best")
 
     ax.set_title(title)
-    ax.set_xlabel("Komponente 1")
-    ax.set_ylabel("Komponente 2")
+    ax.set_xlabel("Component 1")
+    ax.set_ylabel("Component 2")
 
     if plot_path:
         plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
@@ -139,8 +139,8 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
 
     :param data: high-dimensional data points
     :param labels: class labels of the data points (optional)
-    :param lengths: sequence lengths (optional) -> wenn gesetzt, wird nach Länge eingefärbt
-    :param plot_path: path to save the plot (ohne Endung)
+    :param lengths: sequence lengths (optional) -> if set, color-codes by sequence length
+    :param plot_path: path to save the plot (without extension)
     """
     reducer = umap.UMAP(n_components=2, n_neighbors=15, random_state=42)
     umapped = reducer.fit_transform(data)
@@ -159,9 +159,9 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
             edgecolors="none"
         )
         cb = fig.colorbar(sc, ax=ax)
-        cb.set_label("Sequenzlänge (AAs)")
+        cb.set_label("Sequence Length (AAs)")
 
-        # optional Legende mit Labelzahlen
+        # optional legend with label counts
         if labels is not None:
             ax.legend([f"Positive: {int(np.sum(np.asarray(labels) == 1))}",
                        f"Negative: {int(np.sum(np.asarray(labels) == 0))}"],
@@ -178,9 +178,9 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
                    label=f"Negative: {int(np.sum(labels_arr == 0))}", s=12)
         ax.legend(loc="best")
 
-    ax.set_title("UMAP auf Sequenz-Embeddings")
-    ax.set_xlabel("Komponente 1")
-    ax.set_ylabel("Komponente 2")
+    ax.set_title("UMAP on Sequence Embeddings")
+    ax.set_xlabel("Component 1")
+    ax.set_ylabel("Component 2")
 
     if plot_path:
         plt.savefig(f"{plot_path}.pdf", bbox_inches="tight", dpi=300)
