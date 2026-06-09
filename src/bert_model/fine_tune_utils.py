@@ -4,22 +4,9 @@ import os
 import numpy as np
 import pandas as pd
 import peptides as pep
-import seaborn as sns
 import yaml
 import matplotlib.pyplot as plt
-from scipy.stats import linregress
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import (r2_score,
-                             mean_absolute_error,
-                             explained_variance_score,
-                             mean_squared_error,
-                             precision_recall_curve,
-                             PrecisionRecallDisplay,
-                             f1_score,
-                             precision_score,
-                             recall_score,
-                             matthews_corrcoef,
-                             classification_report, roc_auc_score, roc_curve, average_precision_score)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from transformers import DefaultDataCollator, BertConfig
@@ -30,6 +17,10 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBe
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
+from src.machine_learning.eval_utils import (
+    get_pretty_name, print_regression_metrics, make_regression_plot,
+    overall_stats, get_model_stats, evaluate_hemo,
+)
 
 
 def prepare_datasets(model_class: str,
@@ -362,76 +353,12 @@ def prepare_hemo_eval(test_dataset: PeptideDataset,
                       plot_path: str,
                       tag: str,
                       file_name: str):
-    if file_name.startswith('happen_style'):
-        file_name = 'Schwellenwert-Datensatz'
-    elif file_name.startswith("gram"):
-        file_name = 'Gram-Datensatz'
-    else:
-        file_name = 'WhiteLab-Datensatz'
-
-    from sklearn import metrics
     y_true = test_dataset.labels
     logits = trainer.predict(test_dataset).predictions
-
     y_score = logits.flatten()
-
-
-
-    fpr, tpr, _ = roc_curve(y_true, y_score)
-
-
-    mcc = matthews_corrcoef(y_true, format_logit_to_label(logits=logits))
-    print(f"MCC: {mcc:.4f}")
-    auc = roc_auc_score(y_true, y_score)
-    print(f'AUROC: {auc:.4f}')
-
-    plt.figure()
-    plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
-    plt.plot([0, 1], [0, 1], linestyle='--')
-    plt.xlabel('Falsch-Positiven-Rate')
-    plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
-    plt.title(f'ROC-Kurve ({tag})\nDaten: {file_name}')
-    plt.legend(loc='lower right')
-    plt.grid(True)
-    roc_path = f'{plot_path}_roc_curve.png'
-    plt.savefig(roc_path)
-    plt.close()
-
-    precision, recall, _ = precision_recall_curve(y_true, y_score)
-    ap = average_precision_score(y_true, y_score)
-    plt.figure()
-    plt.plot(recall, precision, label=f'AP={ap:.3f}')
-    plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
-    plt.xlabel('Sensitivität')
-    plt.ylabel('Präzision')
-    plt.title(f'Präzisions-Sensitivität-Kurve ({tag})\nDaten: {file_name}')
-    plt.legend(loc='lower left')
-    plt.grid(True)
-    pr_path = f'{plot_path}_pr.png'
-    plt.savefig(pr_path)
-    plt.close()
-
-    print(classification_report(y_true, format_logit_to_label(logits=logits), digits=3))
-    confusion_matrix = metrics.confusion_matrix(y_true, format_logit_to_label(logits=logits))
-    with np.errstate(all='ignore'):
-        confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
-
-    titles_options = [
-        (f"Konfusionsmatrix", 1, confusion_matrix),
-        (f"Konfusionsmatrix", 2, confusion_matrix_normalized),
-    ]
-
-    for title, i, matrix in titles_options:
-        cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
-        cm_display.plot()
-
-        # Deutsche Achsenbeschriftung
-        plt.xlabel("Vorhergesagte Klasse")
-        plt.ylabel("Wahre Klasse")
-        plt.title(title + f" ({tag})\nDaten: {file_name}")
-        plt.savefig(f"{plot_path}{title}_{i}_{tag}_confusion_matrix.png", dpi=300, bbox_inches="tight")
-        plt.close()
-        plt.clf()
+    y_pred = format_logit_to_label(logits=logits)
+    evaluate_hemo(y_true=y_true, y_score=y_score, y_pred=y_pred,
+                  plot_path=plot_path, tag=tag, file_name=file_name)
 
 
 def get_bce_label_weight(labels):
@@ -477,246 +404,6 @@ def init_model(train_dataset, training_args, n_features):
     return data_collator, model, run_metric
 
 
-def regression_plot(y_true, y_pred, path, logger, sequence_data=None):
-    fig, axs = plt.subplots(ncols=2, figsize=(16, 8))
-
-    # Regression part
-    slope, intercept, r_value, p_value, std_err = linregress(y_pred, y_true)
-    # reg_equation = "y = {:.2f}x".format(slope)
-
-    # calculate the residuals
-    residuals = y_true - y_pred
-    std_residuals = np.std(residuals)
-
-    if sequence_data is not None:
-        # Sort out the highest residuals and print them
-        joined_info = zip(sequence_data, residuals)
-        positive_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=True)[:30]
-        joined_info = zip(sequence_data, residuals)
-        negative_extreme_peptides = sorted(joined_info, key=lambda x: x[1], reverse=False)[:30]
-        # highest_sequences = sorted_peptides[:50]
-        # print the sequences to file
-        with open(f"{path}/highest_residuals.csv", "w") as f:
-            f.write("sequence;residual\n")
-            for sequence in positive_extreme_peptides:
-                f.write(f"{sequence[0]};{sequence[1]}\n")
-            for sequence in negative_extreme_peptides:
-                f.write(f"{sequence[0]};{sequence[1]}\n")
-
-    logger.info(f"Steigung: {slope}, Standartabweichung der Residuen: {std_residuals} log(µM)")
-
-    # generating residual plot
-    sns.residplot(x=y_pred, y=residuals, ax=axs[1])
-    axs[1].set_title(
-        "Residuen gegen vorhergesagte Werte\nStandardabweichung der Residuen: {:.2f} log(µM)".format(std_residuals))
-    axs[1].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
-    axs[1].set_ylabel("Residuum MHK/log(µM)")
-
-    # Plot two red horizontal lines representing positive and negative standard deviations
-    axs[1].axhline(std_residuals, color='red', linestyle='--')
-    axs[1].axhline(-std_residuals, color='red', linestyle='--')
-
-    # Plot manually added regression line with confidence interval
-    y_pred_sorted = np.sort(y_pred)
-
-    # generate scatter plot
-    sns.regplot(x=y_pred, y=y_true, ax=axs[0], fit_reg=False)
-
-    # plot the fitted line through the origin and also a line with slope 1 for comparison
-    # axs[0].plot(y_pred_sorted, slope * y_pred_sorted, color='red')
-    # standarf f(x) function for getting slope=1
-    axs[0].plot([-1, 4], [-1, 4], linestyle='--', color='green', label='45-degree Line')
-
-    # Calculate bounds for lines parallel to the regression line
-    lower_bound = 1 * y_pred_sorted - std_residuals
-    upper_bound = 1 * y_pred_sorted + std_residuals
-
-    # reg_equation2 = f"y = {slope:.2f}x + {intercept:.2f}"
-    # axs[0].text(0.05, 0.95, reg_equation2, transform=axs[0].transAxes, fontsize=12,
-    #            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
-
-    # Plot two lines parallel to the regression line representing positive and negative standard deviations
-    axs[0].plot(y_pred_sorted, lower_bound, color='red', linestyle='--')
-    axs[0].plot(y_pred_sorted, upper_bound, color='red', linestyle='--')
-
-    axs[0].set_title("Tatsächliche gegen vorhergesagte Werte MHK/log(µM)")
-    axs[0].set_xlabel("Vorhergesagter Wert MHK/log(µM)")
-    axs[0].set_ylabel("Tatsächlicher Wert MHK/log(µM)")
-
-    fig.suptitle("Regressions -und Residuenplot")
-    plt.tight_layout()
-    plt.savefig(f"{path}/regression_plot.png")
-    plt.close()
-    plt.clf()
-
-
-def overall_stats(predictions, y_true, save_path, tag, file_name):
-    if file_name.startswith("acineto"):
-        file_name = "Acinetobacter baumannii"
-    elif file_name.startswith("bacillus"):
-        file_name = "Bacillus subtilis"
-    elif file_name.startswith("candida"):
-        file_name = "Candida albicans"
-    elif file_name.startswith("enterobacter"):
-        file_name = "Enterobacter sp."
-    elif file_name.startswith("enterococc"):
-        file_name = "Enterococcus faecalis"
-    elif file_name.startswith("escher"):
-        file_name = "Escherichia coli"
-    elif file_name.startswith("klebsie"):
-        file_name = "Klebsiella pneumoniae"
-    elif file_name.startswith("micro"):
-        file_name = "Micrococcus luteus"
-    elif file_name.startswith("pseudo"):
-        file_name = "Pseudomonas aeruginosa"
-    elif file_name.startswith("salmonella"):
-        file_name = "Salmonella enterica"
-    elif file_name.startswith("staphylococcus_aureus"):
-        file_name = "Staphylococcus aureus"
-    elif file_name.startswith("staphylococcus_epi"):
-        file_name = "Staphylococcus epidermidis"
-    # 1. Plotting the distribution of the target feature (y_test)
-    plt.figure(figsize=(10, 6))
-    sns.histplot(y_true, kde=True)
-    plt.title(f'Verteilung der MIC-Werte ({tag})\nDaten: {file_name}')
-    plt.xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + f'/{tag}target_distribution.pdf')
-    plt.close()
-    plt.clf()
-
-    # 2. Calculate variance of the target feature in the test set
-    target_variance = np.var(y_true)
-    print(f"Variance of the target feature (value) in test set: {target_variance}")
-
-    # 4. Plotting Residuals in the test set
-    residuals = y_true - predictions
-    plt.figure(figsize=(10, 6))
-    sns.histplot(residuals, kde=True)
-    plt.title(f'Verteilung der Residuen ({tag})\nDaten: {file_name}')
-    plt.xlabel(r'Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
-    plt.close()
-    plt.clf()
-
-    df = pd.DataFrame({
-        "MIC (log$_{10}$ µM)": y_true,
-        "Residuen (log$_{10}$ µM)": residuals
-    })
-
-    # Einteilung in 4 Quantile – du kannst q=5 oder q=[0,.25,.5,.75,1.] nehmen
-    df["MIC-Quartil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
-
-    plt.figure(figsize=(8, 4))
-    sns.boxplot(x="MIC-Quartil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
-
-    plt.xlabel(r"Quartile der Tatsächlichen MIC-Werte $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.title(f"Residuen-Quartilsplot ({tag})\nDaten: {file_name}")
-    plt.tight_layout()
-    plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
-    plt.close()
-    plt.clf()
-
-    # 5. Print MSE for comparison on the test set
-    mse = np.mean((y_true - predictions) ** 2)
-    print(f"Mean Squared Error (MSE) on Test Set: {mse}")
-
-
-def get_model_stats(plot_dir: str,
-                    predictions,
-                    target_data,
-                    logger: logging.Logger,
-                    file_name: str,
-                    tag: str):
-    r2, mse = print_regression_metrics(y_true=target_data, y_pred=predictions, logger=logger, tag=tag)
-
-    # plot regression train
-    make_regression_plot(y_true=target_data, y_pred=predictions, path=plot_dir + f"/{file_name + tag}_regression.pdf",
-                         file_name=file_name, tag=tag)
-
-    return r2, mse
-
-
-def print_regression_metrics(y_true, y_pred, logger: logging.Logger, tag):
-    logger.info(f"{tag} Regression metrics: \n"
-                f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> VAR: {explained_variance_score(y_true=y_true, y_pred=y_pred):.5f}\n")
-    return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
-
-
-def make_regression_plot(y_true, y_pred, path, file_name, tag):
-    if file_name.startswith("acineto"):
-        file_name = "Acinetobacter baumannii"
-    elif file_name.startswith("bacillus"):
-        file_name = "Bacillus subtilis"
-    elif file_name.startswith("candida"):
-        file_name = "Candida albicans"
-    elif file_name.startswith("enterobacter"):
-        file_name = "Enterobacter sp."
-    elif file_name.startswith("enterococc"):
-        file_name = "Enterococcus faecalis"
-    elif file_name.startswith("escher"):
-        file_name = "Escherichia coli"
-    elif file_name.startswith("klebsie"):
-        file_name = "Klebsiella pneumoniae"
-    elif file_name.startswith("micro"):
-        file_name = "Micrococcus luteus"
-    elif file_name.startswith("pseudo"):
-        file_name = "Pseudomonas aeruginosa"
-    elif file_name.startswith("salmonella"):
-        file_name = "Salmonella enterica"
-    elif file_name.startswith("staphylococcus_aureus"):
-        file_name = "Staphylococcus aureus"
-    elif file_name.startswith("staphylococcus_epi"):
-        file_name = "Staphylococcus epidermidis"
-
-    y_true = np.asarray(y_true).reshape(-1).astype(float)
-    y_pred = np.asarray(y_pred).reshape(-1).astype(float)
-
-    resid = y_true - y_pred
-    sigma = resid.std(ddof=1)
-
-    # --- Regression: Tatsächlich vs. vorhergesagt ---
-    fig_reg, ax_reg = plt.subplots(figsize=(8, 6))
-
-    ax_reg.scatter(y_pred, y_true, alpha=0.6, edgecolor='none')
-
-    lo, hi = np.nanpercentile(np.concatenate([y_true, y_pred]), [0.5, 99.5])
-    ax_reg.plot([lo, hi], [lo, hi], ls='--', c='green', label='Ideal')
-
-    x_vals = np.linspace(lo, hi, 100)
-    ax_reg.plot(x_vals, x_vals + sigma, ls='--', c='red', label='+σ')
-    ax_reg.plot(x_vals, x_vals - sigma, ls='--', c='red', label='-σ')
-
-    ax_reg.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    ax_reg.set_ylabel(r'Tatsächlicher Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    ax_reg.legend(loc='best')
-
-    fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
-    plt.tight_layout()
-    plt.savefig(path.replace('.pdf', '_regression.pdf'))
-    plt.close(fig_reg)
-
-    # --- Residuenplot ---
-    fig_res, ax_res = plt.subplots(figsize=(8, 6))
-
-    ax_res.scatter(y_pred, resid, alpha=0.6, edgecolor='none')
-    ax_res.axhline(0, color='k', ls=':')
-    ax_res.axhline(+sigma, color='r', ls='--', label='+σ')
-    ax_res.axhline(-sigma, color='r', ls='--', label='-σ')
-
-    ax_res.set_xlabel(r'Vorhergesagter Wert $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    ax_res.set_ylabel('Residuum (Tatsächlich - Vorhersage)')
-    ax_res.legend(loc='best')
-
-    fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {file_name}")
-    plt.tight_layout()
-    plt.savefig(path.replace('.pdf', '_residuals.pdf'))
-    plt.close(fig_res)
 
 
 if __name__ == '__main__':

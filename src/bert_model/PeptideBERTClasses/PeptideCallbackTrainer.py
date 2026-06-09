@@ -7,6 +7,7 @@ from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.machine_learning.eval_utils import get_pretty_name
 
 
 class LearningCurveCallback(TrainerCallback):
@@ -122,36 +123,7 @@ class PlotMetricsCallback(TrainerCallback):
                           eval_metrics: list,
                           metric_name: str):
 
-        file_name = args.train_file.split('/')[-1]
-
-        if file_name.startswith("acineto"):
-            file_name = "Acinetobacter baumannii"
-        elif file_name.startswith("bacillus"):
-            file_name = "Bacillus subtilis"
-        elif file_name.startswith("candida"):
-            file_name = "Candida albicans"
-        elif file_name.startswith("enterobacter"):
-            file_name = "Enterobacter sp."
-        elif file_name.startswith("enterococc"):
-            file_name = "Enterococcus faecalis"
-        elif file_name.startswith("escher"):
-            file_name = "Escherichia coli"
-        elif file_name.startswith("klebsie"):
-            file_name = "Klebsiella pneumoniae"
-        elif file_name.startswith("micro"):
-            file_name = "Micrococcus luteus"
-        elif file_name.startswith("pseudo"):
-            file_name = "Pseudomonas aeruginosa"
-        elif file_name.startswith("salmonella"):
-            file_name = "Salmonella enterica"
-        elif file_name.startswith("staphylococcus_aureus"):
-            file_name = "Staphylococcus aureus"
-        elif file_name.startswith("staphylococcus_epi"):
-            file_name = "Staphylococcus epidermidis"
-        elif file_name.startswith('happen_style'):
-            file_name = 'Schwellenwert-Datensatz'
-        else:
-            file_name = 'WhiteLab-Datensatz'
+        file_name = get_pretty_name(args.train_file)
 
         epochs = range(1, len(eval_metrics) + 1)
         plt.figure(figsize=(10, 5))
