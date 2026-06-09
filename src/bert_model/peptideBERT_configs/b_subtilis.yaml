@@ -2,7 +2,6 @@
 model_class: 'regression'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
-do_predict: true              # Predict with the model
 num_train_epochs: 50           # Number of epochs to train the model
 per_device_train_batch_size: 64  # Batch size for training
 per_device_eval_batch_size: 64    # Batch size for evaluation
@@ -10,7 +9,6 @@ early_stopping_patience: 5       # Patience for early stopping
 early_stop_metric: 'eval_loss'    # Metric for early stopping
 early_stop_mode: 'min'            # Mode for early stopping
 early_stop_warm_up: 8            # Warm-up period for early stopping
-dataloader_drop_last: false       # Drop last batch if smaller than batch size
 dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
 load_best_model_at_end: true      # Load the best model at the end of training
 add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
@@ -28,9 +26,7 @@ max_length: 36                    # Maximum input sequence length
 train_file: './data/regression_data/bacillus_subtilis_for_regression.csv'  # Path to training data
 model_path: 'Rostlab/prot_bert_bfd'                         # Path to pretrained model 'GrimSqueaker/proteinBERT'  'Rostlab/prot_bert_bfd'
 model_save_path: './models/b_subtilis'                             # Path to save the model
-plot_path: './model_plots/b_subtilis_plots'                                    # Path to save the plots
-
-metric_for_best_model: 'loss'   # Metric for selecting best model ['loss', 'accuracy']
+plot_path: './model_plots/b_subtilis_plots'                        # Path to save the plots
 
 # Logging Settings
 output_dir: './results_bsubtilis'         # Path to checkpoints
@@ -39,9 +35,6 @@ logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logi
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
 save_strategy: 'epoch'          # Save strategy (set to 'epoch' for this logic)
-
-# Reproducibility
-seed: 42                        # Random seed for reproducibility
 
 # Hardware Settings
 use_cpu: false                  # Use CPU for training
