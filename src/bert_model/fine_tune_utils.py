@@ -5,9 +5,7 @@ import numpy as np
 import pandas as pd
 import peptides as pep
 import yaml
-import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from transformers import DefaultDataCollator, BertConfig
 from transformers import BertTokenizer
@@ -17,10 +15,7 @@ from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBe
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
-from src.machine_learning.eval_utils import (
-    get_pretty_name, print_regression_metrics, make_regression_plot,
-    overall_stats, get_model_stats, evaluate_hemo,
-)
+from src.evaluation.eval_utils import overall_stats, get_model_stats, evaluate_hemo
 
 
 def prepare_datasets(model_class: str,

@@ -8,7 +8,13 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 import peptides as pep
 import plot_utils
-import eval_utils
+try:
+    from src.evaluation import eval_utils
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from evaluation import eval_utils
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import RFECV

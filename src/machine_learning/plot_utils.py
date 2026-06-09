@@ -1,4 +1,10 @@
-import eval_utils
+try:
+    from src.evaluation import eval_utils
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from evaluation import eval_utils
 from sklearn.inspection import permutation_importance  # noqa: F401  kept for callers
 
 
