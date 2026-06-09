@@ -195,6 +195,7 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
 
 def perform_clustering(embedded_sequences,
                        plot_path: str,
+                       sequence_labels=None,
                        logger: logging.Logger or None = None,
                        tag: str = ""):
     """
@@ -247,10 +248,10 @@ def perform_clustering(embedded_sequences,
     clustering(umap_fit)
 
     print("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, plot_path=f"{plot_path}{tag}_tsne_plot")
+    plot_tsne(tsne_fit, labels=sequence_labels, plot_path=f"{plot_path}{tag}_tsne_plot")
 
     print("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, plot_path=f"{plot_path}{tag}_umap_plot")
+    plot_umap(umap_fit, labels=sequence_labels, plot_path=f"{plot_path}{tag}_umap_plot")
 
 
 def encode_peptides(sequence_file,
@@ -339,7 +340,6 @@ def cluster_model_embedding(file_path,
     :param batch_size: Batch size for encoding the sequences
     :param plot_path: Path to save the plots
     :param device: Device to run the model on
-    :param add_features: Whether to add features to the sequence data
     :param sequence_max_length: Maximum length of the sequences
     :param data_tag: Tag for the output files
     :param label_0_cluster_data: Amount of data points for label 0
