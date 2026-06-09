@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -30,11 +31,12 @@ def _add_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _load_split_files(base_file: str, debug_sample: bool = False) -> tuple:
+def _load_split_files(base_file, debug_sample: bool = False) -> tuple:
     """Loads pre-split train/val/test CSVs derived from a base file path."""
-    train_df = pd.read_csv(base_file.replace('.csv', "_train.csv"), sep=';')
-    val_df = pd.read_csv(base_file.replace('.csv', "_val.csv"), sep=';')
-    test_df = pd.read_csv(base_file.replace('.csv', "_test.csv"), sep=';')
+    base = Path(base_file).with_suffix('')
+    train_df = pd.read_csv(f"{base}_train.csv", sep=';')
+    val_df = pd.read_csv(f"{base}_val.csv", sep=';')
+    test_df = pd.read_csv(f"{base}_test.csv", sep=';')
     if debug_sample:
         train_df = train_df.sample(frac=1)[:100]
     return train_df, val_df, test_df

@@ -104,14 +104,12 @@ def run_all(
     # Prevent silent truncation if lengths differ
     models = list(models)
     grids = list(grids)
-    if data_dir.endswith("hemo_train/"):
-        data_dir = Path(data_dir)
-        output_root = Path(output_root)
+    data_dir = Path(data_dir)
+    output_root = Path(output_root)
+    if 'hemo' in data_dir.name:
         csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
     else:
-        data_dir = Path(data_dir)
-        output_root = Path(output_root)
-        csv_files = sorted(list(data_dir.glob("*dataset.csv")))
+        csv_files = sorted(data_dir.glob("*dataset.csv"))
 
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
