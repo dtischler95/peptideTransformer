@@ -85,7 +85,7 @@ def _debug_predicted_labels(predictions):
     """
     Helper function to print the amount of predicted labels
     This is used to debug for label bias in binary classification
-    So far this covers only the eval dataset! TODO: Implement for training dataset
+    So far this covers only the eval dataset.
     """
     label_0_counter = 0
     label_1_counter = 0
@@ -98,28 +98,3 @@ def _debug_predicted_labels(predictions):
             print(f"Invalid Prediction: {pred}")
 
     return label_0_counter, label_1_counter
-
-
-def mlm_metrics(eval_preds) -> dict:
-    """
-    computes accuracy for mlm task. Ignore -100 labels and calculate accuracy only on predictions of masked tokens
-
-    :param eval_preds: predictions and labels
-
-    :return: dictionary with the metrics
-    """
-
-    accuracy = evaluate.load("accuracy")
-    predictions, labels = eval_preds
-
-    # Get predicted labels from logits
-    preds = np.argmax(predictions, axis=-1)
-
-    # Ignore the -100 labels
-    mask = labels != -100  # Create a mask for valid labels
-    masked_preds = preds[mask]  # Filter predictions using the mask
-    masked_labels = labels[mask]  # Filter labels using the mask
-
-    # Calculate accuracy only on valid predictions
-    return {'accuracy': accuracy.compute(predictions=masked_preds.flatten(), references=masked_labels.flatten())[
-        "accuracy"]}

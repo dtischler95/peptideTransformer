@@ -168,9 +168,6 @@ def download_and_prepare_whitelab_data(create_whitelab_csv: bool = False, verbos
     decoded_sequences_to_file(outfile_name='whitelab_data', create_formatted_whitelab_csv=create_whitelab_csv,
                               verbose=verbose)
 
-# TODO Integrate PeptideBERTs Dataloader to show Data leakage
-# TODO Compare models trained with leaked and without leaked data and show graphics in preprocess_notebook
-
 if __name__ == '__main__':
     # decoded_sequences_to_file('whitelab_data', create_intermediate_files=True, verbose=False)
     download_and_prepare_whitelab_data(create_whitelab_csv=True, verbose=False)

@@ -325,7 +325,6 @@ def parse_and_label_hemolytic_data(*data_paths: str,
 
     # Remove wrongly parsed data. If more Data needed later, you can try to find them here
     # those units cant be converted to µM
-    # TODO Collect removed datapoints into seperat DataFrame for later inspection
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "μg"]
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "µg/m"]
     df_raw_hemo = df_raw_hemo[df_raw_hemo['unit'] != "unknown"]
@@ -339,7 +338,6 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     df_raw_hemo['hemo_concentration'] = df_raw_hemo['hemo_concentration'].str.extract(r'(\d+\.?\d*)').astype(
         float)
 
-    # TODO MAY SET 0.0 % HEMO ACTIVITY TO 0.001% SO THAT DATA WONT GET LOST
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_concentration'] != 0.0]
     df_raw_hemo = df_raw_hemo[df_raw_hemo['hemo_percent'] <= 100.0]
 

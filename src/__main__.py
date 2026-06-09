@@ -58,7 +58,7 @@ def main():
         #     #filterwarnings("ignore", category=UserWarning)
         #     cluster_model_embedding(file_path=args.file_path,
         #                             data_tag=args.file_path.split('/')[-1].split('.')[0],
-        #                             batch_size=8, # TODO can i set this dynamically without creating a new argparse parameter?
+        #                             batch_size=8,
         #                             plot_path=args.out_plot_path,
         #                             tokenizer_and_model=(tokenizer, model),
         #                             device=)  # Assuming you have a tokenizer and model to pass

@@ -107,7 +107,7 @@ class PlotMetricsCallback(TrainerCallback):
         # ---------------------------------------------------------------------------------------------------
 
         for obj in self.object_list:
-            if "eval_loss" in logs[-1]:  # TODO is there a better way to check if there are eval metrics?
+            if "eval_loss" in logs[-1]:
                 obj.eval_metric.append(logs[-1].get("eval_" + obj.metric_name))
                 self.plot_metric_curve(args=args,
                                        train_metrics=obj.train_metric,
@@ -273,17 +273,3 @@ class CollectBatchWiseTrainMetrics(TrainerCallback):
     def get_train_r2(self):
         return r2_score(self.collected_labels, self.collected_predictions)
 
-
-class CurriculumLearningCallback(TrainerCallback):
-    """
-    Idea so far, make a callback "on_evaluate" or "on_epoch_begin" that changes the training data for the next curriculum step
-    A curriculum step is not defined for me so far. It could be something like every 10 Epochs. I need to do some more research on this.
-    """
-
-    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
-        """
-        Update the masking percentage for the curriculum MLM task.
-        Conditions can be added here for adjusting the update algorithm.
-        """
-        if state.epoch % 20 == 0:
-            kwargs['train_dataloader'].base_dataloader.collate_fn.data_collator.update_probability()
