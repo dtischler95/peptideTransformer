@@ -8,6 +8,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 import peptides as pep
 import plot_utils
+import eval_utils
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import RFECV
@@ -68,31 +69,16 @@ def load_model(path):
 
 
 
-def print_regression_metrics(y_true, y_pred, logger: logging.Logger):
-    logger.info(f"Regression metrics: \n"
-                f"    -> R2:  {r2_score(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> MAE: {mean_absolute_error(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> MSE: {mean_squared_error(y_true=y_true, y_pred=y_pred):.5f}\n"
-                f"    -> VAR: {explained_variance_score(y_true=y_true, y_pred=y_pred):.5f}\n")
-    return r2_score(y_true=y_true, y_pred=y_pred), mean_squared_error(y_true=y_true, y_pred=y_pred)
+print_regression_metrics = eval_utils.print_regression_metrics
 
 
-def get_model_stats(model,
-                    plot_dir: str,
-                    feature_data,
-                    target_data,
-                    logger: logging.Logger,
-                    file_name,
-                    tag: str,
-                    model_name):
-    pred_train = model.predict(feature_data)
-
-    r2, mse = print_regression_metrics(y_true=target_data, y_pred=pred_train, logger=logger)
-
-    # plot regression train
-    plot_utils.make_regression(y_true=target_data, y_pred=pred_train, path=plot_dir + f"/{tag}_regression.pdf",
-                               file_name=file_name, model_name=model_name, tag=tag)
-
+def get_model_stats(model, plot_dir: str, feature_data, target_data, logger: logging.Logger,
+                    file_name, tag: str, model_name):
+    pred = model.predict(feature_data)
+    r2, mse = eval_utils.print_regression_metrics(y_true=target_data, y_pred=pred, logger=logger, tag=tag)
+    eval_utils.make_regression_plot(y_true=target_data, y_pred=pred,
+                                    path=f"{plot_dir}/{tag}_regression.pdf",
+                                    file_name=file_name, tag=tag)
     return r2, mse
 
 
@@ -143,81 +129,9 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
 
 
 def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, model_name):
-    if file_name.startswith("acineto"):
-        file_name = "Acinetobacter baumannii"
-    elif file_name.startswith("bacillus"):
-        file_name = "Bacillus subtilis"
-    elif file_name.startswith("candida"):
-        file_name = "Candida albicans"
-    elif file_name.startswith("enterobacter"):
-        file_name = "Enterobacter sp."
-    elif file_name.startswith("enterococc"):
-        file_name = "Enterococcus faecalis"
-    elif file_name.startswith("escher"):
-        file_name = "Escherichia coli"
-    elif file_name.startswith("klebsie"):
-        file_name = "Klebsiella pneumoniae"
-    elif file_name.startswith("micro"):
-        file_name = "Micrococcus luteus"
-    elif file_name.startswith("pseudo"):
-        file_name = "Pseudomonas aeruginosa"
-    elif file_name.startswith("salmonella"):
-        file_name = "Salmonella enterica"
-    elif file_name.startswith("staphylococcus_aureus"):
-        file_name = "Staphylococcus aureus"
-    elif file_name.startswith("staphylococcus_epi"):
-        file_name = "Staphylococcus epidermidis"
-
-    # Make predictions on the test set
     predictions = best_estimator.predict(x_test)
-
-    # 1. Plotting the distribution of the target feature (y_test)
-    plt.figure(figsize=(10, 6))
-    sns.histplot(y_test, kde=True)
-    plt.title(f'Verteilung der MIC-Werte ({tag})\nModel: {model_name} Daten: {file_name}')
-    plt.xlabel(r'$\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + f'/{tag}_target_distribution.pdf')
-    plt.close()
-    plt.clf()
-
-    # 2. Calculate variance of the target feature in the test set
-    target_variance = np.var(y_test)
-    print(f"Variance of the target feature (value) in test set: {target_variance}")
-
-    # 4. Plotting Residuals in the test set
-    residuals = y_test - predictions
-    plt.figure(figsize=(10, 6))
-    sns.histplot(residuals, kde=True)
-    plt.title(f'Verteilung der Residuen ({tag})\nModel: {model_name} Daten: {file_name}')
-    plt.xlabel(r'Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$')
-    plt.ylabel('Häufigkeit')
-    plt.savefig(save_path + f'/{tag}residuals_distribution.pdf')
-    plt.close()
-    plt.clf()
-
-    df = pd.DataFrame({
-        "MIC (log$_{10}$ µM)": y_test,
-        "Residuen (log$_{10}$ µM)": residuals
-    })
-
-    # Einteilung in 4 Quantile – du kannst q=5 oder q=[0,.25,.5,.75,1.] nehmen
-    df["MIC-Quantil"] = pd.qcut(df["MIC (log$_{10}$ µM)"], q=4, labels=["Q1", "Q2", "Q3", "Q4"])
-
-    plt.figure(figsize=(8, 4))
-    sns.boxplot(x="MIC-Quantil", y="Residuen (log$_{10}$ µM)", data=df, color="skyblue")
-
-    plt.xlabel(r"Quartile des tatsächlichen Werts $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.ylabel(r"Residuen $\log_{10}(\mathrm{MIC})\,[\mu\mathrm{M}]$")
-    plt.title(f"Quartilplot des tatsächlichen MIC-Werts {tag}\nModel: {model_name} Daten: {file_name}")
-    plt.tight_layout()
-    plt.savefig(save_path + f'/{tag}residuals_quantils.pdf')
-    plt.close()
-    plt.clf()
-
-    # 5. Print MSE for comparison on the test set
-    mse = np.mean((y_test - predictions) ** 2)
-    print(f"Mean Squared Error (MSE) on Test Set: {mse}")
+    eval_utils.overall_stats(y_true=y_test, predictions=predictions, save_path=save_path,
+                             tag=tag, file_name=file_name, model_name=model_name)
 
 
 
@@ -370,73 +284,10 @@ def plot_residuals_vs_length_from_df(model,
 
 
 def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, tag, logger, data_name):
-    if data_name == 'happen_style':
-        data_name = 'Schwellenwert-Datensatz'
-    if data_name == 'gram_dataset':
-        data_name = 'Gram-Datensatz'
-    else:
-        data_name = 'WhiteLab-Datensatz'
-
     y_score = _get_scores(best_estimator, x_data)
-
-    auc = roc_auc_score(y_true, y_score)
-
-    ap = average_precision_score(y_true, y_score)
-
-    fpr, tpr, _ = roc_curve(y_true, y_score)
-
-
-
-    plt.figure()
-    plt.plot(fpr, tpr, label=f'AUROC={auc:.3f}')
-    plt.plot([0, 1], [0, 1], linestyle='--')
-    plt.xlabel('Falsch-Positiven-Rate')
-    plt.ylabel('Richtig-Positiven-Rate (Sensitivität)')
-    plt.title(f'ROC-Kurve ({tag})\nModel: {model_name} Daten: {data_name}')
-    plt.legend(loc='lower right')
-    plt.grid(True)
-    roc_path = f'{plot_path}/{tag}_{model_name}_roc.png'
-    plt.savefig(roc_path)
-    plt.close()
-
-    precision, recall, _ = precision_recall_curve(y_true, y_score)
-    plt.figure()
-    plt.plot(recall, precision, label=f'AP={ap:.3f}')
-    plt.hlines(np.mean(y_true), 0, 1, linestyles='--')
-    plt.xlabel('Sensitivität')
-    plt.ylabel('Präzision')
-    plt.title(f'Präzisions-Sensitivität-Kurve ({tag})\nModel: {model_name} Daten: {data_name}')
-    plt.legend(loc='lower left')
-    plt.grid(True)
-    pr_path = f'{plot_path}/{tag}_{model_name}_pr.png'
-    plt.savefig(pr_path)
-    plt.close()
-
     y_pred = (y_score >= 0.5).astype(int)
-    mcc = matthews_corrcoef(y_true, y_pred)
-    logger.info(f"MCC: {mcc:.4f}")
-    logger.info(f'AUROC: {auc:.4f}')
-    logger.info(f'Average Precision (PR-AUC): {ap:.4f}')
-    logger.info(f"Cls report here for {tag}")
-    logger.info(classification_report(y_true, y_pred, digits=3))
-    confusion_matrix = metrics.confusion_matrix(y_true, y_pred)
-
-    with np.errstate(all='ignore'):
-        confusion_matrix_normalized = confusion_matrix / confusion_matrix.sum(axis=1, keepdims=True)
-    titles_options = [
-        (f"Konfusionsmatrix", 1, confusion_matrix),
-        (f"Konfusionsmatrix", 2, confusion_matrix_normalized),
-    ]
-
-    for title, i, matrix in titles_options:
-        cm_display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=[0, 1])
-        cm_display.plot()
-        plt.title(f"{title} ({tag})\nModel: {model_name} Daten: {data_name}")
-        plt.xlabel('Vorhergesagte Klasse')
-        plt.ylabel('Tatsächliche Klasse')
-        plt.savefig(f"{plot_path}/{tag}_{i}_{title}.png")
-        plt.close()
-        plt.clf()
+    eval_utils.evaluate_hemo(y_true=y_true, y_score=y_score, y_pred=y_pred, plot_path=plot_path,
+                             tag=tag, file_name=data_name, model_name=model_name, logger=logger)
 
 
 def prepare_train_val_data(calculate_features, train_df, test_df, target_col, out_dir):
