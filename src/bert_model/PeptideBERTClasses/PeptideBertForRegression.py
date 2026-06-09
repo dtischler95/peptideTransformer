@@ -8,20 +8,14 @@ from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 class PeptideBertForRegression(BertModel):
     """
-    Naive implementation of a regression model using the BertModel as a base.
-    For better testing, I still need to prepare my regression dataset properly.
-    I also need to implement a robust and consistent architecture for regression.
+    Regression model using the BertModel as a base with a linear regression head on top of the [CLS] token embedding.
     """
 
     def __init__(self, config, model_path: str, n_features: int):
         config.return_dict = False
         super().__init__(config)
-        # config.
         self.bert = BertModel.from_pretrained(model_path, config=config)
 
-        # Freeze BERT model parameters
-        # for param in self.bert.parameters():
-        #     param.requires_grad = False
 
         # ----------------- Add regression head -----------------
         self.norm = nn.LayerNorm(config.hidden_size + n_features, eps=config.layer_norm_eps)
