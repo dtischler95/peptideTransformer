@@ -1,4 +1,7 @@
 import pandas as pd
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def data_scraper(file_path: str):
     df = pd.read_csv(file_path, sep=';')
@@ -14,8 +17,8 @@ def data_scraper(file_path: str):
     hc_df = df[df['measure_type'].str.contains('HC')]
     result_df = pd.concat([hemo_df, hc_df])
     result_df.loc[:, 'measure_type'] = result_df.apply(combine_columns, axis=1)
-    result_df.to_csv("../../../data/data_from_database/Hemolytik_scraped.csv", sep=';', index=False)
+    result_df.to_csv(str(_REPO_ROOT / "data" / "data_from_database" / "Hemolytik_scraped.csv"), sep=';', index=False)
 
 if __name__ == '__main__':
-    file_path = '../../../data/data_from_database/complete_amp_data.csv'
+    file_path = str(_REPO_ROOT / "data" / "data_from_database" / "complete_amp_data.csv")
     data_scraper(file_path)

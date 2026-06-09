@@ -2,10 +2,16 @@ from xgboost import XGBClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 import sys
-import ml_utils
-import config
 import logging
 from pathlib import Path
+
+try:
+    from src.machine_learning import ml_utils, config
+except ImportError:
+    import ml_utils  # type: ignore
+    import config    # type: ignore
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 from typing import Iterable, Any
 import matplotlib as mpl
 
@@ -83,8 +89,8 @@ def train_classificators(file_path: str,
 
 
 def run_all(
-        data_dir: str | Path = "../../data/hemo_train/",
-        output_root: str | Path = "./final_plots/",
+        data_dir: str | Path = _REPO_ROOT / "data" / "hemo_train",
+        output_root: str | Path = _REPO_ROOT / "final_plots",
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
@@ -133,7 +139,7 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = '../../data/gram/'
+    data_dir = _REPO_ROOT / "data" / "gram"
     model_list = [  # ('gb',   GradientBoostingClassifier()),
         ('xtra', ExtraTreesClassifier()),
         ('xgb', XGBClassifier()),

@@ -1,4 +1,7 @@
 import pandas as pd
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 """
 This script is meant to gether the data for the tamper dataset. 
@@ -6,10 +9,10 @@ This script is meant to gether the data for the tamper dataset.
 
 def prepare_tamper_data():
 
-    train_negativ = "../../../data/tamper_data/tr_neg.faa"
-    train_positiv = "../../../data/tamper_data/tr_pos.faa"
-    val_negativ = "../../../data/tamper_data/val_neg.faa"
-    val_positiv = "../../../data/tamper_data/val_pos.faa"
+    train_negativ = str(_REPO_ROOT / "data" / "tamper_data" / "tr_neg.faa")
+    train_positiv = str(_REPO_ROOT / "data" / "tamper_data" / "tr_pos.faa")
+    val_negativ = str(_REPO_ROOT / "data" / "tamper_data" / "val_neg.faa")
+    val_positiv = str(_REPO_ROOT / "data" / "tamper_data" / "val_pos.faa")
 
     train_neg_dict = _reformat_fasta(train_negativ, label=0)
     train_pos_dict = _reformat_fasta(train_positiv, label=1)
@@ -26,8 +29,8 @@ def prepare_tamper_data():
     val_df = val_df[~val_df['sequence'].isin(train_df['sequence'])]
 
 
-    train_df.to_csv("../../../data/tamper_data/train_tamper.csv", index=False, sep=';')
-    val_df.to_csv("../../../data/tamper_data/val_tamper.csv", index=False, sep=';')
+    train_df.to_csv(str(_REPO_ROOT / "data" / "tamper_data" / "train_tamper.csv"), index=False, sep=';')
+    val_df.to_csv(str(_REPO_ROOT / "data" / "tamper_data" / "val_tamper.csv"), index=False, sep=';')
 
 
 def _reformat_fasta(train_negativ, label):

@@ -1,4 +1,7 @@
 import pandas as pd
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 """
 This script is used to prepare the data from the HAPENN database for training a binary classification model.
@@ -24,7 +27,7 @@ def prepare_happenn_data(file_path: str):
                 sequence_counter += 1
 
     df = pd.DataFrame(sequence_label_dict)
-    df.to_csv('../../data/train_data/happen_data.csv', sep=';', index=False)
+    df.to_csv(str(_REPO_ROOT / "data" / "train_data" / "happen_data.csv"), sep=';', index=False)
     print(sequence_counter)
     print(len(sequence_label_dict['sequence']))
 
@@ -125,5 +128,5 @@ def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    file_path = "../../data/data_from_database/happen_data.fasta"
+    file_path = str(_REPO_ROOT / "data" / "data_from_database" / "happen_data.fasta")
     prepare_happenn_data(file_path=file_path)

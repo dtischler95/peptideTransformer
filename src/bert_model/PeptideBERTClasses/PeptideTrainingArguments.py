@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Literal
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 from transformers import TrainingArguments
 
 
@@ -14,8 +16,8 @@ class PeptideTrainingArguments(TrainingArguments):
                  model_class: str,
                  train_file=None,
                  model_path: str = 'Rostlab/prot_bert_bfd',
-                 model_save_path: str = '../default_path_BERT',
-                 plot_path: str = '../../plots',
+                 model_save_path: str = str(_REPO_ROOT / 'default_path_BERT'),
+                 plot_path: str = str(_REPO_ROOT / 'plots'),
                  ignore_leakage: bool = False,
                  max_length: int = 36,
                  fast_debug_mode: bool = False,
