@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
 import re
+from pathlib import Path
 from peptides import Peptide as Pep
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
 from src.data_preprocessing.binary.happenn_preprocess import label_after_happen_style, label_after_happenn
-from src.data_analysis.dataset_viewer import check_value_distance_inside_one_sequence
+
 
 """
 Script for our data preprocessing. It contains the main logic for creating 
@@ -352,7 +355,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     if filter_sequences:
         seq_to_filter = 100
         sequences_to_drop = check_value_distance_inside_one_sequence(df=df_raw_hemo,
-                                                                     plot_path="../../../data/train_data/hemolytic_value_differences.png",
+                                                                     plot_path=str(_REPO_ROOT / "data" / "train_data" / "hemolytic_value_differences.png"),
                                                                      min_concentration_difference=seq_to_filter)
         # Drop sequences with high value distance
         high_difference_sequences = df_raw_hemo[df_raw_hemo['sequence'].isin(sequences_to_drop)]
@@ -418,13 +421,13 @@ if __name__ == '__main__':
     # This part is hardcoded since this algorithm is specific for our data
     # This is meant for the preprocessing step
 
-    hemolytik_db = '../../../data/data_from_database/Hemolytik_scraped.csv'
-    dbaasp_db = '../../../data/data_from_database/dbaasp_scraped.csv'
-    all_db = '../../../data/data_from_database/complete_amp_data.csv'
+    hemolytik_db = str(_REPO_ROOT / "data" / "data_from_database" / "Hemolytik_scraped.csv")
+    dbaasp_db = str(_REPO_ROOT / "data" / "data_from_database" / "dbaasp_scraped.csv")
+    all_db = str(_REPO_ROOT / "data" / "data_from_database" / "complete_amp_data.csv")
 
     parse_and_label_hemolytic_data(hemolytik_db,
                                    dbaasp_db,
-                                   out_path='../../../data/',
+                                   out_path=str(_REPO_ROOT / "data") + "/",
                                    dataset_tag='happen_style',
                                    filter_sequences=True,
                                    vote_label=False,

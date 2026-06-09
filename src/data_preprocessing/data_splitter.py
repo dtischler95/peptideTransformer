@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: int = 10):
     """
     Erzeugt eine Sequenz-ebene Stratifikationsspalte:
@@ -87,23 +89,24 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
     return train_df, val_df, test_df
 
 def data_splitter(task: str,
+                  data_dir: Path | str | None = None,
                   test_size=0.20, val_size=0.16, random_state=42):
 
     if task == "classification":
         data_dir_suffix = "*.csv"
-        file_dir = '../../data/hemo_train/'
+        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "hemo_train"
         target_col = 'label'
     elif task == "regression":
         data_dir_suffix = "*regression.csv"
-        file_dir = '../../data/regression_data/'
+        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "regression_data"
         target_col = 'mic_log10'
     else:
         data_dir_suffix = "*dataset.csv"
-        file_dir = '../../data/gram/'
+        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "gram"
         target_col = 'label'
 
 
-    for train_file in Path(file_dir).glob(data_dir_suffix):
+    for train_file in file_dir.glob(data_dir_suffix):
         tmp_df = pd.read_csv(train_file, sep=';')
         if task == "classification":
             try:
@@ -122,6 +125,5 @@ def data_splitter(task: str,
         test_df.to_csv(out_base.with_name(out_base.name + "_test.csv"), sep=';', index=False)
 
 if __name__ == '__main__':
-
     data_splitter(task='gram')
     # Für Klassifikation wäre: task='classification'

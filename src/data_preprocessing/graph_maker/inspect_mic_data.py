@@ -1,4 +1,5 @@
 from collections import Counter
+from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,11 +12,13 @@ This file is inteded for creation of images for my thesis.
 This should only contain functions to create systematic views of the data
 """
 
-happenn_style_train_data = '../../../data/train_data/happen_style_unvoted.csv'
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PLOTS_ROOT = _REPO_ROOT / "final_plots"
+_PLOTS_ROOT.mkdir(exist_ok=True)
 
-white_lab_train_data = '../../../data/train_data/whitelab_hemo_data.csv'
-
-white_lab_train_data_clean = '../../../data/train_data/whitelab_filtered_clean.csv'
+happenn_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "happen_style_unvoted.csv")
+white_lab_train_data = str(_REPO_ROOT / "data" / "train_data" / "whitelab_hemo_data.csv")
+white_lab_train_data_clean = str(_REPO_ROOT / "data" / "train_data" / "whitelab_filtered_clean.csv")
 
 def get_pretty_organism_name(file_path: str) -> str:
     name = '_'.join(file_path.split('/')[-1].split('_')[:2]).replace('_', ' ').capitalize()
@@ -24,14 +27,8 @@ def get_pretty_organism_name(file_path: str) -> str:
     return name
 
 def get_mic_files():
-    file_list = []
-    mic_file_path = "../../../data/regression_data/"
-
-    for file in os.listdir(mic_file_path):
-        if file.endswith(".csv"):
-            file_list.append(mic_file_path + file)
-
-    return file_list
+    mic_dir = _REPO_ROOT / "data" / "regression_data"
+    return [str(f) for f in mic_dir.iterdir() if f.suffix == ".csv"]
 
 def mic_distribution_histogram(mic_files: list[str]):
     """
@@ -61,7 +58,7 @@ def hist_plot_mic(df, organism):
     plt.ylabel("Häufigkeit")
     plt.grid(True, axis='y')
     plt.tight_layout()
-    plt.savefig(f"../../../final_plots/{organism}_mic_distribution.png")
+    plt.savefig(f"{_PLOTS_ROOT}/{organism}_mic_distribution.png")
     plt.close()
 
 
@@ -89,7 +86,7 @@ def violin_mic_distribution(mic_files: list[str]):
         axes[i].grid(True, axis='y')
     fig.suptitle("Violin Plot der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
-    plt.savefig(f"../../../final_plots/violin_mic_distribution.png")
+    plt.savefig(f"{_PLOTS_ROOT}/violin_mic_distribution.png")
     plt.close()
 
 
@@ -117,7 +114,7 @@ def mic_seq_length_distribution(mic_files: list[str]):
 
     fig.suptitle("Histogramm der Sequenzlängen\n", fontsize=20)
     plt.tight_layout()
-    plt.savefig("../../../final_plots/hist_sequ_length_distribution.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hist_sequ_length_distribution.png")
     plt.close()
 
 def hist_mic_distribution(mic_files: list[str]):
@@ -144,7 +141,7 @@ def hist_mic_distribution(mic_files: list[str]):
 
     fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
-    plt.savefig("../../../final_plots/hist_mic_distribution.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hist_mic_distribution.png")
     plt.close()
 
 def hist_mic_log_comparison(mic_files: list[str]):
@@ -179,7 +176,7 @@ def hist_mic_log_comparison(mic_files: list[str]):
 
     fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
     plt.tight_layout()
-    plt.savefig("../../../final_plots/hist_mic_distribution.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hist_mic_distribution.png")
     plt.close()
 
 def get_all_data_combined(mic_files: list[str]) -> pd.DataFrame:
@@ -237,7 +234,7 @@ def hist_mic_log_nested(mic_files: list[str]):
                  organism, ha="center", va="bottom", fontsize=10, fontweight="bold")
 
     fig.suptitle("Histogramme der MIC-Werte pro Organismus", fontsize=14)
-    plt.savefig("../../../final_plots/hist_mic_nested.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"{_PLOTS_ROOT}/hist_mic_nested.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -304,7 +301,7 @@ def mic_amino_frequency_comparison(
 
     fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=20)
 
-    plt.savefig(f"../../../final_plots/all_aa_frequency_comparison.png")
+    plt.savefig(f"{_PLOTS_ROOT}/all_aa_frequency_comparison.png")
     plt.close()
 
 

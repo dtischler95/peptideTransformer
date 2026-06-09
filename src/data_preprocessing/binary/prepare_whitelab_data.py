@@ -1,11 +1,10 @@
-import os
 import numpy as np
+from pathlib import Path
 from transformers import BertTokenizer
 import pandas as pd
 import urllib.request
 
-# Define the base directory relative to this script's location
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def decoded_sequences_to_file(outfile_name: str,
                               create_formatted_whitelab_csv: bool = False,
@@ -24,14 +23,14 @@ def decoded_sequences_to_file(outfile_name: str,
     tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd')
 
     # Load the .npz files containing the data
-    neg_data_path = os.path.join(BASE_DIR, '../../../data/whitelab_data/hemo-negative.npz')
-    pos_data_path = os.path.join(BASE_DIR, '../../../data/whitelab_data/hemo-positive.npz')
+    neg_data_path = _REPO_ROOT / "data" / "whitelab_data" / "hemo-negative.npz"
+    pos_data_path = _REPO_ROOT / "data" / "whitelab_data" / "hemo-positive.npz"
     neg_data = np.load(neg_data_path)
     pos_data = np.load(pos_data_path)
 
     # Process sequences and write to files if needed
-    df_negative = write_sequences_to_list(os.path.join(BASE_DIR, f"../../../data/data_for_data_viewer/{outfile_name}_raw_negativ.txt"), neg_data['arr_0'], tokenizer)
-    df_positive = write_sequences_to_list(os.path.join(BASE_DIR, f"../../../data/data_for_data_viewer/{outfile_name}_raw_positive.txt"), pos_data['arr_0'], tokenizer)
+    df_negative = write_sequences_to_list(str(_REPO_ROOT / "data" / "data_for_data_viewer" / f"{outfile_name}_raw_negativ.txt"), neg_data['arr_0'], tokenizer)
+    df_positive = write_sequences_to_list(str(_REPO_ROOT / "data" / "data_for_data_viewer" / f"{outfile_name}_raw_positive.txt"), pos_data['arr_0'], tokenizer)
 
     if create_formatted_whitelab_csv:
         produce_whitelab_csv_file(df_positive, df_negative, special_tokens)
@@ -81,7 +80,7 @@ def format_whitelab_sequences(df: pd.DataFrame, outfile_name: str, special_token
 
     # Convert to DataFrame and save to CSV
     result_df = pd.DataFrame(unique_sequences.items(), columns=['sequence', 'count'])
-    result_df.to_csv(os.path.join(BASE_DIR, f"../../../data/data_for_data_viewer/{outfile_name}_formatted.csv"), sep=';', index=False)
+    result_df.to_csv(str(_REPO_ROOT / "data" / "data_for_data_viewer" / f"{outfile_name}_formatted.csv"), sep=';', index=False)
 
     if verbose:
         for seq, count in unique_sequences.items():
@@ -107,7 +106,7 @@ def produce_whitelab_csv_file(positive_data: pd.DataFrame, negative_data: pd.Dat
     positive_df = format_whitelab_file(positive_data, 1)
 
     result_df = pd.concat([negative_df, positive_df])
-    result_df.to_csv(os.path.join(BASE_DIR, '../../../data/train_data/whitelab_hemo_data.csv'), sep=';', index=False)
+    result_df.to_csv(str(_REPO_ROOT / "data" / "train_data" / "whitelab_hemo_data.csv"), sep=';', index=False)
 
 
 def download_and_prepare_whitelab_data(create_whitelab_csv: bool = False, verbose: bool = False):
@@ -130,11 +129,11 @@ def download_and_prepare_whitelab_data(create_whitelab_csv: bool = False, verbos
     def download_hemolysis():
         urllib.request.urlretrieve(
             'https://github.com/ur-whitelab/peptide-dashboard/raw/master/ml/data/hemo-positive.npz',
-            os.path.join(BASE_DIR, '../../../data/whitelab_data/hemo-positive.npz'),
+            str(_REPO_ROOT / "data" / "whitelab_data" / "hemo-positive.npz"),
         )
         urllib.request.urlretrieve(
             'https://github.com/ur-whitelab/peptide-dashboard/raw/master/ml/data/hemo-negative.npz',
-            os.path.join(BASE_DIR, '../../../data/whitelab_data/hemo-negative.npz'),
+            str(_REPO_ROOT / "data" / "whitelab_data" / "hemo-negative.npz"),
         )
 
     def func1(file):
@@ -152,8 +151,8 @@ def download_and_prepare_whitelab_data(create_whitelab_csv: bool = False, verbos
         )
 
     def func2(task):
-        func1(os.path.join(BASE_DIR, f'../../../data/whitelab_data/{task}-positive.npz'))
-        func1(os.path.join(BASE_DIR, f'../../../data/whitelab_data/{task}-negative.npz'))
+        func1(str(_REPO_ROOT / "data" / "whitelab_data" / f"{task}-positive.npz"))
+        func1(str(_REPO_ROOT / "data" / "whitelab_data" / f"{task}-negative.npz"))
 
     def prepare_downloaded_data():
         func2('hemo')

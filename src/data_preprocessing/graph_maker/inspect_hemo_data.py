@@ -1,16 +1,17 @@
 from collections import Counter
+from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 import numpy as np
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PLOTS_ROOT = _REPO_ROOT / "final_plots"
+_PLOTS_ROOT.mkdir(exist_ok=True)
 
-
-happenn_style_train_data = '../../../data/train_data/happen_style_unvoted.csv'
-
-white_lab_train_data = '../../../data/train_data/whitelab_hemo_data.csv'
+happenn_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "happen_style_unvoted.csv")
+white_lab_train_data = str(_REPO_ROOT / "data" / "train_data" / "whitelab_hemo_data.csv")
 
 
 def label_comparison():
@@ -37,7 +38,7 @@ def label_comparison():
     plt.ylabel("Häufigkeit [%]")
     plt.tight_layout()
     plt.xticks([0, 1])
-    plt.savefig(f"../../../final_plots/hemo_label_comparison.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hemo_label_comparison.png")
     plt.close()
 
 
@@ -82,7 +83,7 @@ def length_per_label_comparison():
     axes[1, 1].set_ylabel("Häufigkeit")
 
     plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
-    plt.savefig(f"../../../final_plots/hemo_length_comparison.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hemo_length_comparison.png")
     plt.close()
 
 def mic_amino_frequency_comparison_multi(
@@ -150,7 +151,7 @@ def mic_amino_frequency_comparison_multi(
 
     fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=20)
 
-    plt.savefig(f"../../../final_plots/hemo_aa_frequency_comparison.png")
+    plt.savefig(f"{_PLOTS_ROOT}/hemo_aa_frequency_comparison.png")
     plt.close()
 
 

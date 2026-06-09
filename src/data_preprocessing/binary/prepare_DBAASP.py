@@ -1,5 +1,8 @@
 import pandas as pd
+from pathlib import Path
 from src.data_preprocessing.preprocess_utils import load_and_filter_data
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def expand_rows(df: pd.DataFrame) -> pd.DataFrame:
@@ -59,5 +62,5 @@ def create_dbaasp_hemo_file(in_path: str,
 
 if __name__ == '__main__':
 
-    create_dbaasp_hemo_file(in_path ="../../../data/data_from_database/DBAASP_from_CalcAMP.csv",
-                            out_path ="../../../data/data_from_database/dbaasp_scraped.csv")
+    create_dbaasp_hemo_file(in_path=str(_REPO_ROOT / "data" / "data_from_database" / "DBAASP_from_CalcAMP.csv"),
+                            out_path=str(_REPO_ROOT / "data" / "data_from_database" / "dbaasp_scraped.csv"))
