@@ -43,18 +43,18 @@ def mic_distribution_histogram(mic_files: list[str]):
 
 def hist_plot_mic(df, organism):
     plt.figure(figsize=(10, 5))
-    plt.suptitle(f"Verteilung der MIC Werte für {organism}")
+    plt.suptitle(f"MIC Value Distribution for {organism}")
     plt.subplot(1, 2, 1)
     plt.hist(df['value'], bins=50)
-    plt.title(f"Verteilung der MIC Werte")
+    plt.title("MIC Value Distribution")
     plt.xlabel('MIC (µM)')
-    plt.ylabel("Häufigkeit")
+    plt.ylabel("Count")
     plt.grid(True, axis='y')
     plt.subplot(1, 2, 2)
     plt.hist(df['mic_log10'], bins=30)
-    plt.title(f"Verteilung der MIC Werte (log10 transformiert)")
+    plt.title("MIC Value Distribution (log10 transformed)")
     plt.xlabel('MIC (log10(µM))')
-    plt.ylabel("Häufigkeit")
+    plt.ylabel("Count")
     plt.grid(True, axis='y')
     plt.tight_layout()
     plt.savefig(f"{_PLOTS_ROOT}/{organism}_mic_distribution.png")
@@ -83,7 +83,7 @@ def violin_mic_distribution(mic_files: list[str]):
         axes[i].set_title(f"{organism}", size=18)
         axes[i].set_ylabel('MIC (log10(µM))', size=12)
         axes[i].grid(True, axis='y')
-    fig.suptitle("Violin Plot der MIC Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("Violin Plot of MIC Values (log10 transformed)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig(f"{_PLOTS_ROOT}/violin_mic_distribution.png")
     plt.close()
@@ -107,11 +107,11 @@ def mic_seq_length_distribution(mic_files: list[str]):
 
         axes[i].hist(df['sequence'].str.len(), bins=30)
         axes[i].set_title(f"{organism}", size=18)
-        axes[i].set_xlabel('Sequenzlänge', size=12)
-        axes[i].set_ylabel('Häufigkeit', size=12)
+        axes[i].set_xlabel('Sequence Length', size=12)
+        axes[i].set_ylabel('Count', size=12)
         axes[i].grid(True, axis='y')
 
-    fig.suptitle("Histogramm der Sequenzlängen\n", fontsize=20)
+    fig.suptitle("Sequence Length Distribution\n", fontsize=20)
     plt.tight_layout()
     plt.savefig(f"{_PLOTS_ROOT}/hist_sequ_length_distribution.png")
     plt.close()
@@ -135,10 +135,10 @@ def hist_mic_distribution(mic_files: list[str]):
         axes[i].hist(df['mic_log10'], bins=50)
         axes[i].set_title(f"{organism}", size=18)
         axes[i].set_xlabel('MIC (log10(µM))', size=12)
-        axes[i].set_ylabel('Häufigkeit', size=12)
+        axes[i].set_ylabel('Count', size=12)
         axes[i].grid(True, axis='y')
 
-    fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("MIC Value Distribution (log10 transformed)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig(f"{_PLOTS_ROOT}/hist_mic_distribution.png")
     plt.close()
@@ -165,15 +165,15 @@ def hist_mic_log_comparison(mic_files: list[str]):
         ax_left.hist(df['value'], bins=50)
         ax_left.set_title(f"{organism}", size=18)
         ax_left.set_xlabel('MIC (µM)', size=12)
-        ax_left.set_ylabel('Häufigkeit', size=12)
+        ax_left.set_ylabel('Count', size=12)
         ax_left.grid(True, axis='y')
         ax_right.hist(df['mic_log10'], bins=50)
         ax_right.set_title(f"{organism}", size=18)
         ax_right.set_xlabel('MIC (log10(µM))', size=12)
-        ax_right.set_ylabel('Häufigkeit', size=12)
+        ax_right.set_ylabel('Count', size=12)
         ax_right.grid(True, axis='y')
 
-    fig.suptitle("Histogramm der MIC Werte (log10 transformiert)\n", fontsize=20)
+    fig.suptitle("MIC Value Distribution (log10 transformed)\n", fontsize=20)
     plt.tight_layout()
     plt.savefig(f"{_PLOTS_ROOT}/hist_mic_distribution.png")
     plt.close()
@@ -188,7 +188,7 @@ def get_all_data_combined(mic_files: list[str]) -> pd.DataFrame:
 def combined_hist_plot(mic_files: list[str]):
     combined_df = get_all_data_combined(mic_files)
     #combined_df = combined_df[combined_df['value'] <= 300.0]
-    hist_plot_mic(combined_df, "ESKAPE Organismen")
+    hist_plot_mic(combined_df, "ESKAPE Organisms")
 
 def hist_mic_log_nested(mic_files: list[str]):
     """
@@ -217,14 +217,14 @@ def hist_mic_log_nested(mic_files: list[str]):
         ax_left.hist(df['value'], bins=50, color="skyblue", edgecolor="black")
 
         ax_left.set_xlabel("µM", fontsize=10)
-        ax_left.set_ylabel("Häufigkeit", fontsize=10)
+        ax_left.set_ylabel("Count", fontsize=10)
         ax_left.tick_params(labelsize=10)
 
         # Log10
         ax_right.hist(df['mic_log10'], bins=30, color="lightgreen", edgecolor="black")
 
         ax_right.set_xlabel("log10(µM)", fontsize=10)
-        ax_right.set_ylabel("Häufigkeit", fontsize=10)
+        ax_right.set_ylabel("Count", fontsize=10)
         ax_right.tick_params(labelsize=10)
 
         # Gemeinsamer Titel pro Organismus (über den beiden Subplots)
@@ -232,7 +232,7 @@ def hist_mic_log_nested(mic_files: list[str]):
                  ax_left.get_position().y1 + 0.01,
                  organism, ha="center", va="bottom", fontsize=10, fontweight="bold")
 
-    fig.suptitle("Histogramme der MIC-Werte pro Organismus", fontsize=14)
+    fig.suptitle("MIC Value Histograms per Organism", fontsize=14)
     plt.savefig(f"{_PLOTS_ROOT}/hist_mic_nested.png", dpi=300, bbox_inches="tight")
     plt.close()
 
@@ -280,25 +280,25 @@ def mic_amino_frequency_comparison(
         x = np.arange(len(tick_labels))
 
         #fig2, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-        fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=12)
-        ax_left.bar(x - 0.2, vec_0, 0.4, label="Inaktiv")
-        ax_left.bar(x + 0.2, vec_1, 0.4, label="Aktiv")
+        fig.suptitle("Amino Acid Frequency Comparison", fontsize=12)
+        ax_left.bar(x - 0.2, vec_0, 0.4, label="Inactive")
+        ax_left.bar(x + 0.2, vec_1, 0.4, label="Active")
         plt.xticks(x, tick_labels)
-        ax_left.set_ylabel("AS Häufigkeit", size=8)
+        ax_left.set_ylabel("AA Frequency", size=8)
         ax_left.legend(fontsize=5)
         ax_left.set_xticks(x, tick_labels)
-        ax_left.set_xlabel("Aminosäuren")
+        ax_left.set_xlabel("Amino Acids")
 
-        # Train - gen
+        # Frequency difference
         ax_right.bar(x, vec_0 - vec_1, alpha=0.75)
-        ax_right.set_ylabel("Differenz in der Häufigkeit", size=8)
+        ax_right.set_ylabel("Frequency Difference", size=8)
         ax_right.set_xticks(x, tick_labels)
-        ax_right.set_xlabel("Aminosäuren")
+        ax_right.set_xlabel("Amino Acids")
         fig.text((ax_left.get_position().x0 + ax_right.get_position().x1) / 2,
                  ax_left.get_position().y1 + 0.01,
                  organism, ha="center", va="bottom", fontsize=12, fontweight="bold")
 
-    fig.suptitle("Aminosäuren Häufigkeits Vergleich", fontsize=20)
+    fig.suptitle("Amino Acid Frequency Comparison", fontsize=20)
 
     plt.savefig(f"{_PLOTS_ROOT}/all_aa_frequency_comparison.png")
     plt.close()

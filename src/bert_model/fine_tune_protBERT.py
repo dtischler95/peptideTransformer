@@ -15,11 +15,11 @@ from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCur
 
 import matplotlib as mpl
 mpl.rcParams.update({
-    'font.size': 13,        # Basisgröße für alles,
-    'axes.titlesize': 18,       # Titel der Achsen
-    'axes.labelsize': 15,       # Achsenbeschriftungen (xlabel, ylabel)
-    'xtick.labelsize': 14,      # Tick-Beschriftungen X-Achse
-    'ytick.labelsize': 14,      # Tick-Beschriftungen Y-Achse
+    'font.size': 13,        # base font size
+    'axes.titlesize': 18,       # axes title size
+    'axes.labelsize': 15,       # axes label size (xlabel, ylabel)
+    'xtick.labelsize': 14,      # X-axis tick labels
+    'ytick.labelsize': 14,      # Y-axis tick labels
 })
 
 # this line should be included in the TrainingArguments
@@ -171,7 +171,7 @@ def fine_tune(config_path: str):
             prepare_hemo_eval(test_dataset=val_dataset,
                               trainer=trainer,
                               plot_path=training_args.plot_path + "/val_",
-                              tag='Validierung',
+                              tag='Validation',
                               file_name=file_name)
             prepare_hemo_eval(test_dataset=test_dataset,
                               trainer=trainer,
@@ -196,7 +196,7 @@ def fine_tune(config_path: str):
             overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path,
                           tag='Training', file_name=file_name)
             overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path,
-                          tag='Validierung', file_name=file_name)
+                          tag='Validation', file_name=file_name)
             overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test', file_name=file_name)
 
             train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
@@ -211,7 +211,7 @@ def fine_tune(config_path: str):
                                               target_data=y_val_true,
                                               logger=logger,
                                               file_name=file_name,
-                                              tag='Validierung')
+                                              tag='Validation')
 
             test_r2, test_mse = get_model_stats(plot_dir=training_args.plot_path,
                                                 predictions=y_test_preds,
