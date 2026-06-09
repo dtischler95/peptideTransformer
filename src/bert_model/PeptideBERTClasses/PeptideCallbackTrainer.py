@@ -7,7 +7,7 @@ from sklearn.metrics import matthews_corrcoef, mean_squared_error, mean_absolute
 from transformers import TrainerCallback, TrainerState, TrainerControl, TrainingArguments
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.machine_learning.eval_utils import get_pretty_name
+from src.evaluation.eval_utils import get_pretty_name
 
 
 class LearningCurveCallback(TrainerCallback):
