@@ -1,13 +1,9 @@
 import argparse
 import os
-import sys
 from pathlib import Path
 
 from src.bert_model.fine_tune_protBERT import fine_tune
 from src.data_preprocessing.data_splitter import data_splitter
-
-# Adding the src folder to python path so the module is runnable
-sys.path.append(os.path.dirname(__file__))
 
 _SRC_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SRC_DIR.parent
