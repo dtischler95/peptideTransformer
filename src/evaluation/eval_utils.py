@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -76,7 +77,8 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     ax_reg.legend(loc='best')
     fig_reg.suptitle(f"Regressionsplot (σ={sigma:.2f}) ({tag})\nDaten: {label}")
     plt.tight_layout()
-    plt.savefig(path.replace('.pdf', '_regression.pdf'))
+    base = Path(path).with_suffix('')
+    plt.savefig(f"{base}_regression.pdf")
     plt.close(fig_reg)
 
     fig_res, ax_res = plt.subplots(figsize=(8, 6))
@@ -89,7 +91,7 @@ def make_regression_plot(y_true, y_pred, path, file_name, tag):
     ax_res.legend(loc='best')
     fig_res.suptitle(f"Residuenplot (σ={sigma:.2f}) ({tag})\nDaten: {label}")
     plt.tight_layout()
-    plt.savefig(path.replace('.pdf', '_residuals.pdf'))
+    plt.savefig(f"{base}_residuals.pdf")
     plt.close(fig_res)
 
 

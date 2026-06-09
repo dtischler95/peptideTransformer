@@ -1,5 +1,6 @@
 import sys
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
 
@@ -119,12 +120,12 @@ def fine_tune(config_path: str):
         logger.info(f"*** Model saved to {training_args.model_save_path} ***")
 
     if training_args.do_eval:
-        file_name = training_args.train_file.split('/')[-1].split('.')[0]
+        file_name = Path(training_args.train_file).stem
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
             # Custom Function for cluster the model embeddings with the whole dataset
             scaler = cluster_model_embedding(file_path=train_dataset,
-                                             data_tag=config_path.split('/')[-1].split('.')[0],
+                                             data_tag=Path(config_path).stem,
                                              batch_size=training_args.per_device_eval_batch_size,
                                              plot_path=training_args.plot_path + "/Training_",
                                              scaler=None,
@@ -137,7 +138,7 @@ def fine_tune(config_path: str):
                                              )
 
             cluster_model_embedding(file_path=val_dataset,
-                                    data_tag=config_path.split('/')[-1].split('.')[0],
+                                    data_tag=Path(config_path).stem,
                                     batch_size=training_args.per_device_eval_batch_size,
                                     plot_path=training_args.plot_path + "/val_",
                                     scaler=scaler,
@@ -150,7 +151,7 @@ def fine_tune(config_path: str):
                                     )
 
             cluster_model_embedding(file_path=test_dataset,
-                                    data_tag=config_path.split('/')[-1].split('.')[0],
+                                    data_tag=Path(config_path).stem,
                                     batch_size=training_args.per_device_eval_batch_size,
                                     plot_path=training_args.plot_path + "/test_",
                                     scaler=scaler,
@@ -219,7 +220,7 @@ def fine_tune(config_path: str):
                                                 file_name=file_name,
                                                 tag='Test')
 
-            with open(f"{training_args.plot_path}/{training_args.train_file.split('/')[-1].split('.')[0]}_train.txt",
+            with open(f"{training_args.plot_path}/{Path(training_args.train_file).stem}_train.txt",
                       "w") as f:
                 f.write(f"Filename: {file_name}\n"
                         f"Train R2: {round(train_r2, 4)}\n"

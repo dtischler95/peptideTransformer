@@ -111,13 +111,12 @@ def run_all(
 
     results = []
 
+    data_dir = Path(data_dir)
     gram_mode = False
-    if data_dir.endswith('regression/'):
-        data_dir = Path(data_dir)
+    if 'regression' in data_dir.name:
         csv_files = sorted(data_dir.glob("*regression.csv"))
     else:
-        data_dir = Path(data_dir)
-        csv_files = sorted(list(data_dir.glob("*dataset.csv")))
+        csv_files = sorted(data_dir.glob("*dataset.csv"))
         gram_mode = True
 
     for csv_path in csv_files:
@@ -156,19 +155,19 @@ def run_all(
 
 
 if __name__ == "__main__":
-    data_dir = _REPO_ROOT / "data" / "gram"
+    data_dir = _REPO_ROOT / "data" / "regression"
     model_list = [  # ('gb', GradientBoostingRegressor()),
-        ('xtra', ExtraTreesRegressor(n_jobs=1)),
-        ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
+        #('xtra', ExtraTreesRegressor(n_jobs=1)),
+        #('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
         ('rf', RandomForestRegressor(n_jobs=1)),
-        ('svr', SVR(n_jobs=1))
+        #('svr', SVR(n_jobs=1))
     ]
 
     param_grids = [  # config.gb_param_grid,
-        config.xtra_gram,
-        config.xgb_param_grid,
-        config.rf_param_grid,
-        config.svr_param_grid
+        #config.xtra_gram,
+        #config.xgb_param_grid,
+        config.rf_test_param_grid,
+        #config.svr_param_grid
     ]
 
     run_all(calculate_features=False,
