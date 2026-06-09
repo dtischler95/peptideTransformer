@@ -22,14 +22,14 @@ from sklearn.metrics import (r2_score,
                              classification_report, roc_auc_score, roc_curve, average_precision_score)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from transformers import BertForMaskedLM, DefaultDataCollator, BertConfig, DataCollatorForLanguageModeling
+from transformers import DefaultDataCollator, BertConfig
 from transformers import BertTokenizer
 
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.transformer_metrics import binary_metrics, mlm_metrics, regression_metrics
+from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
 
 
 def prepare_datasets(model_class: str,
@@ -49,7 +49,7 @@ def prepare_datasets(model_class: str,
     Update the Dataset class if you want to use a different model or a different task so the Dataset class fits the
     data and the task.
 
-    :param model_class: Model class to use, either 'binary_dense', 'binary_conv', 'mlm' or 'regression'
+    :param model_class: Model class to use, either 'binary_dense' or 'regression'
     :param model_path: Path to the pretrained model
     :param show_encoding: If the encoding of the vocabulary should be shown
     :param train_file: Path to the training data
@@ -271,73 +271,6 @@ def format_one_hot_to_label(one_hot_tensor):
     """
     return np.argmax(one_hot_tensor, axis=1).flatten()
 
-
-def calculate_abundance(predictions):
-    """
-    Calculate the abundance of 0's and 1's in the predictions.
-    """
-    abundance = {
-        0: np.count_nonzero(predictions == 0),
-        1: np.count_nonzero(predictions == 1)
-    }
-    return abundance
-
-
-def plot_abundance(abundance_dict, title, ax):
-    """
-    Plot the abundance of predicted labels.
-    """
-    ax.bar(abundance_dict.keys(), abundance_dict.values(), color=['blue', 'orange'])
-    ax.set_title(title)
-    ax.set_xlabel('Value')
-    ax.set_ylabel('Abundance')
-    ax.set_xticks(list(abundance_dict.keys()))
-    ax.set_ylim(0, max(abundance_dict.values()) + 1)  # Add some space above the bars
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
-
-
-def plot_label_abundance(label_0_counter,
-                         label_1_counter,
-                         task_name: str,
-                         plot_path: str):
-    """
-    Plot the abundance of label classes in the predictions per Epoch or Batch wise
-
-    TODO Better looking graphs. Maybe make it more dynamic to given task name
-
-    :param label_0_counter: Counter for label 0
-    :param label_1_counter: Counter for label 1
-    :param task_name: Name of the task
-    :param plot_path: Path to save the plot
-    """
-
-    max_labels = label_0_counter[0] + label_1_counter[0]
-
-    if task_name == "train_batch_wise_label_prediction":
-        x_label = "Batches"
-    else:
-        x_label = "Epochs"
-
-    epochs = range(1, len(label_0_counter) + 1)
-    plt.figure(figsize=(10, 5))
-
-    plt.plot(epochs, label_0_counter, label='Label 0', color='blue')
-    plt.xlabel(f"{x_label}")
-    plt.ylabel('Label 0 [%]', color='green')
-    plt.tick_params(axis='y', labelcolor='green')
-    plt.ylim(0, max_labels)
-    plt.xticks(epochs)
-    plt.xlim(1, len(label_0_counter))
-    label_0_counter_np = np.array(label_0_counter)
-    plt.fill_between(epochs, label_0_counter, max_labels, where=(label_0_counter_np <= max_labels),
-                     color='red', alpha=0.3)
-
-    plt.fill_between(epochs, label_0_counter, 0, where=(label_0_counter_np >= 0), color='green', alpha=0.3)
-
-    plt.savefig(f"{plot_path}/{task_name}_label_abundance.png")
-    plt.close()
-
-
 # TODO Update this function for all new parameters and formats
 def generate_custom_yaml_file(config_name: str,
                               file_path: str = './bert_model/peptideBERT_configs/'):
@@ -352,7 +285,7 @@ def generate_custom_yaml_file(config_name: str,
 
     yaml_content = """
 # Training and Evaluation Settings
-model_class: 'ENTER MODELTYPE HERE'                    # Model class to use, either 'binary' or 'mlm' 
+model_class: 'ENTER MODELTYPE HERE'                    # Model class to use, either 'binary_dense' or 'regression'
 do_train: true                                         # Train the model
 do_eval: true                                          # Evaluate the model
 do_predict: true                                       # Predict with the model
@@ -540,7 +473,7 @@ def init_model(train_dataset, training_args, n_features):
 
     else:
         raise ValueError(
-            f"binary_or_mlm must be either 'binary_dense', 'binary_conv' or 'mlm'. You provided: '{training_args.model_class}'")
+            f"model_class must be either 'binary_dense' or 'regression'. You provided: '{training_args.model_class}'")
     return data_collator, model, run_metric
 
 
@@ -689,25 +622,6 @@ def overall_stats(predictions, y_true, save_path, tag, file_name):
     # 5. Print MSE for comparison on the test set
     mse = np.mean((y_true - predictions) ** 2)
     print(f"Mean Squared Error (MSE) on Test Set: {mse}")
-
-
-def best_f1_threshold(y_true, y_score, plot_path):
-    p, r, thr = precision_recall_curve(y_true, y_score)
-
-    display = PrecisionRecallDisplay.from_predictions(y_true, y_score, plot_chance_level=True, pos_label=1)
-    _ = display.ax_.set_title("2-Klassen Präzision-Sensitivität Kurve")
-    display.plot()
-    plt.xlabel("Sensitivität (Positive Klasse: 1)")
-    plt.ylabel("Präzision (Positive Klasse: 1)")
-    plt.savefig(plot_path + 'precision_recall_curve.png')
-    plt.close()
-    plt.clf()
-
-    f1 = 2 * p * r / (p + r + 1e-12)
-    i = np.nanargmax(f1)
-    # thresholds has length = len(p)-1; clamp index
-    use_i = min(i, len(thr) - 1) if len(thr) > 0 else 0
-    return (thr[use_i] if len(thr) else 0.5), f1[i], p[i], r[i]
 
 
 def get_model_stats(plot_dir: str,

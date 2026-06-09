@@ -64,8 +64,6 @@ class PeptideTrainer(Trainer):
                         logs['MSE'] = round(float(callback.get_train_mse()), 4)
                         logs['MAE'] = round(float(callback.get_train_mae()), 4)
                         logs['R2'] = round(float(callback.get_train_r2()), 4)
-                    if self.args.model_class.startswith('mlm'):
-                        logs['Genauigkeit'] = round(callback.get_train_accuracy(), 4)
                     if self.args.model_class.startswith('binary'):
                         logs['Genauigkeit'] = round(callback.get_train_accuracy(), 4)
                         logs['Präzision'] = round(callback.get_train_precision(), 4)
@@ -101,7 +99,6 @@ class PeptideTrainer(Trainer):
         Return:
             `torch.Tensor`: The tensor with training loss on this batch.
         """
-        # TODO is there any way to use the compute_metric function here??
 
         loss = super().training_step(model, inputs, num_items_in_batch)
 
@@ -123,33 +120,13 @@ class PeptideTrainer(Trainer):
                 pred_labels = format_logit_to_label(logits=preds)
                 train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs, probabilities=preds.flatten())
 
-            elif self.args.model_class == 'mlm':
-                # Extract the logits for the masked tokens
-                preds = model(**inputs).logits.detach().cpu().numpy()
-
-                # Get the indices of the masked tokens
-                masked_indices = inputs["labels"].detach().cpu().numpy() != -100
-
-                # Get the predictions for the masked tokens
-                masked_preds = preds[masked_indices].argmax(axis=1)
-
-                # Get the true labels for the masked tokens
-                masked_labels = inputs["labels"].detach().cpu().numpy()[masked_indices]
-
-                # Calculate the accuracy
-                train_metric_callback.append_batch_results(predictions=masked_preds, labels=masked_labels)
-
             elif self.args.model_class == 'regression':
-                """
-                Implement Regression Metrics here
-                """
                 # Extract the logits for regression
                 preds = model(**inputs)[1].detach().cpu().numpy()
                 cpu_inputs = inputs["labels"].detach().cpu().numpy()
                 train_metric_callback.append_batch_results(predictions=preds.squeeze(), labels=cpu_inputs)
 
         # Apply gradient norm clipping in case of exploding gradients.
-        # Observed while training mlm with large train data points.
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         return loss
