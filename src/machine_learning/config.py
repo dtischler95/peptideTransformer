@@ -83,7 +83,7 @@ xtra_gram_param_grid = {
     'min_samples_split': [2, 4, 8, 16],
     'min_samples_leaf': [1, 2, 4, 8],
     'max_features': ['sqrt', 'log2', 0.2, 0.5],
-    'bootstrap': [False],   # typisch für ExtraTrees
+    'bootstrap': [False],   # typical for ExtraTrees
     'class_weight': [None, 'balanced']
 }
 

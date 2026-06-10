@@ -132,14 +132,14 @@ def overall_stats(best_estimator, x_test, y_test, save_path, tag, file_name, mod
 
 PAD = "-"
 MAX_LEN = 36
-AA = list("ACDEFGHIKLMNPQRSTVWY")  # Standard-20
+AA = list("ACDEFGHIKLMNPQRSTVWY")  # standard 20 amino acids
 CATEGORIES = AA + [PAD]
 
 
 
 def compute_desc_row(sequence):
     p = pep.Peptide(sequence)
-    d = p.descriptors()  # dict -> nur Zahlen
+    d = p.descriptors()
     return {f"desc__{k}": float(v) for k, v in d.items()}
 
 
@@ -147,7 +147,6 @@ def add_descriptors(df):
     desc_rows = [compute_desc_row(s) for s in df["sequence"]]
     desc_df = pd.DataFrame(desc_rows).reset_index(drop=True)
     df = df.reset_index(drop=True).join(desc_df)
-    # sauber halten:
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df
 
@@ -230,13 +229,11 @@ def plot_residuals_vs_length_from_df(model,
                       plot_path,
                       calculate_features,
                       title="Residual Density Plot"):
-    # Labels mappen
     df = df.copy()
     df["label"] = df["label"].map({0: "Gram–", 1: "Gram+"})
 
     y_true = df[target_col].astype(float)
 
-    # Feature-Matrix erzeugen
     _, x_test, _, y_test, _ = prepare_train_val_data(
         calculate_features=calculate_features,
         train_df=df,
@@ -245,11 +242,9 @@ def plot_residuals_vs_length_from_df(model,
         out_dir=''
     )
 
-    # Vorhersagen + Residuen
     y_pred = model.predict(x_test)
     resid = y_true - y_pred
 
-    # Für seaborn zusammenführen
     plot_df = df.assign(resid=resid)
 
     # Figure
@@ -292,11 +287,10 @@ def prepare_train_val_data(calculate_features, train_df, test_df, target_col, ou
         if out_dir is not None:
             x_val_df = pd.DataFrame(x_val, columns=feature_names)
 
-            # y_val als DataFrame oder Series
-            y_val_df = pd.Series(y_val, name=target_col)  # oder DataFrame: pd.DataFrame(y_val, columns=[target_col])
 
-            # Kombinieren (falls du Features + Label in einem DF willst)
-            val_df = pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
+            y_val_df = pd.Series(y_val, name=target_col)
+
+            pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
 
 
 
@@ -317,29 +311,23 @@ def encode_kmer_with_features(train_df, val_df, target_col, n_components=128):
 
     desc_cols = [c for c in train_df.columns if c.startswith('desc__')]
 
-    # # Split ohne Leckage: nach einzigartigen Sequenzen
-    # uniq = df['sequence'].unique()
-    # tr_seqs, va_seqs = train_test_split(uniq, test_size=0.2,
-    #                                     random_state=42, shuffle=True)
-    # train_df = df[df['sequence'].isin(tr_seqs)].copy()
-    # val_df = df[df['sequence'].isin(va_seqs)].copy()
 
     y_train = train_df[target_col].astype(float).to_numpy()
     y_val = val_df[target_col].astype(float).to_numpy()
 
     # --- k-mer TF-IDF ---
     tfidf = TfidfVectorizer(analyzer='char',
-                            ngram_range=(3, 4),  # 3- und 4-mer
-                            min_df=2)  # ignoriert seltene
+                            ngram_range=(3, 4),  # 3- and 4-mers
+                            min_df=2)  # ignores rare k-mers
     Xk_tr = tfidf.fit_transform(train_df['sequence'])
     Xk_va = tfidf.transform(val_df['sequence'])
 
-    # --- Dimensionalität reduzieren ---
+    # --- reduce dimensionality ---
     svd = TruncatedSVD(n_components=n_components, random_state=42)
     Z_tr = svd.fit_transform(Xk_tr)
     Z_va = svd.transform(Xk_va)
 
-    # --- Deskriptoren ---
+    # --- descriptors ---
     imp = SimpleImputer(strategy='median')
     D_tr = imp.fit_transform(train_df[desc_cols])
     D_va = imp.transform(val_df[desc_cols])
@@ -348,7 +336,7 @@ def encode_kmer_with_features(train_df, val_df, target_col, n_components=128):
     X_train = np.hstack([Z_tr, D_tr])
     X_val = np.hstack([Z_va, D_va])
 
-    # Feature-Namen: SVD-Komp. + Deskriptoren
+    # feature names: SVD components + descriptors
     svd_names = [f'kmer_svd{i + 1}' for i in range(n_components)]
     feature_names = svd_names + desc_cols
 
@@ -363,12 +351,12 @@ def encode_kmer_no_features(train_df, val_df, target_col, n_components=128, feat
 
     # --- k-mer TF-IDF ---
     tfidf = TfidfVectorizer(analyzer='char',
-                            ngram_range=(3, 4),  # 3- und 4-mer
-                            min_df=2)  # ignoriert seltene
+                            ngram_range=(3, 4),  # 3- and 4-mers
+                            min_df=2)  # ignores rare k-mers
     x_train = tfidf.fit_transform(train_df['sequence'])
     x_val = tfidf.transform(val_df['sequence'])
 
-    # --- Dimensionalität reduzieren ---
+    # --- reduce dimensionality ---
     svd = TruncatedSVD(n_components=n_components, random_state=42)
     x_train = svd.fit_transform(x_train)
     x_val = svd.transform(x_val)
