@@ -26,7 +26,7 @@ max_length: 36                    # Maximum input sequence length
 train_file: 'data/regression_data/acinetobacter_baumannii_for_regression.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/debug'
-plot_path: 'model_plots/debug'
+plot_path: 'bert_plots/debug'
 
 # Logging Settings
 output_dir: 'results/debug'

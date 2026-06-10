@@ -53,6 +53,9 @@ class PeptideTrainingArguments(TrainingArguments):
         :param add_features: Use concentration as input for the model
         :param kwargs: Additional arguments
         """
+        # Default to no external experiment tracking (e.g. wandb), unless the
+        # config explicitly sets report_to.
+        kwargs.setdefault('report_to', 'none')
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file

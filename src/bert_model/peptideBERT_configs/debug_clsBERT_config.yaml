@@ -28,10 +28,10 @@ add_features: true          # Use concentration as extra feature [WARNING] U nee
 
 
 # Dataset and File Paths
-train_file: 'data/hemo_train/happen_style_unvoted.csv'
+train_file: 'data/hemo_train/threshold_style_unvoted.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/debug'
-plot_path: 'model_plots/debug'
+plot_path: 'bert_plots/debug'
 
 # Logging Settings
 output_dir: 'results/debug'

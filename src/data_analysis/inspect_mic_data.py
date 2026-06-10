@@ -12,7 +12,7 @@ This should only contain functions to create systematic views of the data
 """
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_PLOTS_ROOT = _REPO_ROOT / "final_plots"
+_PLOTS_ROOT = _REPO_ROOT / "ml_plots"
 _PLOTS_ROOT.mkdir(exist_ok=True)
 
 threshold_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "threshold_style_unvoted.csv")

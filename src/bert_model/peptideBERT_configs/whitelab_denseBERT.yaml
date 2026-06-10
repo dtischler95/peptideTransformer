@@ -31,7 +31,7 @@ loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_log
 train_file: 'data/hemo_train/whitelab_hemo_data.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/whitelab'
-plot_path: 'model_plots/whitelab'
+plot_path: 'bert_plots/whitelab'
 
 # Logging Settings
 output_dir: 'results/whitelab'

@@ -131,11 +131,11 @@ python -m src bert_model --pipe_configs default   # default directory for batch 
 ### Classical ML baselines
 
 Grid search over ExtraTrees, XGBoost, RF, SVC/SVR. Uses k-mer TF-IDF + optional peptide descriptors.
-Results (plots, metrics) are saved to `final_plots/` by default.
+Results (plots, metrics) are saved to `ml_plots/` by default.
 
 ```bash
-python -m src ml_classify --data_dir data/hemo_train/      --output_dir final_plots/  # Hemolysis classification
-python -m src ml_regress  --data_dir data/regression_data/ --output_dir final_plots/  # MIC regression
+python -m src ml_classify --data_dir data/hemo_train/      --output_dir ml_plots/  # Hemolysis classification
+python -m src ml_regress  --data_dir data/regression_data/ --output_dir ml_plots/  # MIC regression
 ```
 
 > `--features` additionally enables biochemical feature engineering (otherwise k-mer TF-IDF only).

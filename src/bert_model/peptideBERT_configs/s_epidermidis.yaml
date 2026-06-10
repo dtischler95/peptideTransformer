@@ -26,7 +26,7 @@ max_length: 36                    # Maximum input sequence length
 train_file: 'data/regression_data/staphylococcus_epidermidis_for_regression.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/s_epidermidis'
-plot_path: 'model_plots/s_epidermidis'
+plot_path: 'bert_plots/s_epidermidis'
 
 # Logging Settings
 output_dir: 'results/s_epidermidis'

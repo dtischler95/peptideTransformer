@@ -59,7 +59,7 @@ def main():
         ]
         run_classification(
             data_dir=args.data_dir or (_REPO_ROOT / "data" / "hemo_train"),
-            output_root=args.output_dir or (_REPO_ROOT / "final_plots"),
+            output_root=args.output_dir or (_REPO_ROOT / "ml_plots"),
             models=model_list,
             grids=param_grids,
             calculate_features=args.features,
@@ -85,7 +85,7 @@ def main():
         ]
         run_regression(
             data_dir=args.data_dir or (_REPO_ROOT / "data" / "regression_data"),
-            output_root=args.output_dir or (_REPO_ROOT / "final_plots"),
+            output_root=args.output_dir or (_REPO_ROOT / "ml_plots"),
             models=model_list,
             grids=param_grids,
             calculate_features=args.features,

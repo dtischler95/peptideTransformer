@@ -142,7 +142,7 @@ def train_regressors(file_path: str,
 
 def run_classification(
         data_dir: str | Path = _REPO_ROOT / "data" / "hemo_train",
-        output_root: str | Path = _REPO_ROOT / "final_plots",
+        output_root: str | Path = _REPO_ROOT / "ml_plots",
         models: Iterable[tuple[str, Any]] = None,  # e.g. classifier_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
@@ -188,7 +188,7 @@ def run_classification(
 
 def run_regression(
         data_dir: str | Path = _REPO_ROOT / "data" / "regression_data",
-        output_root: str | Path = _REPO_ROOT / "final_plots",
+        output_root: str | Path = _REPO_ROOT / "ml_plots",
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
@@ -249,7 +249,7 @@ def run_regression(
 
 
 if __name__ == "__main__":
-    # Quick smoke test on the gram dataset for both tasks
+
     data_dir = _REPO_ROOT / "data" / "gram"
 
     classifier_list = [
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         ('xtra', ExtraTreesRegressor(n_jobs=1)),
         ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
         ('rf', RandomForestRegressor(n_jobs=1)),
-        ('svr', SVR(n_jobs=1))
+        ('svr', SVR())
     ]
     regressor_grids = [
         config.xtra_gram,
