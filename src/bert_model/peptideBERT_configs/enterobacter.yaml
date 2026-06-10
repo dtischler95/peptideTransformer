@@ -26,7 +26,7 @@ max_length: 36                    # Maximum input sequence length
 train_file: 'data/regression_data/enterobacter_for_regression.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/enterobacter'
-plot_path: 'model_plots/enterobacter'
+plot_path: 'bert_plots/enterobacter'
 
 # Logging Settings
 output_dir: 'results/enterobacter'

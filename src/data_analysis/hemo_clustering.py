@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Optional, Tuple
 
 import torch
@@ -11,60 +12,39 @@ from sklearn.preprocessing import StandardScaler
 from transformers import BertTokenizer, BertModel
 
 
-def _scatter_embedding(ax, fig, fit, labels=None, lengths=None):
+def _scatter_embedding(ax, fit, labels):
     """
-    Scatter a 2D embedding onto `ax`, either color-coded by sequence length
-    (continuous colorbar) or split into positive/negative classes by `labels`.
+    Scatter a 2D embedding onto `ax`, split into positive/negative classes by `labels`.
 
     :param ax: matplotlib Axes to draw on
-    :param fig: matplotlib Figure (needed for the colorbar)
     :param fit: array (n, 2) of 2D coordinates
-    :param labels: class labels of {0, 1} (optional)
-    :param lengths: sequence lengths (optional) -> if set, color-codes by sequence length
+    :param labels: class labels of {0, 1}
     """
-    if lengths is not None:
-        lengths = np.asarray(lengths, dtype=float)
-        sc = ax.scatter(
-            fit[:, 0], fit[:, 1],
-            c=lengths, cmap="viridis",
-            s=12, alpha=0.85, edgecolors="none"
-        )
-        cb = fig.colorbar(sc, ax=ax)
-        cb.set_label("Sequence Length (AAs)")
-
-        if labels is not None:
-            labels_arr = np.asarray(labels)
-            ax.legend([f"Positive: {int(np.sum(labels_arr == 1))}",
-                       f"Negative: {int(np.sum(labels_arr == 0))}"],
-                      frameon=True, loc="best")
-    else:
-        assert labels is not None, "Provide 'labels' for class plot or set 'lengths'."
-        labels_arr = np.asarray(labels)
-        pos = fit[labels_arr == 1]
-        neg = fit[labels_arr == 0]
-        ax.scatter(pos[:, 0], pos[:, 1], c="lawngreen", alpha=0.7,
-                   label=f"Positive: {int(np.sum(labels_arr == 1))}", s=12)
-        ax.scatter(neg[:, 0], neg[:, 1], c="darkgrey", alpha=0.7,
-                   label=f"Negative: {int(np.sum(labels_arr == 0))}", s=12)
-        ax.legend(loc="best")
+    labels_arr = np.asarray(labels)
+    pos = fit[labels_arr == 1]
+    neg = fit[labels_arr == 0]
+    ax.scatter(pos[:, 0], pos[:, 1], c="lawngreen", alpha=0.7,
+               label=f"Positive: {int(np.sum(labels_arr == 1))}", s=12)
+    ax.scatter(neg[:, 0], neg[:, 1], c="darkgrey", alpha=0.7,
+               label=f"Negative: {int(np.sum(labels_arr == 0))}", s=12)
+    ax.legend(loc="best")
 
     ax.set_xlabel("Component 1")
     ax.set_ylabel("Component 2")
 
 
-def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
+def plot_pca(pca, pca_fit, labels, plot_path=""):
     """
     Plot PCA analysis of the data points.
 
     :param pca: PCA object (scikit-learn)
     :param pca_fit: PCA transformed data (n_samples, n_components)
-    :param labels: class labels (optional)
-    :param lengths: sequence lengths (optional) -> if set, color-codes by sequence length
+    :param labels: class labels of {0, 1}
     :param plot_path: path to save the plot (without extension)
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
 
-    _scatter_embedding(ax1, fig, pca_fit, labels=labels, lengths=lengths)
+    _scatter_embedding(ax1, pca_fit, labels)
     ax1.set_title("PCA on Sequence Embeddings")
 
     # right side: explained variance
@@ -79,30 +59,27 @@ def plot_pca(pca, pca_fit, labels=None, lengths=None, plot_path=""):
     _save_or_show(fig, plot_path)
 
 
-def plot_tsne(tsne_fit, labels=None, lengths=None, plot_path="", title="t-SNE on Sequence Embeddings"):
+def plot_tsne(tsne_fit, labels, plot_path="", title="t-SNE on Sequence Embeddings"):
     """
     Plot a t-SNE embedding of the data points.
 
     :param tsne_fit: array (n, 2) of t-SNE coordinates
-    :param labels: class labels of {0, 1} (optional, for class plot)
-    :param lengths: sequence lengths (optional) -> if set, color-codes by length;
-                     'labels' is then only used for the legend counts
+    :param labels: class labels of {0, 1}
     :param plot_path: path to save the plot (without extension); saves as PDF if set
     :param title: plot title
     """
     fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
-    _scatter_embedding(ax, fig, tsne_fit, labels=labels, lengths=lengths)
+    _scatter_embedding(ax, tsne_fit, labels)
     ax.set_title(title)
     _save_or_show(fig, plot_path)
 
 
-def plot_umap(data, labels=None, lengths=None, plot_path=""):
+def plot_umap(data, labels, plot_path=""):
     """
     Run UMAP on `data` and plot the resulting 2D embedding.
 
     :param data: high-dimensional data points
-    :param labels: class labels of the data points (optional)
-    :param lengths: sequence lengths (optional) -> if set, color-codes by sequence length
+    :param labels: class labels of {0, 1}
     :param plot_path: path to save the plot (without extension)
     :return: the 2D UMAP embedding
     """
@@ -110,7 +87,7 @@ def plot_umap(data, labels=None, lengths=None, plot_path=""):
     umapped = reducer.fit_transform(data)
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
-    _scatter_embedding(ax, fig, umapped, labels=labels, lengths=lengths)
+    _scatter_embedding(ax, umapped, labels)
     ax.set_title("UMAP on Sequence Embeddings")
     _save_or_show(fig, plot_path)
 
@@ -127,6 +104,7 @@ def _save_or_show(fig, plot_path: str):
 
 def perform_clustering(embedded_sequences,
                         plot_path: str,
+                        labels,
                         logger: Optional[logging.Logger] = None,
                         tag: str = ""):
     """
@@ -134,6 +112,7 @@ def perform_clustering(embedded_sequences,
 
     :param embedded_sequences: data points
     :param plot_path: path prefix to save the plots under
+    :param labels: class labels of {0, 1} for color-coding the plots
     :param logger: optional logger for progress messages
     :param tag: tag appended to the output file names
     """
@@ -163,13 +142,13 @@ def perform_clustering(embedded_sequences,
         return reducer.fit_transform(data)
 
     tsne_fit = run_tsne(embedded_sequences)
-    umap_fit = run_umap(embedded_sequences)
+    #umap_fit = run_umap(embedded_sequences)
 
     _log("[Clustering] Plotting TSNE")
-    plot_tsne(tsne_fit, plot_path=f"{plot_path}{tag}_tsne_plot")
+    plot_tsne(tsne_fit, labels=labels, plot_path=f"{plot_path}{tag}_tsne_plot")
 
-    _log("[Clustering] Plotting UMAP")
-    plot_umap(umap_fit, plot_path=f"{plot_path}{tag}_umap_plot")
+    # _log("[Clustering] Plotting UMAP")
+    # plot_umap(umap_fit, labels=labels, plot_path=f"{plot_path}{tag}_umap_plot")
 
 
 def encode_peptides(sequence_file,
@@ -267,6 +246,8 @@ def cluster_model_embedding(file_path,
     if device is None:
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
+    Path(plot_path).mkdir(parents=True, exist_ok=True)
+
     embedding, labels, seq_lens, scaler = encode_peptides(sequence_file=file_path,
                                                            batch_size=batch_size,
                                                            tokenizer_and_model=tokenizer_and_model,
@@ -279,6 +260,7 @@ def cluster_model_embedding(file_path,
                                                            plot_path=plot_path)
 
     perform_clustering(embedded_sequences=embedding,
+                        labels=labels,
                         logger=logger,
                         tag=data_tag,
                         plot_path=plot_path)

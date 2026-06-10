@@ -152,6 +152,8 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
     :param plot_path: Directory to save plots into.
     :param model_name: Optional model name included in plot titles and filenames.
     """
+    Path(plot_path).mkdir(parents=True, exist_ok=True)
+
     label = get_pretty_name(file_name)
     title_suffix = f"\nModel: {model_name} Data: {label}" if model_name else f"\nData: {label}"
     name_infix = f"_{model_name}" if model_name else ""

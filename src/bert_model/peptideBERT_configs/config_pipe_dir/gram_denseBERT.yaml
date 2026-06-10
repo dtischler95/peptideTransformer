@@ -31,7 +31,7 @@ loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_log
 train_file: 'data/gram/gram_dataset.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/gram'
-plot_path: 'model_plots/gram'
+plot_path: 'bert_plots/gram'
 
 # Logging Settings
 output_dir: 'results/gram'

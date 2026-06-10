@@ -281,7 +281,7 @@ add_features: false                                    # Use concentration as ex
 train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
 model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
 model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
-plot_path: 'model_plots/MY_RUN_NAME'                   # Where to save evaluation plots
+plot_path: 'bert_plots/MY_RUN_NAME'                   # Where to save evaluation plots
 
 # Logging Settings
 output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints
@@ -328,7 +328,7 @@ max_length: 36                                         # Maximum input sequence 
 train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
 model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
 model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
-plot_path: 'model_plots/MY_RUN_NAME'                   # Where to save evaluation plots
+plot_path: 'bert_plots/MY_RUN_NAME'                   # Where to save evaluation plots
 
 # Logging Settings
 output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints

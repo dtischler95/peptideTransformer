@@ -8,32 +8,24 @@ __pycache__/
 # Environment files
 .env
 *.env
-
-# Virtual environment directories
 venv/
-.env/
 .venv/
 env/
 venv.bak/
 env.bak/
 
-# PyTorch specific
+# PyTorch / Hugging Face
 *.pt
 *.pth
 *.ckpt
-
-# Hugging Face specific
 transformers_cache/
 datasets_cache/
 *.h5
 *.bin
-*.json
 
-# TensorBoard logs
+# TensorBoard / training logs
 runs/
 tensorboard/
-
-# Logs and temporary files
 *.log
 *.tmp
 *.temp
@@ -52,28 +44,22 @@ Thumbs.db
 *.sln
 *.ncb
 
-# Model checkpoints and output
+# Model checkpoints, output and save folders (should not be tracked in git)
 checkpoints/
 output/
+models/
+*/mlm_bert/*
+*/binary_bert/*
 
-# Project Files
+# Project-specific
 src/bert_model/try_out_zone.py
 src/bert_model/wandb/
 src/bert_model/results/
 src/bert_model/logs/
-
 data/out/
-
 dangerzone/
 peptideBERT/
 peptideTransformer.egg-info/
-models/
 
-# Model save folders, since models should not be saved in git
-*/mlm_bert/*
-*/binary_bert/*
-
-# Large Files
+# Large files not needed for reproduction
 data/data_from_database/APD_Hs_all.fasta
-src/peptideTransformer.egg-info
-

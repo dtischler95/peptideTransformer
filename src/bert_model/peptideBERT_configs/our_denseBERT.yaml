@@ -31,7 +31,7 @@ loss_function: 'bce_logit_loss'              # Possible Choices ['bce', 'bce_log
 train_file: 'data/hemo_train/happen_style_unvoted.csv'
 model_path: 'Rostlab/prot_bert_bfd'
 model_save_path: 'models/hemo_our'
-plot_path: 'model_plots/hemo_our'
+plot_path: 'bert_plots/hemo_our'
 
 # Logging Settings
 output_dir: 'results/hemo_our'
