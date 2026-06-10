@@ -8,14 +8,6 @@ Created as part of my Master's thesis. Classical ML baselines (ExtraTrees, XGBoo
 
 ---
 
-## Data sources
-
-The "WhiteLab" hemolysis data used in this project originates from the
-[peptide-dashboard](https://github.com/ur-whitelab/peptide-dashboard) repository (UR WhiteLab).
-See that repository for licensing terms.
-
----
-
 ## Repository structure
 
 ```
@@ -186,3 +178,41 @@ in `data/`. Re-running these commands with the same data reproduces the numbers 
 
 Results for all classification/regression models (classical ML baselines and BERT), including some
 example plots, are listed in [RESULTS.md](RESULTS.md).
+
+---
+
+## Data sources & acknowledgements
+
+- **WhiteLab hemolysis data** - the "WhiteLab" hemolysis dataset originates from the
+  [peptide-dashboard](https://github.com/ur-whitelab/peptide-dashboard) repository (UR WhiteLab).
+  See that repository for licensing terms.
+  > Ansari, M. & White, A. D. (2023). *Serverless Prediction of Peptide Properties with Recurrent Neural Networks*.
+  > Journal of Chemical Information and Modeling, 63(8), 2546-2553. https://doi.org/10.1021/acs.jcim.2c01317
+
+- **"Threshold" hemolysis labeling** - the activity-based labeling scheme used for the "Threshold" dataset
+  (see `label_by_threshold()` in `src/data_preprocessing/binary/happenn_preprocess.py`) follows the scheme
+  introduced by:
+  > Timmons, P. B. & Hewage, C. M. (2020). *HAPPENN is a novel tool for hemolytic activity prediction for
+  > therapeutic peptides which employs neural networks*. Scientific Reports, 10, 10869.
+  > https://doi.org/10.1038/s41598-020-67701-3
+
+- **MIC dataset** - the underlying peptide/MIC data was provided by the *IBVA* working group at
+  Technische Hochschule Mittelhessen (Gießen) as an aggregation of several public AMP databases,
+  including DBAASP, APD3, CAMP and others. See the thesis for the full list of source databases.
+  > Pirtskhalava, M. et al. (2021). *DBAASP v3: database of antimicrobial/cytotoxic activity and structure
+  > of peptides as a resource for development of new therapeutics*. Nucleic Acids Research, 49(D1), D288-D297.
+  > https://doi.org/10.1093/nar/gkaa991
+  >
+  > Wang, G., Li, X. & Wang, Z. (2016). *APD3: the antimicrobial peptide database as a tool for research
+  > and education*. Nucleic Acids Research, 44(D1), D1087-D1093. https://doi.org/10.1093/nar/gkv1278
+  >
+  > Thomas, S., Karnik, S., Barai, R. S. et al. (2010). *CAMP: a useful resource for research on
+  > antimicrobial peptides*. Nucleic Acids Research, 38(suppl_1), D774-D780. https://doi.org/10.1093/nar/gkp1021
+
+- **ProtBERT-BFD** - fine-tuning is based on the pretrained
+  [Rostlab/prot_bert_bfd](https://huggingface.co/Rostlab/prot_bert_bfd) model.
+  > Elnaggar, A. et al. (2020). *ProtTrans: towards cracking the language of life's code through
+  > self-supervised deep learning and high performance computing*. https://doi.org/10.1101/2020.07.12.199554
+
+- **Data download/decoding approach** for the WhiteLab `.npz` files was adapted from
+  [ChakradharG/PeptideBERT](https://github.com/ChakradharG/PeptideBERT/blob/master/data/download_data.py).
