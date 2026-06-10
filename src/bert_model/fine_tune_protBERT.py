@@ -9,7 +9,8 @@ import logging
 
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
-    prepare_hemo_eval, init_model, overall_stats, get_model_stats
+    prepare_hemo_eval, init_model
+from src.evaluation.eval_utils import overall_stats, get_model_stats
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
