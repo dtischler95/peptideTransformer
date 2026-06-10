@@ -11,7 +11,7 @@ This file is inteded for creation of images for my thesis.
 This should only contain functions to create systematic views of the data
 """
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 _PLOTS_ROOT = _REPO_ROOT / "final_plots"
 _PLOTS_ROOT.mkdir(exist_ok=True)
 
@@ -93,7 +93,6 @@ def mic_seq_length_distribution(mic_files: list[str]):
     """
     Shows a histogram of the sequence length for each organism in a subplot grid.
     """
-    # Layout für Subplots
     n_rows = 4
     n_cols = 3
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 12))
@@ -120,7 +119,6 @@ def hist_mic_distribution(mic_files: list[str]):
     """
     Shows a histogram of the log10 MIC values for each organism in a subplot grid.
     """
-    # Layout für Subplots
     n_rows = 4
     n_cols = 3
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 12))
@@ -147,7 +145,6 @@ def hist_mic_log_comparison(mic_files: list[str]):
     """
     Shows a histogram of the log10 MIC values for each organism in a subplot grid.
     """
-    # Layout für Subplots
     n_rows = 6
     n_cols = 4
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 12))
@@ -192,8 +189,8 @@ def combined_hist_plot(mic_files: list[str]):
 
 def hist_mic_log_nested(mic_files: list[str]):
     """
-    12 Subplots (für 12 Organismen), jeder enthält 2 kleine Subplots:
-    links = MIC Rohwerte, rechts = MIC log10-transformiert
+    12 subplots (one per organism), each containing 2 inner subplots:
+    left = raw MIC values, right = log10-transformed MIC values
     """
     n_rows, n_cols = 6, 2  # 12 Organismen = 4x3 Grid
     fig = plt.figure(figsize=(10, 11))
@@ -206,28 +203,27 @@ def hist_mic_log_nested(mic_files: list[str]):
         if organism.startswith('Enterobacter'):
             organism = 'Enterobacter sp.'
 
-        # Position im Outer-Grid
         row, col = divmod(i, n_cols)
         inner = outer[row, col].subgridspec(1, 2, wspace=0.5, hspace=0.5)
 
         ax_left = fig.add_subplot(inner[0])
         ax_right = fig.add_subplot(inner[1])
 
-        # Rohwerte
+        # raw MIC values
         ax_left.hist(df['value'], bins=50, color="skyblue", edgecolor="black")
 
         ax_left.set_xlabel("µM", fontsize=10)
         ax_left.set_ylabel("Count", fontsize=10)
         ax_left.tick_params(labelsize=10)
 
-        # Log10
+        # log10-transformed MIC values
         ax_right.hist(df['mic_log10'], bins=30, color="lightgreen", edgecolor="black")
 
         ax_right.set_xlabel("log10(µM)", fontsize=10)
         ax_right.set_ylabel("Count", fontsize=10)
         ax_right.tick_params(labelsize=10)
 
-        # Gemeinsamer Titel pro Organismus (über den beiden Subplots)
+        # shared title per organism (spanning both subplots)
         fig.text((ax_left.get_position().x0 + ax_right.get_position().x1) / 2,
                  ax_left.get_position().y1 + 0.01,
                  organism, ha="center", va="bottom", fontsize=10, fontweight="bold")
