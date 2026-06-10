@@ -167,3 +167,14 @@ For all other options, see an existing config in `src/bert_model/peptideBERT_con
 
 Data splits, ML baselines and clustering use a fixed `random_state=42`.
 For BERT training, the default seed (`42`) of HuggingFace `TrainingArguments` is used.
+
+The thesis configs/results were produced with `python -m src ml_classify` / `python -m src ml_regress`
+and the corresponding BERT configs in `src/bert_model/peptideBERT_configs/`, given the matching CSVs
+in `data/`. Re-running these commands with the same data reproduces the numbers below.
+
+---
+
+## Results
+
+Results for all classification/regression models (classical ML baselines and BERT), including some
+example plots, are listed in [RESULTS.md](RESULTS.md).
