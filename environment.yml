@@ -1,0 +1,48 @@
+name: peptide-transformer
+# ──────────────────────────────────────────────────────────────────
+# Create env:   conda env create -f environment.yml
+# Activate:     conda activate peptide-transformer
+#
+# PyTorch CUDA build — adjust pytorch-cuda to match your driver:
+#   CUDA 11.8 → pytorch-cuda=11.8
+#   CUDA 12.1 → pytorch-cuda=12.1  (default below)
+#   CUDA 12.4 → pytorch-cuda=12.4
+# CPU-only: remove the pytorch-cuda line entirely.
+# ──────────────────────────────────────────────────────────────────
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  # PyTorch (CUDA 12.1 — change pytorch-cuda if needed)
+  - pytorch::pytorch=2.4.0
+  - pytorch::torchvision=0.19.0
+  - pytorch::pytorch-cuda=12.1
+  # Data science
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - scipy=1.14.0
+  # Classical ML
+  - scikit-learn=1.5.2
+  - xgboost=2.1.1
+  # Dimensionality reduction / clustering
+  - umap-learn=0.5.7
+  # Visualization
+  - matplotlib=3.10.0
+  - seaborn=0.13.2
+  # Config / utilities
+  - pyyaml=6.0.2
+  - tqdm=4.66.5
+  - pip
+  - pip:
+    # HuggingFace ecosystem (more up-to-date via pip)
+    - transformers==4.48.3
+    - accelerate==0.34.2
+    - evaluate==0.4.3
+    - datasets==2.19.1
+    - tokenizers==0.21.0
+    - safetensors==0.4.4
+    - huggingface-hub==0.24.6
+    # Bioinformatics
+    - peptides==0.3.4
