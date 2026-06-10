@@ -216,3 +216,10 @@ example plots, are listed in [RESULTS.md](RESULTS.md).
 
 - **Data download/decoding approach** for the WhiteLab `.npz` files was adapted from
   [ChakradharG/PeptideBERT](https://github.com/ChakradharG/PeptideBERT/blob/master/data/download_data.py).
+
+---
+
+## License
+
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE) -
+free to use, modify, and share for any noncommercial purpose.
