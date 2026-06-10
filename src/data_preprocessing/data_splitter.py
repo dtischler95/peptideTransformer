@@ -6,30 +6,30 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: int = 10):
     """
-    Erzeugt eine Sequenz-ebene Stratifikationsspalte:
-    - Klassifikation: nutzt das (einheitliche) Klassenlabel pro Sequenz
-    - Regression: nimmt Median pro Sequenz und packt ihn in Quantil-Bins
+    Creates a sequence-level stratification column:
+    - Classification: uses the (uniform) class label per sequence
+    - Regression: takes the median per sequence and bins it into quantile bins
     """
     seq_grp = df.groupby('sequence', as_index=False)
 
     if task == "cls":
-        # Mehrheitslabel pro Sequenz bilden und Duplikate entfernen
+        # build majority label per sequence and remove duplicates
         seq_y = (
             df.groupby('sequence', as_index=False)[target_col]
-            .agg(lambda x: x.value_counts().idxmax())  # Mehrheitslabel
+            .agg(lambda x: x.value_counts().idxmax())  # majority label
             .rename(columns={target_col: 'strat'})
         )
 
 
     if task == "regression":
         seq_y = seq_grp[target_col].median().rename(columns={target_col: 'y_median'})
-        # Quantil-Bins (robust gegen Ties)
-        # Falls wenige unique Werte, reduziert qcut automatisch die Anzahl an Bins
+        # quantile bins (robust against ties)
+        # if few unique values, qcut automatically reduces the number of bins
         try:
             seq_y['strat'] = pd.qcut(seq_y['y_median'], q=min(n_bins, seq_y['y_median'].nunique()),
                                      duplicates='drop')
         except ValueError:
-            # Fallback: alle in eine Bin (keine sinnvolle Stratifikation möglich)
+            # fallback: put everything into one bin (no meaningful stratification possible)
             seq_y['strat'] = 0
 
     if task == 'gram':
@@ -42,15 +42,13 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
                    test_size=0.20, val_size=0.16, random_state=42):
 
 
-
-    # nur eine Zeile pro Sequenz + strat label
     strat_df = make_seq_strat_labels(tmp_df, task=task, target_col=target_col)
 
 
     unique_seqs = strat_df['sequence'].to_frame()
     strat_labels = strat_df['strat']
 
-    # 2) Test abspalten (z. B. 20 %)
+    # split off test set (e.g. 20%)
     seq_trainval, seq_test = train_test_split(
         unique_seqs,
         test_size=test_size,
@@ -59,7 +57,7 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
         stratify=strat_labels
     )
 
-    # Mapping: welche Strat-Labels bleiben im Train/Val?
+    # strat-labels for the train/val portion
     strat_trainval = strat_df[strat_df['sequence'].isin(seq_trainval['sequence'])]['strat']
 
 
@@ -118,7 +116,7 @@ def data_splitter(task: str,
             test_size=test_size, val_size=val_size, random_state=random_state
         )
 
-        out_base = train_file.with_suffix("")  # entfernt .csv
+        out_base = train_file.with_suffix("")  # strip .csv suffix
         train_df.to_csv(out_base.with_name(out_base.name + "_train.csv"), sep=';', index=False)
         val_df.to_csv(out_base.with_name(out_base.name + "_val.csv"), sep=';', index=False)
         test_df.to_csv(out_base.with_name(out_base.name + "_test.csv"), sep=';', index=False)
