@@ -124,112 +124,68 @@ def fine_tune(config_path: str):
         file_name = Path(training_args.train_file).stem
         if training_args.model_class.startswith('binary'):
             from src.data_analysis.hemo_clustering import cluster_model_embedding
-            # Custom Function for cluster the model embeddings with the whole dataset
-            scaler = cluster_model_embedding(file_path=train_dataset,
-                                             data_tag=Path(config_path).stem,
-                                             batch_size=training_args.per_device_eval_batch_size,
-                                             plot_path=training_args.plot_path + "/train_/",
-                                             scaler=None,
-                                             tokenizer_and_model=(tokenizer, trainer.model),
-                                             device=training_args.device,
-                                             sequence_max_length=training_args.max_length,
-                                             label_0_cluster_data=training_args.label_0_cluster_data,
-                                             label_1_cluster_data=training_args.label_1_cluster_data,
-                                             logger=logger
-                                             )
 
-            cluster_model_embedding(file_path=val_dataset,
-                                    data_tag=Path(config_path).stem,
-                                    batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path + "/val_/",
-                                    scaler=scaler,
-                                    tokenizer_and_model=(tokenizer, trainer.model),
-                                    device=training_args.device,
-                                    sequence_max_length=training_args.max_length,
-                                    label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data,
-                                    logger=logger
-                                    )
+            splits = [
+                ("train_", train_dataset, "Training"),
+                ("val_", val_dataset, "Validation"),
+                ("test_", test_dataset, "Test"),
+            ]
 
-            cluster_model_embedding(file_path=test_dataset,
-                                    data_tag=Path(config_path).stem,
-                                    batch_size=training_args.per_device_eval_batch_size,
-                                    plot_path=training_args.plot_path + "/test_/",
-                                    scaler=scaler,
-                                    tokenizer_and_model=(tokenizer, trainer.model),
-                                    device=training_args.device,
-                                    sequence_max_length=training_args.max_length,
-                                    label_0_cluster_data=training_args.label_0_cluster_data,
-                                    label_1_cluster_data=training_args.label_1_cluster_data,
-                                    logger=logger
-                                    )
+            # Custom function for clustering the model embeddings of each split.
+            # The scaler is fit on the training split and reused (not refit) for val/test.
+            train_scaler = None
+            for split_dir, dataset, _ in splits:
+                returned_scaler = cluster_model_embedding(file_path=dataset,
+                                                  data_tag=Path(config_path).stem,
+                                                  batch_size=training_args.per_device_eval_batch_size,
+                                                  plot_path=training_args.plot_path + f"/{split_dir}/",
+                                                  scaler=train_scaler,
+                                                  tokenizer_and_model=(tokenizer, trainer.model),
+                                                  device=training_args.device,
+                                                  sequence_max_length=training_args.max_length,
+                                                  label_0_cluster_data=training_args.label_0_cluster_data,
+                                                  label_1_cluster_data=training_args.label_1_cluster_data,
+                                                  logger=logger
+                                                  )
+                if train_scaler is None:
+                    train_scaler = returned_scaler
 
-            prepare_hemo_eval(test_dataset=train_dataset,
-                              trainer=trainer,
-                              plot_path=training_args.plot_path + "/train_",
-                              tag='Training',
-                              file_name=file_name)
-            prepare_hemo_eval(test_dataset=val_dataset,
-                              trainer=trainer,
-                              plot_path=training_args.plot_path + "/val_",
-                              tag='Validation',
-                              file_name=file_name)
-            prepare_hemo_eval(test_dataset=test_dataset,
-                              trainer=trainer,
-                              plot_path=training_args.plot_path + "/test_",
-                              tag='Test',
-                              file_name=file_name)
+            for split_dir, dataset, tag in splits:
+                prepare_hemo_eval(test_dataset=dataset,
+                                  trainer=trainer,
+                                  plot_path=training_args.plot_path + f"/{split_dir}",
+                                  tag=tag,
+                                  file_name=file_name)
 
         elif training_args.model_class.startswith('regression'):
 
-            y_train_preds = trainer.predict(test_dataset=train_dataset)
-            y_train_preds = y_train_preds.predictions.flatten()
-            y_train_true = train_dataset.labels
+            splits = [
+                ("Training", train_dataset),
+                ("Validation", val_dataset),
+                ("Test", test_dataset),
+            ]
 
-            y_val_preds = trainer.predict(test_dataset=val_dataset)
-            y_val_preds = y_val_preds.predictions.flatten()
-            y_val_true = val_dataset.labels
+            stats = {}
+            for tag, dataset in splits:
+                preds = trainer.predict(test_dataset=dataset).predictions.flatten()
+                y_true = dataset.labels
 
-            y_test_preds = trainer.predict(test_dataset=test_dataset)
-            y_test_preds = y_test_preds.predictions.flatten()
-            y_test_true = test_dataset.labels
+                overall_stats(predictions=preds, y_true=y_true, save_path=training_args.plot_path,
+                              tag=tag, file_name=file_name)
 
-            overall_stats(predictions=y_train_preds, y_true=y_train_true, save_path=training_args.plot_path,
-                          tag='Training', file_name=file_name)
-            overall_stats(predictions=y_val_preds, y_true=y_val_true, save_path=training_args.plot_path,
-                          tag='Validation', file_name=file_name)
-            overall_stats(predictions=y_test_preds, y_true=y_test_true, save_path=training_args.plot_path, tag='Test', file_name=file_name)
-
-            train_r2, train_mse = get_model_stats(plot_dir=training_args.plot_path,
-                                                  predictions=y_train_preds,
-                                                  target_data=y_train_true,
-                                                  logger=logger,
-                                                  file_name=file_name,
-                                                  tag='Training')
-
-            val_r2, val_mse = get_model_stats(plot_dir=training_args.plot_path,
-                                              predictions=y_val_preds,
-                                              target_data=y_val_true,
+                stats[tag] = get_model_stats(plot_dir=training_args.plot_path,
+                                              predictions=preds,
+                                              target_data=y_true,
                                               logger=logger,
                                               file_name=file_name,
-                                              tag='Validation')
-
-            test_r2, test_mse = get_model_stats(plot_dir=training_args.plot_path,
-                                                predictions=y_test_preds,
-                                                target_data=y_test_true,
-                                                logger=logger,
-                                                file_name=file_name,
-                                                tag='Test')
+                                              tag=tag)
 
             with open(f"{training_args.plot_path}/{Path(training_args.train_file).stem}_train.txt",
                       "w") as f:
-                f.write(f"Filename: {file_name}\n"
-                        f"Train R2: {round(train_r2, 4)}\n"
-                        f"Train MSE: {round(train_mse, 4)}\n"
-                        f"Validation R2: {round(val_r2, 4)}\n"
-                        f"Validation MSE: {round(val_mse, 4)}\n"
-                        f"Test R2: {round(test_r2, 4)}\n"
-                        f"Test MSE: {round(test_mse, 4)}\n")
+                f.write(f"Filename: {file_name}\n")
+                for tag, (r2, mse) in stats.items():
+                    f.write(f"{tag} R2: {round(r2, 4)}\n"
+                            f"{tag} MSE: {round(mse, 4)}\n")
 
 
 
