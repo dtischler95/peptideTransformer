@@ -31,7 +31,13 @@ def prepare_happenn_data(file_path: str):
     print(sequence_counter)
     print(len(sequence_label_dict['sequence']))
 
-def label_after_happenn(df: pd.DataFrame) -> pd.DataFrame:
+def label_by_threshold(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Labels peptides as hemolytic/non-hemolytic based on activity/concentration thresholds,
+    following the labeling scheme from Timmons & Hewage (2020), HAPPENN - is a novel tool
+    for hemolytic activity prediction for therapeutic peptides which employs neural networks,
+    Scientific Reports, https://doi.org/10.1038/s41598-020-67701-3
+    """
     # Define thresholds as sorted lists of tuples (activity, conc_threshold)
     hemolytic_thresholds = sorted([
         (50, 300), (55, 330), (60, 360), (65, 390), (70, 420),

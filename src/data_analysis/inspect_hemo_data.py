@@ -10,15 +10,15 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _PLOTS_ROOT = _REPO_ROOT / "final_plots"
 _PLOTS_ROOT.mkdir(exist_ok=True)
 
-happenn_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "happen_style_unvoted.csv")
+threshold_style_train_data = str(_REPO_ROOT / "data" / "train_data" / "threshold_style_unvoted.csv")
 white_lab_train_data = str(_REPO_ROOT / "data" / "train_data" / "whitelab_hemo_data.csv")
 
 
 def length_per_label_comparison():
-    df_happen = pd.read_csv(happenn_style_train_data, sep=';')
-    df_happen['length'] = df_happen['sequence'].apply(len)
-    df_happen_inactive = df_happen[df_happen['label'] == 0]
-    df_happen_active = df_happen[df_happen['label'] == 1]
+    df_threshold = pd.read_csv(threshold_style_train_data, sep=';')
+    df_threshold['length'] = df_threshold['sequence'].apply(len)
+    df_threshold_inactive = df_threshold[df_threshold['label'] == 0]
+    df_threshold_active = df_threshold[df_threshold['label'] == 1]
 
 
     df_whitelab = pd.read_csv(white_lab_train_data, sep=';')
@@ -42,15 +42,15 @@ def length_per_label_comparison():
     axes[0, 1].set_xlabel("Sequence Length")
     axes[0, 1].set_ylabel("Count")
 
-    # Bottom left: HAPPENN Inactive
-    sns.histplot(data=df_happen_inactive, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 0])
-    axes[1, 0].set_title("Length Distribution Inactive (HAPPENN)")
+    # Bottom left: Threshold Inactive
+    sns.histplot(data=df_threshold_inactive, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 0])
+    axes[1, 0].set_title("Length Distribution Inactive (Threshold)")
     axes[1, 0].set_xlabel("Sequence Length")
     axes[1, 0].set_ylabel("Count")
 
-    # Bottom right: HAPPENN Active
-    sns.histplot(data=df_happen_active, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 1])
-    axes[1, 1].set_title("Length Distribution Active (HAPPENN)")
+    # Bottom right: Threshold Active
+    sns.histplot(data=df_threshold_active, x='length', hue='label', multiple='stack', bins=30, ax=axes[1, 1])
+    axes[1, 1].set_title("Length Distribution Active (Threshold)")
     axes[1, 1].set_xlabel("Sequence Length")
     axes[1, 1].set_ylabel("Count")
 
@@ -78,8 +78,8 @@ def mic_amino_frequency_comparison_multi(
 
 
         file_name = file.split('/')[-1].split('_')[0]
-        if file_name.startswith('happen'):
-            file_name = 'HAPPENN STYLE'
+        if file_name.startswith('threshold'):
+            file_name = 'THRESHOLD STYLE'
         elif file_name.startswith('white'):
             file_name = 'WHITELAB'
 
@@ -129,7 +129,7 @@ def mic_amino_frequency_comparison_multi(
 
 
 def main():
-    mic_amino_frequency_comparison_multi([white_lab_train_data, happenn_style_train_data])
+    mic_amino_frequency_comparison_multi([white_lab_train_data, threshold_style_train_data])
 
 
 

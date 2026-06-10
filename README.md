@@ -8,6 +8,14 @@ Created as part of my Master's thesis. Classical ML baselines (ExtraTrees, XGBoo
 
 ---
 
+## Data sources
+
+The "WhiteLab" hemolysis data used in this project originates from the
+[peptide-dashboard](https://github.com/ur-whitelab/peptide-dashboard) repository (UR WhiteLab).
+See that repository for licensing terms.
+
+---
+
 ## Repository structure
 
 ```
