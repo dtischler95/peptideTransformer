@@ -79,12 +79,6 @@ def split_measure_type(x):
         concentration = x.split('hemolysis at')[1]
         unit = re.search(r'(μM|μg/ml|mg/ml|mM|nM|pM|μg|µM|µg/ml*)', concentration).group() if re.search(
             r'(μM|μg/ml|mg/ml|mM|nM|pM|μg|µM|µg/ml*)', concentration) else "why"
-    # Check for other patterns (e.g., relative % score and concentration)
-    # elif 'hemolysis' in x:
-    #     percent = x.split('hemolysis')[0]
-    #     concentration = x.split('hemolysis')[1]
-    #     unit = re.search(r'(μM|μg/ml|mg/ml|mM|nM|pM|μg*)', concentration).group() if re.search(r'(μM|μg/ml|mg/ml|mM|nM|pM|μg*)', concentration) else "why1"
-    # Check for other patterns (e.g., relative % score and concentration)
     elif 'Hemolysis at' in x:
         percent = x.split('Hemolysis at')[0]
         concentration = x.split('Hemolysis at')[1]
@@ -129,151 +123,114 @@ def split_measure_type(x):
     return percent, concentration, unit
 
 
-def process_units(final, verbose: bool = False, hemo_or_mic : str = "hemo"):
+# Normalize the various unit spellings/typos found in the raw data to a
+# small set of canonical unit strings.
+_UNIT_ALIASES = {
+    "µg/mL": "µg/ml",
+    "mu_mol": "µM",
+    "mu_m/mL": "µM/ml",
+    "mug_ml": "µg/ml",
+    "mu_mol/L": "µM/l",
+    "µm/ml": "µM/ml",
+    "mu_m]": "µM",
+    "uM": "µM",
+    "mu_m": "µM",
+    "μmol": "µM",
+    "ng/mL": "ng/ml",
+    "μM": "µM",
+    "mm": "mM",
+    "µM/ml": "µM/ml",
+    "μg/ml": "µg/ml",
+    "mu_m/l": "µM/l",
+    "mg/L": "mg/l",
+    "mu_m/ml": "µM/ml",
+    "CFU/ml": "cfu/ml",
+    "mmol/l": "mM/l",
+    "nmol/ml": "nM/ml",
+    "pmol": "pM",
+    "mol/l": "M/l",
+    "pmol/ml": "pM/ml",
+    "μg": "µg",
+    "nmol/g": "nM/g",
+    "mg/mL": "mg/ml",
+    "g/mL": "g/ml",
+}
+
+# Conversion factor to µM for each unit, and whether the value additionally
+# needs to be divided by the peptide's molecular weight (for mass-based units).
+_UNIT_TO_MICROMOLAR = {
+    "µg/ml": (1e3, True),
+    "mg/ml": (1e6, True),
+    "g/ml": (1e9, True),
+    "ng/ml": (1, True),
+    "µg/µl": (1e6, True),
+    "µg/nl": (1e9, True),
+    "g/l": (1e6, True),
+    "mg/l": (1e3, True),
+    "µg/l": (1, True),
+    "nM": (1e-3, False),
+    "nM/ml": (1e12, False),
+    "mM": (1e3, False),
+    "mM/l": (1e3, False),
+    "M": (1e6, False),
+    "M/l": (1e6, False),
+    "pM": (1e6, False),
+    "pM/ml": (1e15, False),
+}
+
+
+def _log_unit_stats(df: pd.DataFrame, value_column: str, label: str):
+    print(label)
+    print(df.groupby("unit").agg(
+        count=('unit', 'size'),
+        min=(value_column, 'min'),
+        max=(value_column, 'max'),
+        mean=(value_column, 'mean'),
+        std=(value_column, 'std'),
+        median=(value_column, lambda x: np.median(x)),
+        units=('unit', 'unique'),
+    ).sort_values(by='count', ascending=False))
+
+
+def process_units(final: pd.DataFrame, verbose: bool = False, hemo_or_mic: str = "hemo") -> pd.DataFrame:
     """
-    Function from Lukas Beyerle
-    Calculates µM value for each datapoint based on the given unit and concentration.
+    Convert the concentration/value column to a uniform µM unit, based on
+    the (often inconsistently spelled) unit strings in the raw data.
+
+    Mass-based units (e.g. µg/ml) are converted to µM using each peptide's
+    molecular weight; molar units (e.g. nM, mM) are converted with a fixed
+    factor.
+
+    :param final: DataFrame with a "unit" column and the value column to convert
+    :param verbose: if True, print unit statistics before and after conversion
+    :param hemo_or_mic: "hemo" to convert "hemo_concentration", anything else to convert "value"
+    :return: the DataFrame with the value column converted to µM and "unit" set to "µM" where possible
     """
     print("Processing units")
 
-    row_to_look = "hemo_concentration" if hemo_or_mic == "hemo" else "value"
+    value_column = "hemo_concentration" if hemo_or_mic == "hemo" else "value"
 
-    # Replace dictionary for initial unit replacements
-    replace_units = {
-        "µg/mL": "µg/ml",
-        "mu_mol": "µM",
-        "mu_m/mL": "µM/ml",
-        "mug_ml": "µg/ml",
-        "mu_mol/L": "µM/l",
-        "µm/ml": "µM/ml",
-        "mu_m]": "µM",
-        "uM": "µM",
-        "mu_m": "µM",
-        "μmol": "µM",
-        "ng/mL": "ng/ml",
-        "μM": "µM",
-        "mm": "mM",
-        "µM/ml": "µM/ml",
-        "μg/ml": "µg/ml",
-        "mu_m/l": "µM/l",
-        "mg/L": "mg/l",
-        "mu_m/ml": "µM/ml",
-        "CFU/ml": "cfu/ml",
-        "mmol/l": "mM/l",
-        "nmol/ml": "nM/ml",
-        "pmol": "pM",
-        "mol/l": "M/l",
-        "pmol/ml": "pM/ml",
-        "μg": "µg",
-        "nmol/g": "nM/g",
-        "mg/mL": "mg/ml",
-        "g/mL": "g/ml",
-    }
-
-    # Replacement units after calculation
-    replace_units_after_calculation = {
-        "µg/ml": "µM",
-        "mg/ml": "µM",
-        "ng/ml": "µM",
-        "pM/ml": "µM",
-        "mg/l": "µM",
-        "mM/l": "µM",
-        "nM/ml": "µM",
-        "µM/l": "µM",
-        "µM/ml": "µM",
-        "g/l": "µM",
-        "µg/l": "µM",
-        "µg/µl": "µM",
-        "µg/nl": "µM",
-        "g/ml": "µM",
-        "M": "µM",
-        "nM": "µM",
-        "mM": "µM",
-        "pM": "µM",
-        "M/l": "µM",
-    }
-    units_before = "Something went Wrong with Unit conversion"
-    # If verbose, show units before processing
     if verbose:
         units_before = final["unit"].nunique()
-        print("VOR Umrechnung der Einheiten")
-        print(final.groupby("unit").agg(
-            count=('unit', 'size'),
-            min=(row_to_look, 'min'),
-            max=(row_to_look, 'max'),
-            mean=(row_to_look, 'mean'),
-            std=(row_to_look, 'std'),
-            median=(row_to_look, lambda x: np.median(x)),
-            units=('unit', 'unique'),
-        ).sort_values(by='count', ascending=False))
+        _log_unit_stats(final, value_column, "VOR Umrechnung der Einheiten")
 
-    # Replace units before calculation
-    final['unit'] = final['unit'].replace(replace_units)
+    final["unit"] = final["unit"].replace(_UNIT_ALIASES)
+    final["mol_weight"] = final["sequence"].apply(lambda p: Pep(p).molecular_weight())
 
-    # Calculate molecular weight using lambda
+    for unit, (factor, needs_mol_weight) in _UNIT_TO_MICROMOLAR.items():
+        mask = final["unit"] == unit
+        if not mask.any():
+            continue
+        final.loc[mask, value_column] *= factor
+        if needs_mol_weight:
+            final.loc[mask, value_column] /= final.loc[mask, "mol_weight"]
+        final.loc[mask, "unit"] = "µM"
 
-    final.loc[:, 'mol_weight'] = final['sequence'].apply(lambda p: Pep(p).molecular_weight())
-
-    # Apply conversions based on units
-    def convert_values(row):
-        if row['unit'] == 'µg/ml':
-            return row[row_to_look] * 10 ** 3 / row['mol_weight']
-        elif row['unit'] == 'mg/ml':
-            return row[row_to_look] * 10 ** 6 / row['mol_weight']
-        elif row['unit'] == 'nM':
-            return row[row_to_look] / 10 ** 3
-        elif row['unit'] == 'nM/ml':
-            return row[row_to_look] * 10 ** 12
-        elif row['unit'] == 'mM':
-            return row[row_to_look] * 10 ** 3
-        elif row['unit'] == 'mM/l':
-            return row[row_to_look] * 10 ** 3
-        elif row['unit'] == 'M':
-            return row[row_to_look] * 10 ** 6
-        elif row['unit'] == 'pM':
-            return row[row_to_look] * 10 ** 6
-        elif row['unit'] == 'pM/ml':
-            return row[row_to_look] * 10 ** 15
-        elif row['unit'] == 'µg/µl':
-            return row[row_to_look] * 10 ** 6 / row['mol_weight']
-        elif row['unit'] == 'M/l':
-            return row[row_to_look] * 10 ** 6
-        elif row['unit'] == 'g/l':
-            return row[row_to_look] * 10 ** 6 / row['mol_weight']
-        elif row['unit'] == 'g/ml':
-            return row[row_to_look] * 10 ** 9 / row['mol_weight']
-        elif row['unit'] == 'mg/l':
-            return row[row_to_look] * 10 ** 3 / row['mol_weight']
-        elif row['unit'] == 'µg/l':
-            return row[row_to_look] / row['mol_weight']
-        elif row['unit'] == 'ng/ml':
-            return row[row_to_look] / row['mol_weight']
-        elif row['unit'] == 'µg/nl':
-            return row[row_to_look] * 10 ** 9 / row['mol_weight']
-        else:
-            return row[row_to_look]
-
-
-    final.loc[:, row_to_look] = final.apply(convert_values, axis=1)
-
-    # Drop the temporary molecular weight column
     final = final.drop(columns=["mol_weight"])
-
-    # Replace units after calculation
-    final['unit'] = final['unit'].replace(replace_units_after_calculation)
 
     if verbose:
         units_after = final["unit"].nunique()
-        print("NACH Umrechnung der Einheiten")
-        print(final.groupby("unit").agg(
-            count=('unit', 'size'),
-            min=(row_to_look, 'min'),
-            max=(row_to_look, 'max'),
-            mean=(row_to_look, 'mean'),
-            std=(row_to_look, 'std'),
-            median=(row_to_look, lambda x: np.median(x)),
-            units=('unit', 'unique'),
-        ).sort_values(by='count', ascending=False))
+        _log_unit_stats(final, value_column, "NACH Umrechnung der Einheiten")
         print(f"\nUNITS before: {units_before} -> after: {units_after}\n")
 
     return final
