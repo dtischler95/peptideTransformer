@@ -27,7 +27,7 @@ _NAME_MAP = [
     ("micro", "Micrococcus luteus"),
     ("pseudo", "Pseudomonas aeruginosa"),
     ("salmonella", "Salmonella enterica"),
-    ("happen_style", "Threshold Dataset"),
+    ("threshold_style", "Threshold Dataset"),
     ("gram_dataset", "Gram Dataset"),
     ("gram", "Gram Dataset"),
     ("whitelab", "WhiteLab Dataset"),

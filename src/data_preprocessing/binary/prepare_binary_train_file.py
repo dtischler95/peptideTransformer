@@ -7,7 +7,7 @@ from peptides import Peptide as Pep
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 from src.data_preprocessing.preprocess_utils import load_and_filter_data, split_positive_and_negative, \
     filter_and_evaluate_ambiguous_sequences
-from src.data_preprocessing.binary.happenn_preprocess import label_after_happenn
+from src.data_preprocessing.binary.happenn_preprocess import label_by_threshold
 
 
 """
@@ -353,7 +353,7 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     if label_threshold is not None:
         df_raw_hemo = label_via_relation(df=df_raw_hemo, label_threshold=label_threshold)
     else:
-        df_raw_hemo = label_after_happenn(df=df_raw_hemo)
+        df_raw_hemo = label_by_threshold(df=df_raw_hemo)
 
 
 
@@ -363,15 +363,6 @@ def parse_and_label_hemolytic_data(*data_paths: str,
     # Split the data into positive and negative sequences for later analysis
     split_positive_and_negative(data=result_df, to_file=True, out_path=out_path_splitted_file)
 
-    # # remove abiguous labels
-    # if 2 in result_df['label'].unique():
-    #     print(f"\033[31mRemoved {result_df[result_df['label'] == 2].shape[0]} ambiguous sequences. (Label 2)\033[0m")
-    #     sequences_df = result_df[result_df['label'] == 2]
-    #     result_df = result_df[result_df['label'] != 2]
-    #
-    #     unique_list = sequences_df['sequence'].unique()
-    #     for seq in unique_list:
-    #         print(seq)
 
     print(result_df.shape)
 
@@ -413,6 +404,6 @@ if __name__ == '__main__':
     parse_and_label_hemolytic_data(hemolytik_db,
                                    dbaasp_db,
                                    out_path=str(_REPO_ROOT / "data") + "/",
-                                   dataset_tag='happen_style',
+                                   dataset_tag='threshold_style',
                                    vote_label=False,
                                    label_threshold=None)
