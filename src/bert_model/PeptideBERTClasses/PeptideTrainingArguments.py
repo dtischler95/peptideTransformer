@@ -56,6 +56,11 @@ class PeptideTrainingArguments(TrainingArguments):
         # Default to no external experiment tracking (e.g. wandb), unless the
         # config explicitly sets report_to.
         kwargs.setdefault('report_to', 'none')
+        # Cap the number of checkpoints kept on disk (HF default is unlimited),
+        # unless the config explicitly sets save_total_limit. With
+        # load_best_model_at_end=True, the Trainer always keeps the best
+        # checkpoint regardless of this limit.
+        kwargs.setdefault('save_total_limit', 2)
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file

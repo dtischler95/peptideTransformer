@@ -2,11 +2,11 @@ from typing import Optional, Union, Tuple, List
 
 import torch
 import torch.nn as nn
-from transformers import BertModel
+from transformers import BertModel, BertPreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
-class PeptideBertForRegression(BertModel):
+class PeptideBertForRegression(BertPreTrainedModel):
     """
     Regression model using the BertModel as a base with a linear regression head on top of the [CLS] token embedding.
     """

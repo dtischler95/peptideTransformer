@@ -109,20 +109,18 @@ class PeptideTrainer(Trainer):
             raise ValueError("CollectBatchWiseTrainMetrics Callback not found. This is a critical error.")
 
         if "labels" in inputs:
-            if self.args.model_class.startswith('binary'):
+            with torch.no_grad():
+                if self.args.model_class.startswith('binary'):
 
-                preds = model(**inputs)[1].detach().cpu().numpy()
-                cpu_inputs = inputs["labels"].detach().cpu().numpy()
-                pred_labels = format_logit_to_label(logits=preds)
-                train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs, probabilities=preds.flatten())
+                    preds = model(**inputs)[1].detach().cpu().numpy()
+                    cpu_inputs = inputs["labels"].detach().cpu().numpy()
+                    pred_labels = format_logit_to_label(logits=preds)
+                    train_metric_callback.append_batch_results(predictions=pred_labels, labels=cpu_inputs, probabilities=preds.flatten())
 
-            elif self.args.model_class == 'regression':
-                # Extract the logits for regression
-                preds = model(**inputs)[1].detach().cpu().numpy()
-                cpu_inputs = inputs["labels"].detach().cpu().numpy()
-                train_metric_callback.append_batch_results(predictions=preds.squeeze(), labels=cpu_inputs)
-
-        # Apply gradient norm clipping in case of exploding gradients.
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                elif self.args.model_class == 'regression':
+                    # Extract the logits for regression
+                    preds = model(**inputs)[1].detach().cpu().numpy()
+                    cpu_inputs = inputs["labels"].detach().cpu().numpy()
+                    train_metric_callback.append_batch_results(predictions=preds.squeeze(), labels=cpu_inputs)
 
         return loss
