@@ -46,16 +46,13 @@ def _load_split_files(base_file, debug_sample: bool = False) -> tuple:
 
 
 def _get_labels_and_features(data: pd.DataFrame, model_class: str, use_features: bool):
-    if model_class.startswith('regression'):
-        target_column = 'mic_log10'
-        drop_cols = ['sequence', target_column]
-    else:
-        target_column = 'label'
-        drop_cols = ['sequence', target_column]
-        if 'hemo_percent' in data.columns:
-            drop_cols += ['hemo_percent', 'hemo_concentration']
+    target_column = 'mic_log10' if model_class.startswith('regression') else 'label'
     labels = data[target_column].values
-    features = data.drop(columns=drop_cols) if use_features else None
+    if use_features:
+        desc_cols = [c for c in data.columns if c.startswith('desc__')]
+        features = data[desc_cols]
+    else:
+        features = None
     return labels, features
 
 
