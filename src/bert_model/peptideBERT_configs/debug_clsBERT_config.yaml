@@ -1,5 +1,5 @@
 # Training and Evaluation Settings
-model_class: 'binary_dense'         # Model class to use, either 'binary_dense', 'binary_conv' or 'mlm'
+model_class: 'binary_dense'         # Model class to use, either 'binary_dense' or 'regression'
 do_train: true                # Train the model
 do_eval: true                 # Evaluate the model
 num_train_epochs: 1           # Number of epochs to train the model

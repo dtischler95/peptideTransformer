@@ -2,11 +2,11 @@ from typing import Optional, Union, Tuple, List
 
 import torch
 import torch.nn as nn
-from transformers import BertModel
+from transformers import BertModel, BertPreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
-class PeptideBertForBinaryClassification(BertModel):
+class PeptideBertForBinaryClassification(BertPreTrainedModel):
     """
     This class is a reproduction of PeptideBERTs implementation for binary classification.
     It added a Sigmoid activation function to the output logits to convert the output to probabilities.

@@ -8,7 +8,7 @@ class PeptideDataset(Dataset):
 
     This class tokenizes the peptide sequences and returns the tokenized input_ids and attention_mask tensors.
     """
-    def __init__(self, peptides, features, tokenizer, model_class, labels=None, max_length=36):
+    def __init__(self, peptides, features, tokenizer, model_class, labels, max_length=36):
         """
         Args:
             peptides: List of peptide sequences.
@@ -20,8 +20,7 @@ class PeptideDataset(Dataset):
         self.peptides = [' '.join(seq) for seq in peptides]
 
         self.features = features
-        if labels is not None:
-            self.labels = labels
+        self.labels = labels
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.model_class = model_class
@@ -51,8 +50,7 @@ class PeptideDataset(Dataset):
 
         if self.features is not None:
             item['features'] = torch.from_numpy(self.features[idx]).to(torch.float32)
-        if self.labels is not None:
-            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.float)
+        item['labels'] = torch.tensor(self.labels[idx], dtype=torch.float)
 
 
         return item
