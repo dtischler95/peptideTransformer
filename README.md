@@ -192,6 +192,10 @@ in `data/`. Re-running these commands with the same data reproduces the numbers 
 Results for all classification/regression models (classical ML baselines and BERT), including some
 example plots, are listed in [RESULTS.md](RESULTS.md).
 
+For the data side of the story, [notebooks/data_quality_mic.ipynb](notebooks/data_quality_mic.ipynb) and
+[notebooks/data_quality_hemo.ipynb](notebooks/data_quality_hemo.ipynb) walk through the dataset, the
+measurement/label noise, and how it caps achievable performance for each task.
+
 ---
 
 ## Data sources & acknowledgements
