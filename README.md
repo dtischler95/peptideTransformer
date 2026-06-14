@@ -27,6 +27,8 @@ data/                   # Default input location for the commands below, not man
   gram/                 # Gram staining classification data
   data_from_database/   # Raw data from public databases
 
+notebooks/              # Data-quality notebooks (see Results below) + shared nb_utils.py
+
 src/
   cli.py                # CLI logic (all subcommands)
   __main__.py           # Entry point for `python -m src`
