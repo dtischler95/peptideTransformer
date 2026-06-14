@@ -8,6 +8,16 @@ Created as part of my Master's thesis. Classical ML baselines (ExtraTrees, XGBoo
 
 ---
 
+## What this project shows
+
+This isn't an attempt to top AMP-activity-prediction leaderboards - it's the codebase behind a Master's thesis on **data quality in AMP modeling**, asking whether prediction accuracy is limited more by the model or by the data.
+
+**The main finding:** across both tasks (MIC regression, hemolysis classification) and every model class — classical ML baselines and fine-tuned ProtBERT alike — performance is **capped by the measurement variability in the underlying experimental data, not by model architecture**. For the MIC data, repeated measurements of the same peptide differ by ~0.4 log₁₀ (a ~3-fold concentration range) — the same order of magnitude as the best achievable test error. Added physicochemical features helped only selectively, with no systematic gain.
+
+So the models here are built to be **honest, not flashy**: de-duplicated sequences, sequence-level train/val/test splits (no peptide appears in more than one split), and train/test gaps reported as-is so they reflect real generalization. The numbers are what the data allows — which is exactly the point.
+
+---
+
 ## Repository structure
 
 ```
@@ -79,7 +89,9 @@ Without installing as a package, all commands below (`python -m src ...`) assume
 ### Splitting data
 
 Creates `_train.csv`, `_val.csv`, `_test.csv` next to each source file.
-Stratified by label (classification) or quantile bins (regression).
+Stratified by label (classification) or quantile bins (regression), and split at the
+**sequence level** - each unique peptide goes into exactly one split, so no sequence
+leaks across train/val/test.
 
 Must be run once before training so that fixed splits exist for all models/comparisons.
 
@@ -101,11 +113,12 @@ python -m src data_init --task cls --data_dir path/to/csvs/
 
 ### Fine-tuning PeptideBERT
 
-Generate a new YAML config:
+Generate a new YAML config (`--model_class` is `binary_dense` for hemolysis classification or `regression` for MIC):
 ```bash
 python -m src generate_bert_model_config \
     --config_name your_config.yaml \
-    --file_path path/to/your/configs/
+    --file_path path/to/your/configs/ \
+    --model_class regression
 ```
 
 Creates a fully commented template. Required fields to fill in: `train_file`, `model_save_path`, `output_dir`, `logging_dir`.
