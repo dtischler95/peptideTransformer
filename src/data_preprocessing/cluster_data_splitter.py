@@ -8,8 +8,9 @@ split, in addition to the existing per-sequence stratification.
 
 Output files use the same layout as the random splitter (``*_train.csv`` /
 ``*_val.csv`` / ``*_test.csv``, ``;``-separated, same columns), written into a
-parallel ``*_cluster`` data directory so the existing BERT and ML pipelines can read
-them unchanged.
+parallel ``*_cluster`` data directory under the base file's name. BERT configs point
+``train_file`` at this (non-existent) base path; only the path stem is used to locate
+the ``_train``/``_val``/``_test`` files, so the base CSV itself is not duplicated here.
 
 MMseqs2 (https://github.com/soedinglab/MMseqs2) is a standalone binary, not a Python
 package, and must be on PATH. The clustering step is CPU-only.
@@ -283,9 +284,7 @@ def cluster_data_splitter(task: str,
         _report_split(base_file.name, task, target_col, cluster_of,
                       train_df, val_df, test_df)
 
-        # Copy the base file so the ML auto-glob can discover the split here too.
-        shutil.copy(base_file, out / base_file.name)
-        stem = (out / base_file.name).with_suffix("")
+        stem = out / base_file.stem
         train_df.to_csv(stem.with_name(stem.name + "_train.csv"), sep=";", index=False)
         val_df.to_csv(stem.with_name(stem.name + "_val.csv"), sep=";", index=False)
         test_df.to_csv(stem.with_name(stem.name + "_test.csv"), sep=";", index=False)
