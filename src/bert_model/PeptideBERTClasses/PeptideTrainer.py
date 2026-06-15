@@ -23,7 +23,18 @@ class PeptideTrainer(Trainer):
         super().__init__(model=model, args=args, **kwargs)
         self.args = args
 
-        # Additional initialization if needed
+        # _save() below makes non-contiguous params contiguous (a freshly
+        # allocated .data tensor with new strides) to avoid a "tensor is not
+        # contiguous" error on save. If that first happens *after* the
+        # optimizer has already created exp_avg/exp_avg_sq for that param with
+        # the old (non-contiguous) layout via memory_format=preserve_format,
+        # fused AdamW's next step() crashes with "params, grads, exp_avgs,
+        # and exp_avg_sqs must have same dtype, device, and layout". Doing the
+        # contiguous fix-up here, before the optimizer is created, keeps
+        # params and optimizer state in sync for the whole run.
+        for param in self.model.parameters():
+            if not param.is_contiguous():
+                param.data = param.data.contiguous()
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         """
