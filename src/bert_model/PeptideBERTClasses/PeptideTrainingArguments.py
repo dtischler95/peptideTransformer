@@ -61,11 +61,6 @@ class PeptideTrainingArguments(TrainingArguments):
         # load_best_model_at_end=True, the Trainer always keeps the best
         # checkpoint regardless of this limit.
         kwargs.setdefault('save_total_limit', 2)
-        # Disable PyTorch's fused AdamW kernel: it crashes with a dtype/device
-        # mismatch ("params, grads, exp_avgs, and exp_avg_sqs must have same
-        # dtype, device, and layout") once DataParallel reloads the model from
-        # a checkpoint across multiple GPUs.
-        kwargs.setdefault('optim_args', 'fused=False')
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file
