@@ -1,0 +1,44 @@
+# Training and Evaluation Settings
+model_class: 'regression'         # Model class to use, either 'binary_dense' or 'regression'
+do_train: true                # Train the model
+do_eval: true                 # Evaluate the model
+num_train_epochs: 50           # Number of epochs to train the model
+per_device_train_batch_size: 64  # Batch size for training
+per_device_eval_batch_size: 64    # Batch size for evaluation
+early_stopping_patience: 5       # Patience for early stopping
+early_stop_metric: 'eval_loss'    # Metric for early stopping
+early_stop_mode: 'min'            # Mode for early stopping
+early_stop_warm_up: 8            # Warm-up period for early stopping
+dataloader_num_workers: 1         # Number of dataloader workers (higher can affect performance)
+load_best_model_at_end: true      # Load the best model at the end of training
+add_features: false          # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
+
+# Model and Optimizer Settings
+learning_rate: 0.00001            # Learning rate for optimizer
+weight_decay: 0.01                # Weight decay for optimizer
+lr_scheduler_type: 'reduce_lr_on_plateau'  # Learning rate scheduler type
+lr_scheduler_kwargs:              # Additional scheduler arguments
+  patience: 4                     # Patience for ReduceLROnPlateau scheduler
+max_length: 36                    # Maximum input sequence length
+
+
+# Dataset and File Paths
+train_file: 'data/regression_data_cluster/micrococcus_luteus_for_regression.csv'
+model_path: 'Rostlab/prot_bert_bfd'
+model_save_path: 'models/m_luteus_cluster'
+plot_path: 'bert_plots/m_luteus_cluster'
+
+# Logging Settings
+output_dir: 'results/m_luteus_cluster'
+logging_dir: 'logs/m_luteus_cluster'
+logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logic)
+log_level: 'info'               # Log level
+eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
+save_strategy: 'epoch'          # Save strategy (set to 'epoch' for this logic)
+
+# Hardware Settings
+use_cpu: false                  # Use CPU for training
+
+# Miscellaneous Settings
+ignore_leakage: false                   # Ignore leakage in training data (only if certain)
+fast_debug_mode: false                  # Developer mode for pipeline testing

@@ -9,6 +9,24 @@ _SRC_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SRC_DIR.parent
 
 
+def _resolve_config_shortname(name: str) -> str:
+    """Resolve a bare config filename to a full path, searching subfolders of
+    peptideBERT_configs so configs organised into random_split/ and cluster_split/
+    still work as `--config_path name.yaml`."""
+    cfg_root = _SRC_DIR / 'bert_model' / 'peptideBERT_configs'
+    flat = cfg_root / name
+    if flat.exists():
+        return str(flat)
+    matches = list(cfg_root.rglob(name))
+    if len(matches) == 1:
+        return str(matches[0])
+    if len(matches) > 1:
+        opts = ', '.join(str(m.relative_to(cfg_root)) for m in matches)
+        raise SystemExit(f"Config name '{name}' is ambiguous ({opts}). "
+                         f"Pass a full path or use --pipe_configs with the folder.")
+    return str(flat)  # not found: let the downstream open() raise a clear error
+
+
 def main():
     args, parser = parse_inputs()
 
@@ -30,7 +48,7 @@ def main():
 
         if args.config_path:
             if '/' not in args.config_path:
-                args.config_path = str(_SRC_DIR / 'bert_model' / 'peptideBERT_configs' / args.config_path)
+                args.config_path = _resolve_config_shortname(args.config_path)
             # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
             fine_tune(
                 config_path=args.config_path
@@ -38,6 +56,16 @@ def main():
 
     elif args.command == 'data_init':
         data_splitter(task=args.task, data_dir=args.data_dir if args.data_dir else None)
+
+    elif args.command == 'cluster_init':
+        from src.data_preprocessing.cluster_data_splitter import cluster_data_splitter
+        cluster_data_splitter(
+            task=args.task,
+            data_dir=args.data_dir if args.data_dir else None,
+            min_seq_id=args.min_seq_id,
+            coverage=args.coverage,
+            kmer=args.kmer,
+        )
 
     elif args.command == 'ml_classify':
         from src.machine_learning.train_models import run_classification
@@ -112,6 +140,13 @@ def parse_inputs():
     data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
     data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["classification", "regression", "gram"]')
     data_preprocess_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory (uses repo default if omitted)')
+    # Subparser for similarity-aware (MMseqs2 cluster) splitting
+    cluster_init_parser = subparsers.add_parser('cluster_init', help='Create similarity-aware (MMseqs2 cluster) train/val/test splits into a parallel <dir>_cluster folder')
+    cluster_init_parser.add_argument('--task', type=str, required=True, help='task of the train data ["cls", "regression", "gram"]')
+    cluster_init_parser.add_argument('--data_dir', type=str, default=None, help='Input data directory (repo default if omitted); output goes to <dir>_cluster')
+    cluster_init_parser.add_argument('--min_seq_id', type=float, default=0.5, help='MMseqs2 minimum sequence identity for clustering (default 0.5)')
+    cluster_init_parser.add_argument('--coverage', type=float, default=0.8, help='MMseqs2 coverage threshold -c (default 0.8)')
+    cluster_init_parser.add_argument('--kmer', type=int, default=5, help='MMseqs2 k-mer size -k; 5 is the smallest value supported for amino acid sequences (default 5)')
     # Subparser for ml_classify
     ml_classify_parser = subparsers.add_parser('ml_classify', help='Train classical ML classification models')
     ml_classify_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory')
