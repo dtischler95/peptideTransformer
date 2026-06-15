@@ -35,6 +35,7 @@ logging_strategy: 'epoch'       # Logging strategy (set to 'epoch' for this logi
 log_level: 'info'               # Log level
 eval_strategy: 'epoch'          # Evaluation strategy (set to 'epoch' for this logic)
 save_strategy: 'epoch'          # Save strategy (set to 'epoch' for this logic)
+save_total_limit: 1            # Keep only the best checkpoint on disk
 
 # Hardware Settings
 use_cpu: false                  # Use CPU for training
