@@ -16,7 +16,7 @@ accelerate==0.34.2
 evaluate==0.4.3
 datasets==2.19.1
 tokenizers==0.23.1
-safetensors==0.4.4
+safetensors==0.8.0
 huggingface-hub==0.24.6
 
 # Classical ML
