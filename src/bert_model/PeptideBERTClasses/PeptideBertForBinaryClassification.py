@@ -118,8 +118,13 @@ class PeptideBertForBinaryClassification(BertPreTrainedModel):
                 loss_fct = nn.BCELoss()  # Use Binary Cross Entropy Loss
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
             elif self.loss_function == 'bce_logit_loss':
-                loss_fct = nn.BCEWithLogitsLoss(
-                    pos_weight=self.bce_logit_weight)  # Use Binary Cross Entropy Loss with logits
+                # Move pos_weight to the logits' device so this also works under
+                # nn.DataParallel (multi-GPU): the weight is created once on cuda:0, but
+                # replicas run on other GPUs, which otherwise raises a device mismatch.
+                pos_weight = self.bce_logit_weight
+                if pos_weight is not None:
+                    pos_weight = pos_weight.to(logits.device)
+                loss_fct = nn.BCEWithLogitsLoss(pos_weight=pos_weight)  # BCE with logits
                 loss = loss_fct(logits.view(-1), labels.view(-1).float())
                 # this is done after loss calculation because bce_with_logit loss arleady implemented sigmoid
                 # For further calculations we still need to apply sigmoid to the logits here since the loss function wont return the sigmoided logits
