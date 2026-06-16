@@ -13,9 +13,11 @@ from xgboost import XGBClassifier, XGBRegressor
 
 try:
     from src.machine_learning import ml_utils, config
+    from src.data_preprocessing import datasets
 except ImportError:
     import ml_utils  # type: ignore
     import config    # type: ignore
+    import datasets  # type: ignore
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -157,10 +159,7 @@ def run_classification(
     grids = list(grids)
     data_dir = Path(data_dir)
     output_root = Path(output_root)
-    if 'hemo' in data_dir.name:
-        csv_files = sorted(list(data_dir.glob("*unvoted.csv")) + list(data_dir.glob("*data.csv")))
-    else:
-        csv_files = sorted(data_dir.glob("*dataset.csv"))
+    csv_files = datasets.split_basepaths_in(data_dir)
 
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent
@@ -207,12 +206,8 @@ def run_regression(
     results = []
 
     data_dir = Path(data_dir)
-    gram_mode = False
-    if 'regression' in data_dir.name:
-        csv_files = sorted(data_dir.glob("*regression.csv"))
-    else:
-        csv_files = sorted(data_dir.glob("*dataset.csv"))
-        gram_mode = True
+    gram_mode = datasets.task_for_dir(data_dir) == "gram"
+    csv_files = datasets.split_basepaths_in(data_dir)
 
     for csv_path in csv_files:
         # Safer way to derive a short slug from filename, OS-independent

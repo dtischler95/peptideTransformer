@@ -14,7 +14,7 @@ This isn't an attempt to top AMP-activity-prediction leaderboards - it's the cod
 
 **The main finding:** across both tasks (MIC regression, hemolysis classification) and every model class — classical ML baselines and fine-tuned ProtBERT alike — performance is **capped by the measurement variability in the underlying experimental data, not by model architecture**. For the MIC data, repeated measurements of the same peptide differ by ~0.4 log₁₀ (a ~3-fold concentration range) — the same order of magnitude as the best achievable test error. Added physicochemical features helped only selectively, with no systematic gain.
 
-So the models here are built to be **honest, not flashy**: de-duplicated sequences, sequence-level train/val/test splits (no peptide appears in more than one split), and train/test gaps reported as-is so they reflect real generalization. The numbers are what the data allows — which is exactly the point.
+So the models here are built to be **honest, not flashy**: de-duplicated sequences, sequence-level train/val/test splits (no peptide appears in more than one split), and train/test gaps reported as-is. A stricter, similarity-aware split (`cluster_init`, see Usage) is also included, since a random sequence-level split can still share near-duplicate peptides across train and test and flatter the test score, the cluster split keeps whole similarity clusters in one split and gives a more conservative read on generalization (see [RESULTS.md](RESULTS.md)). The numbers are what the data allows, which is exactly the point.
 
 ---
 
@@ -111,6 +111,20 @@ Custom data directory:
 python -m src data_init --task cls --data_dir path/to/csvs/
 ```
 
+**Similarity-aware (cluster) split.** `data_init` splits at the sequence level, but near-duplicate
+peptides (e.g. a single point mutation) can still land on opposite sides of the split. `cluster_init`
+groups sequences into similarity clusters with MMseqs2 and keeps whole clusters in one split, writing
+into a parallel `<data_dir>_cluster/` folder. The matching BERT configs live in
+`src/bert_model/peptideBERT_configs/cluster_split/`.
+
+```bash
+python -m src cluster_init --task regression   # MIC,        into data/regression_data_cluster/
+python -m src cluster_init --task cls          # Hemolysis,  into data/hemo_train_cluster/
+python -m src cluster_init --task gram         # Gram
+```
+> Requires the MMseqs2 binary on PATH (`conda install -c bioconda mmseqs2`, or the static Windows build).
+> Defaults: `--min_seq_id 0.5 --coverage 0.8 --kmer 5`. CPU-only.
+
 ---
 
 ### Fine-tuning PeptideBERT
@@ -154,6 +168,10 @@ python -m src ml_regress  --data_dir data/regression_data/ --output_dir ml_plots
 ```
 
 > `--features` additionally enables biochemical feature engineering (otherwise k-mer TF-IDF only).
+
+> To train on the similarity-aware splits, point `--data_dir` at the matching `*_cluster/` folder
+> (e.g. `data/regression_data_cluster/`). Datasets are discovered from the split files, so the base
+> CSV does not need to be duplicated into the cluster folder.
 
 ---
 

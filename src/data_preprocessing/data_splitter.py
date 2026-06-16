@@ -2,7 +2,10 @@ from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+try:
+    from src.data_preprocessing import datasets
+except ImportError:  # allow running the file directly
+    import datasets  # type: ignore
 
 def make_seq_strat_labels(df: pd.DataFrame, task: str, target_col: str, n_bins: int = 10):
     """
@@ -89,21 +92,10 @@ def data_splitter(task: str,
                   data_dir: Path | str | None = None,
                   test_size=0.20, val_size=0.16, random_state=42):
 
-    if task == "cls":
-        data_dir_suffix = "*.csv"
-        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "hemo_train"
-        target_col = 'label'
-    elif task == "regression":
-        data_dir_suffix = "*regression.csv"
-        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "regression_data"
-        target_col = 'mic_log10'
-    else:
-        data_dir_suffix = "*dataset.csv"
-        file_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "gram"
-        target_col = 'label'
+    target_col = datasets.target_col(task)
 
-
-    for train_file in file_dir.glob(data_dir_suffix):
+    # Base files only (the registry's globs never match generated _train/_val/_test).
+    for train_file in datasets.base_files(task, data_dir):
         tmp_df = pd.read_csv(train_file, sep=';')
         if task == "cls":
             try:

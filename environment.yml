@@ -46,3 +46,6 @@ dependencies:
     - huggingface-hub==0.24.6
     # Bioinformatics
     - peptides==0.3.4
+# Optional external tool (not pip/conda-installable on all platforms):
+#   MMseqs2 — only needed for `cluster_init` (similarity-aware splitting).
+#   Install separately: `conda install -c bioconda mmseqs2`, or the static Windows build.

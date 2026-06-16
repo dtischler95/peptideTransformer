@@ -138,7 +138,7 @@ def parse_inputs():
     fine_tune_parser.add_argument('--pipe_configs', type=str, required=False, help='Path to the Directory containing config files. Will use every config inside this dir.')
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
-    data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["classification", "regression", "gram"]')
+    data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["cls", "regression", "gram"]')
     data_preprocess_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory (uses repo default if omitted)')
     # Subparser for similarity-aware (MMseqs2 cluster) splitting
     cluster_init_parser = subparsers.add_parser('cluster_init', help='Create similarity-aware (MMseqs2 cluster) train/val/test splits into a parallel <dir>_cluster folder')

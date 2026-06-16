@@ -33,10 +33,10 @@ from sklearn.model_selection import StratifiedGroupKFold
 
 try:
     from src.data_preprocessing.data_splitter import make_seq_strat_labels
+    from src.data_preprocessing import datasets
 except ImportError:  # allow running the file directly
     from data_splitter import make_seq_strat_labels  # type: ignore
-
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+    import datasets  # type: ignore
 
 
 # --------------------------------------------------------------------- clustering
@@ -246,20 +246,10 @@ def cluster_data_splitter(task: str,
     writes into a parallel '<data_dir>_cluster' directory (same filenames), so the
     existing ML auto-discovery and BERT loaders pick them up unchanged.
     """
-    if task == "cls":
-        # Mirror the ML auto-discovery globs so we only grab the base files,
-        # never the generated *_train/_val/_test.csv outputs.
-        in_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "hemo_train"
-        base_files = sorted(list(in_dir.glob("*unvoted.csv")) + list(in_dir.glob("*data.csv")))
-        target_col = "label"
-    elif task == "regression":
-        in_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "regression_data"
-        base_files = sorted(in_dir.glob("*regression.csv"))
-        target_col = "mic_log10"
-    else:
-        in_dir = Path(data_dir) if data_dir else _REPO_ROOT / "data" / "gram"
-        base_files = sorted(in_dir.glob("*dataset.csv"))
-        target_col = "label"
+    in_dir = Path(data_dir) if data_dir else datasets.default_dir(task)
+    target_col = datasets.target_col(task)
+    # Base files only (the registry's globs never match generated _train/_val/_test).
+    base_files = datasets.base_files(task, in_dir)
 
     out = Path(out_dir) if out_dir else in_dir.with_name(in_dir.name + "_cluster")
     out.mkdir(parents=True, exist_ok=True)
