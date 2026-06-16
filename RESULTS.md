@@ -180,3 +180,51 @@ R² and MSE for train/test, per organism. **Bold** marks the best test R² and b
 | Staphylococcus epidermidis | rf | 0.900 | 0.306 | 0.049 | 0.349 |
 | Staphylococcus epidermidis | svr | 0.550 | 0.243 | 0.222 | 0.381 |
 | Staphylococcus epidermidis | bert | 0.884 | 0.310 | 0.057 | 0.347 |
+
+### MIC regression - cluster-based (similarity-aware) split, sequence input only
+
+The tables above use a random split at the sequence level (each unique peptide goes into exactly one
+split). That still lets near-duplicate peptides, for example a single point mutation, land on opposite
+sides of the split. The cluster split groups sequences into similarity clusters with MMseqs2
+(`min-seq-id 0.5`, `coverage 0.8`) and keeps whole clusters in one split, so the test set holds
+sequences dissimilar to those seen in training
+(`src/data_preprocessing/cluster_data_splitter.py`, CLI `cluster_init`).
+
+Fine-tuned BERT, sequence input only. **Work in progress:** 9 of 12 organisms are filled in below, the
+remaining organisms and the classical ML baselines are still to be added.
+
+| Organism | Model | R² Train | R² Test | MSE Train | MSE Test |
+|---|---|---|---|---|---|
+| Acinetobacter baumannii | bert | 0.739 | 0.208 | 0.144 | 0.506 |
+| Bacillus subtilis | bert | 0.565 | 0.246 | 0.240 | 0.512 |
+| Candida albicans | bert | 0.138 | 0.113 | 0.408 | 0.446 |
+| Enterobacter sp. | bert | 0.418 | 0.143 | 0.238 | 0.375 |
+| Enterococcus faecalis | bert | _pending_ | _pending_ | _pending_ | _pending_ |
+| Escherichia coli | bert | 0.346 | 0.274 | 0.344 | 0.395 |
+| Klebsiella pneumoniae | bert | 0.285 | 0.233 | 0.336 | 0.365 |
+| Micrococcus luteus | bert | 0.573 | 0.066 | 0.282 | 0.602 |
+| Pseudomonas aeruginosa | bert | 0.798 | 0.228 | 0.104 | 0.369 |
+| Salmonella enterica | bert | _pending_ | _pending_ | _pending_ | _pending_ |
+| Staphylococcus aureus | bert | 0.364 | 0.177 | 0.298 | 0.383 |
+| Staphylococcus epidermidis | bert | _pending_ | _pending_ | _pending_ | _pending_ |
+
+Compared to the random split (same BERT, sequence input only), test R² drops for almost every organism:
+
+| Organism | R² Test (random) | R² Test (cluster) | Change |
+|---|---|---|---|
+| Acinetobacter baumannii | 0.452 | 0.208 | -0.244 |
+| Bacillus subtilis | 0.318 | 0.246 | -0.072 |
+| Candida albicans | 0.222 | 0.113 | -0.109 |
+| Enterobacter sp. | 0.131 | 0.143 | +0.012 |
+| Escherichia coli | 0.396 | 0.274 | -0.122 |
+| Klebsiella pneumoniae | 0.363 | 0.233 | -0.130 |
+| Micrococcus luteus | 0.094 | 0.066 | -0.028 |
+| Pseudomonas aeruginosa | 0.452 | 0.228 | -0.224 |
+| Staphylococcus aureus | 0.336 | 0.177 | -0.159 |
+
+The consistent drop means part of the random-split test score came from near-duplicate sequences shared
+across splits, not from generalization to new sequence space. Enterobacter is the exception, and it also
+has the smallest training set, where a random split has little near-duplicate structure to exploit. This
+sits on top of the measurement-noise ceiling shown in `notebooks/data_quality_mic.ipynb`: the
+random-split R² is already capped by label noise, and the similarity-aware split shows how much of what
+remains is similarity-driven rather than genuine generalization.
