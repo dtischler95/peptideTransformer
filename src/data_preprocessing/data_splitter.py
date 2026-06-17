@@ -80,6 +80,10 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
     else:
         cls_strat = tmp_df[['sequence', target_col]]
 
+    # ORDER-DEPENDENT: mask is built from strat_df (groupby-sorted) and applied to
+    # cls_strat (from tmp_df). Index alignment is correct only because all base
+    # regression/gram files are sorted by sequence — same order as the groupby output.
+    # If a base file is ever shuffled, use cls_strat['sequence'].isin(...) instead.
     train_df = cls_strat[strat_df['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
     val_df   = cls_strat[strat_df['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
     test_df  = cls_strat[strat_df['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
