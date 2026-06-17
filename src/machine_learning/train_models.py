@@ -256,7 +256,7 @@ if __name__ == "__main__":
         ('svc', SVC(probability=True)),
     ]
     classifier_grids = [
-        config.xtra_gram_param_grid,
+        config.xtra_cls_param_grid,
         config.xgb_cls_param_grid,
         config.rf_cls_param_grid,
         config.svc_cls_param_grid,
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         ('svr', SVR())
     ]
     regressor_grids = [
-        config.xtra_gram,
+        config.xtra_param_grid,
         config.xgb_param_grid,
         config.rf_param_grid,
         config.svr_param_grid
