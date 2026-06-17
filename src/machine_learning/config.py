@@ -1,13 +1,16 @@
+# Suchraum bewusst klein gehalten: rbf deckt die relevanten Faelle ab, sigmoid
+# liefert hier praktisch nie das beste Modell.
 svr_param_grid = {
-    'svr__C': [1e-3, 1e-1, 1, 10, 100],
-    'svr__epsilon': [0.001, 0.01, 0.1, 0.5],
-    'svr__kernel': ['rbf', 'sigmoid']
+    'svr__C': [0.1, 1, 10, 100],
+    'svr__epsilon': [0.01, 0.1],
+    'svr__kernel': ['rbf']
 }
 
+# n_estimators bei 700 bringt gegenueber 400 kaum Gewinn, kostet aber linear Zeit.
 rf_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
-    'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2, 5]
+    'n_estimators': [200, 400],
+    'min_samples_split': [2, 8],
+    'min_samples_leaf': [1, 4]
 }
 
 rf_test_param_grid = {
@@ -17,9 +20,9 @@ rf_test_param_grid = {
 }
 
 xtra_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
-    'min_samples_split': [3, 4, 5, 7],
-    'min_samples_leaf': [1, 2, 5]
+    'n_estimators': [200, 400],
+    'min_samples_split': [2, 5],
+    'min_samples_leaf': [1, 4]
 }
 
 gb_param_grid = {
@@ -32,9 +35,9 @@ gb_param_grid = {
 }
 
 xgb_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
-    'learning_rate': [0.01, 0.05, 0.1],
-    'max_depth': [3, 5, 7],
+    'n_estimators': [200, 400],
+    'learning_rate': [0.05, 0.1],
+    'max_depth': [3, 6],
     # 'min_child_weight': [1, 3, 5],
     # 'subsample': [0.6, 0.8, 1.0],
     # 'colsample_bytree': [0.6, 0.8, 1.0],
@@ -60,9 +63,9 @@ TOP_ORGANISMS = [
 ]
 
 rf_cls_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
-    'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2, 5],
+    'n_estimators': [200, 400],
+    'min_samples_split': [2, 8],
+    'min_samples_leaf': [1, 4],
     'class_weight': [None, 'balanced'],
 }
 
@@ -78,11 +81,12 @@ xtra_cls_param_grid = {
     'min_samples_leaf': [1, 2, 5],
     'class_weight': [None, 'balanced'],
 }
+# War mit 512 Kombinationen der teuerste Grid. Auf die wirksamen Achsen reduziert.
 xtra_gram_param_grid = {
-    'n_estimators': [200, 400, 700, 1000],
-    'min_samples_split': [2, 4, 8, 16],
-    'min_samples_leaf': [1, 2, 4, 8],
-    'max_features': ['sqrt', 'log2', 0.2, 0.5],
+    'n_estimators': [300, 500],
+    'min_samples_split': [2, 8],
+    'min_samples_leaf': [1, 4],
+    'max_features': ['sqrt', 0.5],
     'bootstrap': [False],   # typical for ExtraTrees
     'class_weight': [None, 'balanced']
 }
@@ -97,9 +101,9 @@ gb_cls_param_grid = {
 }
 
 xgb_cls_param_grid = {
-    'n_estimators': [100, 200, 300, 700],
-    'learning_rate': [0.01, 0.05, 0.1],
-    'max_depth': [3, 5, 7],
+    'n_estimators': [200, 400],
+    'learning_rate': [0.05, 0.1],
+    'max_depth': [3, 6],
     # 'min_child_weight': [1, 3, 5],
     # 'subsample': [0.6, 0.8, 1.0],
     # 'colsample_bytree': [0.6, 0.8, 1.0],
@@ -110,7 +114,7 @@ xgb_cls_param_grid = {
 svc_cls_param_grid = {
     'svc__kernel': ['rbf'],
     'svc__C': [0.1, 1, 10, 100],
-    'svc__gamma': ['scale', 'auto'],
+    'svc__gamma': ['scale'],
     'svc__class_weight': [None, 'balanced'],
 }
 
