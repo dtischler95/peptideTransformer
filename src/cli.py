@@ -70,19 +70,25 @@ def main():
     elif args.command == 'ml_classify':
         from src.machine_learning.train_models import run_classification
         from src.machine_learning import config
-        from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+        from sklearn.dummy import DummyClassifier
+        from sklearn.ensemble import ExtraTreesClassifier
+        from sklearn.linear_model import LogisticRegression
         from sklearn.svm import SVC
         from xgboost import XGBClassifier
+        # Baseline-Set: ein Vertreter je Modellfamilie, ohne Redundanz.
+        # dummy (Boden), logreg (linear), xtra (Bagging), xgb (Boosting), svc (Kernel).
         model_list = [
+            ('dummy', DummyClassifier(strategy='prior')),
+            ('logreg', LogisticRegression(max_iter=1000)),
             ('xtra', ExtraTreesClassifier()),
             ('xgb', XGBClassifier()),
-            ('rf', RandomForestClassifier()),
             ('svc', SVC(probability=True)),
         ]
         param_grids = [
+            config.dummy_param_grid,
+            config.logreg_param_grid,
             config.xtra_gram_param_grid,
             config.xgb_cls_param_grid,
-            config.rf_cls_param_grid,
             config.svc_cls_param_grid,
         ]
         run_classification(
@@ -96,19 +102,25 @@ def main():
     elif args.command == 'ml_regress':
         from src.machine_learning.train_models import run_regression
         from src.machine_learning import config
-        from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+        from sklearn.dummy import DummyRegressor
+        from sklearn.ensemble import ExtraTreesRegressor
+        from sklearn.linear_model import Ridge
         from sklearn.svm import SVR
         from xgboost import XGBRegressor
+        # Baseline-Set: ein Vertreter je Modellfamilie, ohne Redundanz.
+        # dummy (Boden), ridge (linear), xtra (Bagging), xgb (Boosting), svr (Kernel).
         model_list = [
+            ('dummy', DummyRegressor(strategy='mean')),
+            ('ridge', Ridge()),
             ('xtra', ExtraTreesRegressor(n_jobs=1)),
             ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
-            ('rf', RandomForestRegressor(n_jobs=1)),
             ('svr', SVR()),
         ]
         param_grids = [
+            config.dummy_param_grid,
+            config.ridge_param_grid,
             config.xtra_gram,
             config.xgb_param_grid,
-            config.rf_param_grid,
             config.svr_param_grid,
         ]
         run_regression(

@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Iterable, Any
 
 import matplotlib as mpl
-from sklearn.ensemble import (
-    RandomForestClassifier, ExtraTreesClassifier,
-    RandomForestRegressor, ExtraTreesRegressor,
-)
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import roc_auc_score
 from sklearn.svm import SVC, SVR
 from xgboost import XGBClassifier, XGBRegressor
 
@@ -67,8 +67,11 @@ def train_classificators(file_path: str,
                                                                 y_train,
                                                                 'hemo')
 
-    test_score = best_estimator.score(x_test, y_test)
-    logger.info(f"Test score of the best model: {test_score}")
+    # CV (refit=roc_auc) gegen Test-AUROC, um zu sehen ob die Selektion ehrlich ist und
+    # der Train-Test-Gap kosmetisch. Gleiche Metrik auf beiden Seiten, anders als
+    # best_estimator.score, das bei Klassifikatoren Accuracy liefert.
+    test_auc = roc_auc_score(y_test, ml_utils._get_scores(best_estimator, x_test))
+    logger.info(f"CV best AUROC: {grid_search.best_score_:.3f} | Test AUROC: {test_auc:.3f}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
     ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
@@ -118,8 +121,10 @@ def train_regressors(file_path: str,
                                                                 y_train,
                                                                 'mic')
 
+    # CV (refit=r2) gegen Test-R2. Gleiche Metrik auf beiden Seiten, zeigt ob der grosse
+    # Train-Test-Gap der Tree-Modelle kosmetisch ist (CV ~ Test) oder echtes Overfitting.
     test_score = best_estimator.score(x_test, y_test)
-    logger.info(f"Test score of the best model: {test_score}")
+    logger.info(f"CV best R2: {grid_search.best_score_:.3f} | Test R2: {test_score:.3f}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
     if gram_mode:
@@ -250,15 +255,17 @@ if __name__ == "__main__":
     data_dir = _REPO_ROOT / "data" / "hemo_train"
 
     classifier_list = [
+        ('dummy', DummyClassifier(strategy='prior')),
+        ('logreg', LogisticRegression(max_iter=1000)),
         ('xtra', ExtraTreesClassifier()),
         ('xgb', XGBClassifier()),
-        ('rf', RandomForestClassifier()),
         ('svc', SVC(probability=True)),
     ]
     classifier_grids = [
-        config.xtra_cls_param_grid,
+        config.dummy_param_grid,
+        config.logreg_param_grid,
+        config.xtra_gram_param_grid,
         config.xgb_cls_param_grid,
-        config.rf_cls_param_grid,
         config.svc_cls_param_grid,
     ]
     run_classification(calculate_features=False,
@@ -267,15 +274,17 @@ if __name__ == "__main__":
                        grids=classifier_grids)
 
     regressor_list = [
+        ('dummy', DummyRegressor(strategy='mean')),
+        ('ridge', Ridge()),
         ('xtra', ExtraTreesRegressor(n_jobs=1)),
         ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
-        ('rf', RandomForestRegressor(n_jobs=1)),
         ('svr', SVR())
     ]
     regressor_grids = [
-        config.xtra_param_grid,
+        config.dummy_param_grid,
+        config.ridge_param_grid,
+        config.xtra_gram,
         config.xgb_param_grid,
-        config.rf_param_grid,
         config.svr_param_grid
     ]
     run_regression(calculate_features=False,

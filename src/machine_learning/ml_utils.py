@@ -367,7 +367,7 @@ def build_feature_pipeline(estimator, model_name, calculate_features, desc_cols,
     features = ColumnTransformer(transformers, remainder='drop')
 
     steps = [('features', features)]
-    if model_name in ('svr', 'svc'):
+    if model_name in ('svr', 'svc', 'ridge', 'logreg'):
         steps.append(('scaler', StandardScaler()))
     steps.append(('model', estimator))
 

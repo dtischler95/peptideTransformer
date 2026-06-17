@@ -81,12 +81,13 @@ xtra_cls_param_grid = {
     'min_samples_leaf': [1, 2, 5],
     'class_weight': [None, 'balanced'],
 }
-# War mit 512 Kombinationen der teuerste Grid. Auf die wirksamen Achsen reduziert.
+# Baseline-Grid: 8 Kombinationen. class_weight bleibt wegen der Klassenungleichheit
+# (WhiteLab ~16% positiv), die uebrigen Achsen auf je einen Wert reduziert.
 xtra_gram_param_grid = {
-    'n_estimators': [300, 500],
+    'n_estimators': [300],
     'min_samples_split': [2, 8],
     'min_samples_leaf': [1, 4],
-    'max_features': ['sqrt', 0.5],
+    'max_features': ['sqrt'],
     'bootstrap': [False],   # typical for ExtraTrees
     'class_weight': [None, 'balanced']
 }
@@ -119,12 +120,13 @@ svc_cls_param_grid = {
 }
 
 
+# Baseline-Grid bewusst klein (8 Kombinationen, vergleichbar zu XGB/SVR). 300 Baeume
+# reichen fuer eine Baseline, Regularisierung laeuft ueber min_samples_leaf.
 xtra_gram = {
-    'n_estimators': [300, 800],
+    'n_estimators': [300],
     'max_features': ['sqrt', 'log2'],
-    'max_depth': [None, 20, 40],
-    'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2]
+    'min_samples_split': [2, 8],
+    'min_samples_leaf': [1, 4],
 }
 
 
@@ -134,4 +136,19 @@ xtra_gram_feat = {
     'max_depth': [None, 20, 40],
     'min_samples_split': [2, 4, 8],
     'min_samples_leaf': [1, 2]
+}
+
+
+# Baseline-Anker. Dummy als Boden (macht R2/AUROC interpretierbar), lineare Modelle auf
+# den SVD-Komponenten als eigentlicher Baseline-Vergleich. Bare keys, _remap_grid_to_model
+# haengt das model__-Praefix der Pipeline an.
+dummy_param_grid: dict = {}
+
+ridge_param_grid = {
+    'alpha': [0.1, 1.0, 10.0, 100.0],
+}
+
+logreg_param_grid = {
+    'C': [0.01, 0.1, 1.0, 10.0],
+    'class_weight': [None, 'balanced'],
 }
