@@ -51,22 +51,23 @@ def train_classificators(file_path: str,
                          ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'hemo')
 
-    x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        train_df[['sequence', target_col]],
-                                                                        test_df[['sequence', target_col]],
-                                                                        target_col,
-                                                                        plot_path)
+    x_train, y_train, x_test, y_test, desc_cols = ml_utils.build_xy(train_df,
+                                                                    test_df,
+                                                                    target_col,
+                                                                    calculate_features)
 
-    logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
-                f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}\n"
+    logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_test)}"
+                f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_test)}\n"
                 f"For File {file_path}")
 
-    best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
-                                                                    x_train,
-                                                                    y_train,
-                                                                    'hemo')
+    pipeline = ml_utils.build_feature_pipeline(regressor, model_name, calculate_features, desc_cols)
 
-    test_score = best_estimator.score(x_val, y_val)
+    best_estimator, grid_search, _ = ml_utils.grid_search_setup(pipeline, plot_path + '/', model_name, param_grid,
+                                                                x_train,
+                                                                y_train,
+                                                                'hemo')
+
+    test_score = best_estimator.score(x_test, y_test)
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
@@ -82,8 +83,8 @@ def train_classificators(file_path: str,
     ml_utils.evaluate_hemo_model(best_estimator=best_estimator,
                                  model_name=model_name,
                                  plot_path=plot_path,
-                                 x_data=x_val,
-                                 y_true=y_val,
+                                 x_data=x_test,
+                                 y_true=y_test,
                                  tag='Test',
                                  logger=logger,
                                  data_name=data_name)
@@ -100,23 +101,24 @@ def train_regressors(file_path: str,
                      ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'mic')  # mic for gram and mic
 
-    x_train, x_val, y_train, y_val, _ = ml_utils.prepare_train_val_data(calculate_features,
-                                                                        train_df[['sequence', target_col]],
-                                                                        test_df[['sequence', target_col]],
-                                                                        target_col,
-                                                                        plot_path)
+    x_train, y_train, x_test, y_test, desc_cols = ml_utils.build_xy(train_df,
+                                                                    test_df,
+                                                                    target_col,
+                                                                    calculate_features)
 
-    logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_val)}"
-                f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_val)}")
+    logger.info(f"Train shape: {len(x_train)}\tTest shape: {len(x_test)}"
+                f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_test)}")
 
     logger.info(f"File Name: {file_path} and Model: {model_name}")
 
-    best_estimator, grid_search, model = ml_utils.grid_search_setup(regressor, plot_path + '/', model_name, param_grid,
-                                                                    x_train,
-                                                                    y_train,
-                                                                    'mic')
+    pipeline = ml_utils.build_feature_pipeline(regressor, model_name, calculate_features, desc_cols)
 
-    test_score = best_estimator.score(x_val, y_val)
+    best_estimator, grid_search, _ = ml_utils.grid_search_setup(pipeline, plot_path + '/', model_name, param_grid,
+                                                                x_train,
+                                                                y_train,
+                                                                'mic')
+
+    test_score = best_estimator.score(x_test, y_test)
     logger.info(f"Test score of the best model: {test_score}")
     logger.info(f"Best Params: {grid_search.best_params_}")
 
@@ -132,9 +134,9 @@ def train_regressors(file_path: str,
     train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator,
                                                                         plot_path,
                                                                         x_train,
-                                                                        x_val,
+                                                                        x_test,
                                                                         y_train,
-                                                                        y_val,
+                                                                        y_test,
                                                                         logger,
                                                                         file_name,
                                                                         model_name)
@@ -245,7 +247,7 @@ def run_regression(
 
 if __name__ == "__main__":
 
-    data_dir = _REPO_ROOT / "data" / "gram"
+    data_dir = _REPO_ROOT / "data" / "hemo_train"
 
     classifier_list = [
         ('xtra', ExtraTreesClassifier()),

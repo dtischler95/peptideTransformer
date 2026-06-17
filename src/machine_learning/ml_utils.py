@@ -14,6 +14,7 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from evaluation import eval_utils
 import numpy as np
+from sklearn.compose import ColumnTransformer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
@@ -77,25 +78,27 @@ def get_model_stats(model, plot_dir: str, feature_data, target_data, logger: log
     return r2, mse
 
 
-def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train, task):
+def _remap_grid_to_model(param_grid):
     """
-    Setup for the Gridsearch in machine learning logic
+    Normalise param-grid keys to the estimator step of the pipeline.
 
+    Grids in config.py mix bare keys (tree models) and estimator-prefixed keys
+    (``svr__C``, ``svc__C``). Since the estimator now always lives under the
+    ``model`` step of the full featurising pipeline, every key is rewritten to
+    ``model__<param>`` so the grids themselves stay untouched.
     """
+    return {f"model__{k.split('__')[-1]}": v for k, v in param_grid.items()}
 
-    if model_name == 'svr':
-        pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('svr', model)
-        ])
-        model = pipeline
-    if model_name == 'svc':
-        pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('svc', model)
-        ])
-        model = pipeline
 
+def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_train, task):
+    """
+    Setup for the Gridsearch in machine learning logic.
+
+    ``pipeline`` is the full featurising pipeline (k-mer TF-IDF -> SVD, optional
+    descriptors and scaler, then the estimator under the ``model`` step). Because
+    the featuriser is part of the pipeline, GridSearchCV refits it inside every
+    CV fold, so no preprocessing is fit on a fold's held-out data.
+    """
     if task == 'hemo':
         scoring = {
             'roc_auc': 'roc_auc',
@@ -115,11 +118,12 @@ def grid_search_setup(model, model_dir, model_name, param_grid, x_train, y_train
     else:
         raise NotImplementedError
 
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, return_train_score=True, refit=refit,
+    grid = _remap_grid_to_model(param_grid)
+    grid_search = GridSearchCV(estimator=pipeline, param_grid=grid, return_train_score=True, refit=refit,
                                n_jobs=-1, verbose=3, cv=cv, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
-    save_model(model=best_estimator, path=f"{model_dir}{model.__class__.__name__}.keras")
-    return best_estimator, grid_search, model
+    save_model(model=best_estimator, path=f"{model_dir}{model_name}.keras")
+    return best_estimator, grid_search, pipeline
 
 
 
@@ -197,17 +201,29 @@ def prepare_df(file_path, task):
     base = Path(file_path).with_suffix('')
     train_df = pd.read_csv(f"{base}_train.csv", sep=';')
     test_df = pd.read_csv(f"{base}_test.csv", sep=';')
+
+    val_path = Path(f"{base}_val.csv")
+    val_df = pd.read_csv(val_path, sep=';') if val_path.exists() else None
+
     if task == 'mic':
         target_col = 'mic_log10'
     elif task == 'hemo':
-        try:
-            train_df = train_df.drop(columns=['hemo_percent', 'hemo_concentration'])
-            test_df = test_df.drop(columns=['hemo_percent', 'hemo_concentration'])
-        except KeyError:
-            pass
+        drop_cols = ['hemo_percent', 'hemo_concentration']
+        train_df = train_df.drop(columns=drop_cols, errors='ignore')
+        test_df = test_df.drop(columns=drop_cols, errors='ignore')
+        if val_df is not None:
+            val_df = val_df.drop(columns=drop_cols, errors='ignore')
         target_col = 'label'
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
+
+    # Fold the validation split into the development pool, so hyperparameters are
+    # chosen by 5-fold CV over train+val. This matches the data budget BERT uses
+    # (train for fitting, val for early stopping). The test split stays untouched
+    # and is only used for the final reported metrics.
+    if val_df is not None:
+        train_df = pd.concat([train_df, val_df], ignore_index=True)
+
     return train_df, test_df, target_col
 
 
@@ -234,12 +250,11 @@ def plot_residuals_vs_length_from_df(model,
 
     y_true = df[target_col].astype(float)
 
-    _, x_test, _, y_test, _ = prepare_train_val_data(
-        calculate_features=calculate_features,
+    _, _, x_test, _, _ = build_xy(
         train_df=df,
         test_df=df,
         target_col=target_col,
-        out_dir=''
+        calculate_features=calculate_features,
     )
 
     y_pred = model.predict(x_test)
@@ -279,89 +294,84 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
                              tag=tag, file_name=data_name, model_name=model_name, logger=logger)
 
 
-def prepare_train_val_data(calculate_features, train_df, test_df, target_col, out_dir):
+class SafeTruncatedSVD(TruncatedSVD):
+    """
+    TruncatedSVD that clamps ``n_components`` to the available feature count.
+
+    Inside a CV fold the k-mer vocabulary can occasionally be smaller than the
+    requested number of components (small or low-diversity folds). TruncatedSVD
+    requires ``n_components < n_features``, so we clamp at fit time. GridSearchCV
+    clones the estimator before each fit, so the original 128 is always restored
+    for the next fold.
+    """
+    def fit(self, X, y=None):
+        n_features = X.shape[1]
+        if self.n_components >= n_features:
+            self.n_components = max(1, n_features - 1)
+        return super().fit(X, y)
+
+    def fit_transform(self, X, y=None):
+        n_features = X.shape[1]
+        if self.n_components >= n_features:
+            self.n_components = max(1, n_features - 1)
+        return super().fit_transform(X, y)
+
+
+def build_xy(train_df, test_df, target_col, calculate_features):
+    """
+    Build the *raw* model inputs (a DataFrame with a ``sequence`` column and,
+    optionally, deterministic per-sequence descriptors) plus the target arrays.
+
+    No fitted transformation happens here: descriptors are a pure function of the
+    sequence, so computing them outside the CV loop does not leak. Everything that
+    is *fit* (TF-IDF, SVD, imputer, scaler) lives in the pipeline from
+    ``build_feature_pipeline`` and is therefore refit per CV fold.
+    """
+    y_train = train_df[target_col].astype(float).to_numpy()
+    y_test = test_df[target_col].astype(float).to_numpy()
+
     if calculate_features:
-
-        x_train, y_train, x_val, y_val, feature_names = encode_kmer_with_features(train_df=train_df, val_df=test_df, target_col=target_col)
-
-        if out_dir is not None:
-            x_val_df = pd.DataFrame(x_val, columns=feature_names)
-
-
-            y_val_df = pd.Series(y_val, name=target_col)
-
-            pd.concat([x_val_df, y_val_df.reset_index(drop=True)], axis=1)
-
-
-
-        return x_train, x_val, y_train, y_val, feature_names
+        tr = add_descriptors(train_df[['sequence']].copy())
+        te = add_descriptors(test_df[['sequence']].copy())
+        desc_cols = [c for c in tr.columns if c.startswith('desc__')]
+        x_train = tr[['sequence'] + desc_cols]
+        x_test = te[['sequence'] + desc_cols]
     else:
+        desc_cols = []
+        x_train = train_df[['sequence']].copy()
+        x_test = test_df[['sequence']].copy()
+
+    return x_train, y_train, x_test, y_test, desc_cols
 
 
-        x_train, y_train, x_val, y_val = encode_kmer_no_features(train_df=train_df, val_df=test_df, target_col=target_col)
+def build_feature_pipeline(estimator, model_name, calculate_features, desc_cols, n_components=128):
+    """
+    Full featurising pipeline ending in the estimator under the ``model`` step.
 
+    Sequence branch: char k-mer TF-IDF (3-4mers) -> SVD. Descriptor branch (only
+    when ``calculate_features``): median imputation. SVR/SVC additionally get a
+    StandardScaler on the combined feature matrix. Because the whole thing is one
+    pipeline, GridSearchCV refits every fitted step inside each CV fold.
+    """
+    seq_branch = Pipeline([
+        ('tfidf', TfidfVectorizer(analyzer='char',
+                                  ngram_range=(3, 4),  # 3- and 4-mers
+                                  min_df=2)),           # ignores rare k-mers
+        ('svd', SafeTruncatedSVD(n_components=n_components, random_state=42)),
+    ])
 
-        return x_train, x_val, y_train, y_val, None
+    transformers = [('seq', seq_branch, 'sequence')]
+    if calculate_features and desc_cols:
+        transformers.append(('desc', SimpleImputer(strategy='median'), desc_cols))
 
+    features = ColumnTransformer(transformers, remainder='drop')
 
-def encode_kmer_with_features(train_df, val_df, target_col, n_components=128):
-    train_df = add_descriptors(train_df)
-    val_df = add_descriptors(val_df)
+    steps = [('features', features)]
+    if model_name in ('svr', 'svc'):
+        steps.append(('scaler', StandardScaler()))
+    steps.append(('model', estimator))
 
-
-    desc_cols = [c for c in train_df.columns if c.startswith('desc__')]
-
-
-    y_train = train_df[target_col].astype(float).to_numpy()
-    y_val = val_df[target_col].astype(float).to_numpy()
-
-    # --- k-mer TF-IDF ---
-    tfidf = TfidfVectorizer(analyzer='char',
-                            ngram_range=(3, 4),  # 3- and 4-mers
-                            min_df=2)  # ignores rare k-mers
-    Xk_tr = tfidf.fit_transform(train_df['sequence'])
-    Xk_va = tfidf.transform(val_df['sequence'])
-
-    # --- reduce dimensionality ---
-    svd = TruncatedSVD(n_components=n_components, random_state=42)
-    Z_tr = svd.fit_transform(Xk_tr)
-    Z_va = svd.transform(Xk_va)
-
-    # --- descriptors ---
-    imp = SimpleImputer(strategy='median')
-    D_tr = imp.fit_transform(train_df[desc_cols])
-    D_va = imp.transform(val_df[desc_cols])
-
-    # --- Concatenate ---
-    X_train = np.hstack([Z_tr, D_tr])
-    X_val = np.hstack([Z_va, D_va])
-
-    # feature names: SVD components + descriptors
-    svd_names = [f'kmer_svd{i + 1}' for i in range(n_components)]
-    feature_names = svd_names + desc_cols
-
-    return X_train, y_train, X_val, y_val, feature_names
-
-
-def encode_kmer_no_features(train_df, val_df, target_col, n_components=128, feature_selection=None):
-
-
-    y_train = train_df[target_col].astype(float).to_numpy()
-    y_val = val_df[target_col].astype(float).to_numpy()
-
-    # --- k-mer TF-IDF ---
-    tfidf = TfidfVectorizer(analyzer='char',
-                            ngram_range=(3, 4),  # 3- and 4-mers
-                            min_df=2)  # ignores rare k-mers
-    x_train = tfidf.fit_transform(train_df['sequence'])
-    x_val = tfidf.transform(val_df['sequence'])
-
-    # --- reduce dimensionality ---
-    svd = TruncatedSVD(n_components=n_components, random_state=42)
-    x_train = svd.fit_transform(x_train)
-    x_val = svd.transform(x_val)
-
-    return x_train, y_train, x_val, y_val
+    return Pipeline(steps)
 
 
 if __name__ == '__main__':
