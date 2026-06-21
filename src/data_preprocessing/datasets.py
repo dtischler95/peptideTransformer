@@ -78,6 +78,11 @@ def base_files(task: str, data_dir: str | Path | None = None) -> list[Path]:
     return sorted(found)
 
 
+def organism_slug(name: str | Path) -> str:
+    """Short organism/dataset key from a filename stem (first two underscore-separated parts)."""
+    return "_".join(Path(name).stem.split("_")[:2])
+
+
 def task_for_dir(data_dir: str | Path) -> str:
     """Infer the canonical task from a data directory name (handles "*_cluster" dirs)."""
     name = Path(data_dir).name
@@ -88,13 +93,7 @@ def task_for_dir(data_dir: str | Path) -> str:
 
 
 def split_basepaths_in(data_dir: str | Path) -> list[Path]:
-    """Dataset base paths discovered from the ``*_train.csv`` split files in a directory.
-
-    The base CSV itself need not exist: training reads ``<base>_train.csv`` /
-    ``<base>_test.csv`` (see ml_utils.prepare_df), so a split-only directory such as a
-    ``*_cluster`` dir works without duplicating the base file. Returns base paths (the
-    ``_train`` suffix stripped, ``.csv`` restored) so callers keep using a base stem.
-    """
+    """Discover dataset base paths from ``*_train.csv`` files in a directory."""
     directory = Path(data_dir)
     suffix = "_train.csv"
     stems = sorted(p.name[: -len(suffix)] for p in directory.glob(f"*{suffix}"))
