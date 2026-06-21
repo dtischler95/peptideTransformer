@@ -10,7 +10,8 @@ import logging
 from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
 from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_hemo_eval, init_model
-from src.evaluation.eval_utils import overall_stats, get_model_stats
+from src.evaluation.eval_utils import overall_stats, get_model_stats, write_run_artifacts
+from src.data_preprocessing import datasets
 from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
@@ -27,21 +28,13 @@ mpl.rcParams.update({
 logger = logging.getLogger(__name__)
 
 
+def _bert_split(train_file) -> str:
+    """Infer the split from the train_file path (cluster dirs carry 'cluster')."""
+    return "cluster" if "cluster" in str(train_file) else "random"
+
+
 def fine_tune(config_path: str):
-    """
-    Fine-tunes the model on the hemo dataset, should contain basic functionality for fine-tuning
-
-    Script adapted from https://github.com/huggingface/transformers/blob/main/examples/pytorch/token-classification/run_ner.py
-
-    DataLoader also checks for data leakage between the datasets. If data leakage is detected, the training will stop if
-    ignore_leakage is set to False. If ignore_leakage is set to True, the training will continue, but a warning will be
-    printed with the number of leaked data points. Use only if you want to see how data leakage affects the training,
-    since it seems like that PeptideBERT is affected by data leakage. [I used my check_data_loader_for_leakage function
-    on PeptideBERTs train algorithm, and it seems like the model is affected by data leakage]
-
-
-    :param config_path: Path to the config file
-    """
+    """Fine-tune ProtBERT on a single dataset defined by a YAML config."""
 
     # --------------------- Setup logging and configs ---------------------
     # Setup logging
@@ -151,11 +144,26 @@ def fine_tune(config_path: str):
                     train_scaler = returned_scaler
 
             for split_dir, dataset, tag in splits:
-                prepare_hemo_eval(test_dataset=dataset,
+                y_true, y_score, y_pred = prepare_hemo_eval(test_dataset=dataset,
                                   trainer=trainer,
                                   plot_path=training_args.plot_path + f"/{split_dir}",
                                   tag=tag,
                                   file_name=file_name)
+
+                if tag == "Test":
+                    write_run_artifacts(
+                        out_dir=training_args.plot_path + f"/{split_dir}",
+                        data_name=datasets.organism_slug(file_name),
+                        model_name="bert",
+                        task="hemo",
+                        split=_bert_split(training_args.train_file),
+                        seed=getattr(training_args, "seed", 42),
+                        features=bool(training_args.add_features),
+                        y_true=y_true,
+                        y_pred=y_pred,
+                        y_score=y_score,
+                        sequences=[p.replace(" ", "") for p in dataset.peptides],
+                    )
 
         elif training_args.model_class.startswith('regression'):
 
@@ -179,6 +187,20 @@ def fine_tune(config_path: str):
                                               logger=logger,
                                               file_name=file_name,
                                               tag=tag)
+
+                if tag == "Test":
+                    write_run_artifacts(
+                        out_dir=training_args.plot_path,
+                        data_name=datasets.organism_slug(file_name),
+                        model_name="bert",
+                        task="mic",
+                        split=_bert_split(training_args.train_file),
+                        seed=getattr(training_args, "seed", 42),
+                        features=bool(training_args.add_features),
+                        y_true=y_true,
+                        y_pred=preds,
+                        sequences=[p.replace(" ", "") for p in dataset.peptides],
+                    )
 
             with open(f"{training_args.plot_path}/{Path(training_args.train_file).stem}_train.txt",
                       "w") as f:

@@ -384,6 +384,7 @@ def prepare_hemo_eval(test_dataset: PeptideDataset,
     y_pred = format_logit_to_label(logits=logits)
     evaluate_hemo(y_true=y_true, y_score=y_score, y_pred=y_pred,
                   plot_path=plot_path, tag=tag, file_name=file_name)
+    return y_true, y_score, y_pred
 
 
 def get_bce_label_weight(labels):
