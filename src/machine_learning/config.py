@@ -1,8 +1,9 @@
 # Suchraum bewusst klein gehalten: rbf deckt die relevanten Faelle ab, sigmoid
-# liefert hier praktisch nie das beste Modell.
+# liefert hier praktisch nie das beste Modell. epsilon auf den Default reduziert,
+# damit das jetzt serielle SVR den grossen Organismen nicht das Zeitbudget sprengt.
 svr_param_grid = {
     'svr__C': [0.1, 1, 10, 100],
-    'svr__epsilon': [0.01, 0.1],
+    'svr__epsilon': [0.1],
     'svr__kernel': ['rbf']
 }
 
@@ -19,12 +20,6 @@ rf_test_param_grid = {
     'min_samples_leaf': [1]
 }
 
-xtra_param_grid = {
-    'n_estimators': [200, 400],
-    'min_samples_split': [2, 5],
-    'min_samples_leaf': [1, 4]
-}
-
 gb_param_grid = {
     'n_estimators': [300, 500, 800],
     'max_depth': [2, 3, 4],
@@ -34,15 +29,17 @@ gb_param_grid = {
     'learning_rate': [0.01, 0.05, 0.1],
 }
 
+# 16 Kombinationen. Beide Regularisierungsachsen (min_child_weight, subsample)
+# bleiben, dafuer n_estimators fix auf 300, um das Zeitbudget zu halten.
 xgb_param_grid = {
-    'n_estimators': [200, 400],
+    'n_estimators': [300],
     'learning_rate': [0.05, 0.1],
     'max_depth': [3, 6],
-    # 'min_child_weight': [1, 3, 5],
-    # 'subsample': [0.6, 0.8, 1.0],
+    'min_child_weight': [1, 5],
+    'subsample': [0.8, 1.0],
     # 'colsample_bytree': [0.6, 0.8, 1.0],
-    # 'lambda': [1.0, 3.0, 10.0],
-    # 'alpha': [0.0, 0.1, 1.0],
+    # 'reg_lambda': [1.0, 3.0, 10.0],
+    # 'reg_alpha': [0.0, 0.1, 1.0],
 }
 
 TOP_ORGANISMS = [
@@ -75,18 +72,13 @@ rf_cls_test_param_grid = {
     'min_samples_leaf': [1],
 }
 
+# 24 Kombinationen. class_weight bleibt wegen der Klassenungleichheit (WhiteLab
+# ~16% positiv); max_depth-Cap und grosses min_samples_leaf als Regularisierung.
 xtra_cls_param_grid = {
-    'n_estimators': [100, 200, 300],
-    'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2, 5],
-    'class_weight': [None, 'balanced'],
-}
-# Baseline-Grid: 8 Kombinationen. class_weight bleibt wegen der Klassenungleichheit
-# (WhiteLab ~16% positiv), die uebrigen Achsen auf je einen Wert reduziert.
-xtra_gram_param_grid = {
     'n_estimators': [300],
+    'max_depth': [None, 20],
     'min_samples_split': [2, 8],
-    'min_samples_leaf': [1, 4],
+    'min_samples_leaf': [1, 4, 16],
     'max_features': ['sqrt'],
     'bootstrap': [False],   # typical for ExtraTrees
     'class_weight': [None, 'balanced']
@@ -101,12 +93,13 @@ gb_cls_param_grid = {
     'max_features': ['sqrt', 1.0],
 }
 
+# 16 Kombinationen. Beide Regularisierungsachsen bleiben, n_estimators fix auf 300.
 xgb_cls_param_grid = {
-    'n_estimators': [200, 400],
+    'n_estimators': [300],
     'learning_rate': [0.05, 0.1],
     'max_depth': [3, 6],
-    # 'min_child_weight': [1, 3, 5],
-    # 'subsample': [0.6, 0.8, 1.0],
+    'min_child_weight': [1, 5],
+    'subsample': [0.8, 1.0],
     # 'colsample_bytree': [0.6, 0.8, 1.0],
     # 'reg_lambda': [1.0, 3.0, 10.0],
     # 'reg_alpha': [0.0, 0.1, 1.0],
@@ -120,28 +113,17 @@ svc_cls_param_grid = {
 }
 
 
-# Baseline-Grid bewusst klein (8 Kombinationen, vergleichbar zu XGB/SVR). 300 Baeume
-# reichen fuer eine Baseline, Regularisierung laeuft ueber min_samples_leaf.
-xtra_gram = {
+# 24 Kombinationen. max_depth-Cap und ein grosses min_samples_leaf geben dem Baum
+# eine echte Bremse, gegen das starke Overfitting der Tree-Modelle (Train-R2 ~0,99).
+xtra_param_grid = {
     'n_estimators': [300],
     'max_features': ['sqrt', 'log2'],
+    'max_depth': [None, 20],
     'min_samples_split': [2, 8],
-    'min_samples_leaf': [1, 4],
+    'min_samples_leaf': [1, 4, 16],
 }
 
 
-xtra_gram_feat = {
-    'n_estimators': [300, 800],
-    'max_features': ['sqrt', 'log2'],
-    'max_depth': [None, 20, 40],
-    'min_samples_split': [2, 4, 8],
-    'min_samples_leaf': [1, 2]
-}
-
-
-# Baseline-Anker. Dummy als Boden (macht R2/AUROC interpretierbar), lineare Modelle auf
-# den SVD-Komponenten als eigentlicher Baseline-Vergleich. Bare keys, _remap_grid_to_model
-# haengt das model__-Praefix der Pipeline an.
 dummy_param_grid: dict = {}
 
 ridge_param_grid = {
