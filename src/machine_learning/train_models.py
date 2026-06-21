@@ -40,6 +40,9 @@ logging.basicConfig(
 )
 logger.setLevel(logging.INFO)
 
+# O(n^2) kernel matrices blow up memory when CV folds run in parallel.
+_SERIAL_GRID_MODELS = {"svr", "svc"}
+
 
 def train_classificators(file_path: str,
                          regressor,
@@ -47,7 +50,10 @@ def train_classificators(file_path: str,
                          plot_path: str,
                          model_name: str,
                          data_name: str,
-                         calculate_features: bool = True
+                         calculate_features: bool = True,
+                         split: str = "random",
+                         seed: int = 42,
+                         n_jobs: int = -1
                          ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'hemo')
 
@@ -65,11 +71,10 @@ def train_classificators(file_path: str,
     best_estimator, grid_search, _ = ml_utils.grid_search_setup(pipeline, plot_path + '/', model_name, param_grid,
                                                                 x_train,
                                                                 y_train,
-                                                                'hemo')
+                                                                'hemo',
+                                                                seed=seed,
+                                                                n_jobs=n_jobs)
 
-    # CV (refit=roc_auc) gegen Test-AUROC, um zu sehen ob die Selektion ehrlich ist und
-    # der Train-Test-Gap kosmetisch. Gleiche Metrik auf beiden Seiten, anders als
-    # best_estimator.score, das bei Klassifikatoren Accuracy liefert.
     test_auc = roc_auc_score(y_test, ml_utils._get_scores(best_estimator, x_test))
     logger.info(f"CV best AUROC: {grid_search.best_score_:.3f} | Test AUROC: {test_auc:.3f}")
     logger.info(f"Best Params: {grid_search.best_params_}")
@@ -92,6 +97,22 @@ def train_classificators(file_path: str,
                                  logger=logger,
                                  data_name=data_name)
 
+    y_score_test = ml_utils._get_scores(best_estimator, x_test)
+    y_pred_test = (y_score_test >= 0.5).astype(int)
+    ml_utils.write_run_artifacts(
+        out_dir=plot_path,
+        data_name=data_name,
+        model_name=model_name,
+        task="hemo",
+        split=split,
+        seed=seed,
+        features=calculate_features,
+        y_true=y_test,
+        y_pred=y_pred_test,
+        y_score=y_score_test,
+        sequences=x_test["sequence"].to_numpy() if "sequence" in x_test.columns else None,
+    )
+
 
 def train_regressors(file_path: str,
                      regressor,
@@ -100,7 +121,10 @@ def train_regressors(file_path: str,
                      model_name: str,
                      file_name: str,
                      calculate_features: bool = True,
-                     gram_mode: bool = False
+                     gram_mode: bool = False,
+                     split: str = "random",
+                     seed: int = 42,
+                     n_jobs: int = -1
                      ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'mic')  # mic for gram and mic
 
@@ -119,10 +143,10 @@ def train_regressors(file_path: str,
     best_estimator, grid_search, _ = ml_utils.grid_search_setup(pipeline, plot_path + '/', model_name, param_grid,
                                                                 x_train,
                                                                 y_train,
-                                                                'mic')
+                                                                'mic',
+                                                                seed=seed,
+                                                                n_jobs=n_jobs)
 
-    # CV (refit=r2) gegen Test-R2. Gleiche Metrik auf beiden Seiten, zeigt ob der grosse
-    # Train-Test-Gap der Tree-Modelle kosmetisch ist (CV ~ Test) oder echtes Overfitting.
     test_score = best_estimator.score(x_test, y_test)
     logger.info(f"CV best R2: {grid_search.best_score_:.3f} | Test R2: {test_score:.3f}")
     logger.info(f"Best Params: {grid_search.best_params_}")
@@ -146,6 +170,20 @@ def train_regressors(file_path: str,
                                                                         file_name,
                                                                         model_name)
 
+    y_pred_test = best_estimator.predict(x_test)
+    ml_utils.write_run_artifacts(
+        out_dir=plot_path,
+        data_name=file_name,
+        model_name=model_name,
+        task="mic",
+        split=split,
+        seed=seed,
+        features=calculate_features,
+        y_true=y_test,
+        y_pred=y_pred_test,
+        sequences=x_test["sequence"].to_numpy() if "sequence" in x_test.columns else None,
+    )
+
     return train_r2, train_mse, val_r2, val_mse
 
 
@@ -155,23 +193,26 @@ def run_classification(
         models: Iterable[tuple[str, Any]] = None,  # e.g. classifier_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
+        seed: int = 42,
+        organism: str | None = None,
+        n_jobs: int = -1,
 ):
-    """
-    Iterate over all CSVs in data_dir and train each classification model/grid combo.
-    Creates output folders like: {output_root}/{file_slug}/{model_tag}/
-    """
+    """Train all classification models on each dataset in data_dir."""
 
     # Prevent silent truncation if lengths differ
     models = list(models)
     grids = list(grids)
     data_dir = Path(data_dir)
     output_root = Path(output_root)
+    split = "cluster" if "cluster" in data_dir.name else "random"
     csv_files = datasets.split_basepaths_in(data_dir)
+    if organism:
+        csv_files = [p for p in csv_files if organism.lower() in p.stem.lower()]
+        if not csv_files:
+            raise ValueError(f"no base file in {data_dir} matches organism {organism!r}")
 
     for csv_path in csv_files:
-        # Safer way to derive a short slug from filename, OS-independent
-        parts = csv_path.stem.split("_")
-        file_name = "_".join(parts[:2])  # if len(parts) >= 2 else csv_path.stem
+        file_name = datasets.organism_slug(csv_path.stem)
 
         logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
 
@@ -188,7 +229,10 @@ def run_classification(
                 model_name=model_tag,
                 calculate_features=calculate_features,
                 data_name=file_name,
-                plot_path=str(out_dir)
+                plot_path=str(out_dir),
+                split=split,
+                seed=seed,
+                n_jobs=1 if model_tag in _SERIAL_GRID_MODELS else n_jobs,
             )
 
 
@@ -198,11 +242,11 @@ def run_regression(
         models: Iterable[tuple[str, Any]] = None,  # e.g. regressor_list
         grids: Iterable[dict] = None,  # e.g. param_grids
         calculate_features: bool = True,
+        seed: int = 42,
+        organism: str | None = None,
+        n_jobs: int = -1,
 ):
-    """
-    Iterate over all CSVs in data_dir and train each regression model/grid combo.
-    Creates output folders like: {output_root}/{file_slug}/{model_tag}/
-    """
+    """Train all regression models on each dataset in data_dir."""
 
     # Prevent silent truncation if lengths differ
     models = list(models)
@@ -213,13 +257,16 @@ def run_regression(
     results = []
 
     data_dir = Path(data_dir)
+    split = "cluster" if "cluster" in data_dir.name else "random"
     gram_mode = datasets.task_for_dir(data_dir) == "gram"
     csv_files = datasets.split_basepaths_in(data_dir)
+    if organism:
+        csv_files = [p for p in csv_files if organism.lower() in p.stem.lower()]
+        if not csv_files:
+            raise ValueError(f"no base file in {data_dir} matches organism {organism!r}")
 
     for csv_path in csv_files:
-        # Safer way to derive a short slug from filename, OS-independent
-        parts = csv_path.stem.split("_")
-        file_name = "_".join(parts[:2])  # if len(parts) >= 2 else csv_path.stem
+        file_name = datasets.organism_slug(csv_path.stem)
         logger.info(f"Running {file_name}")
 
         logger.info(f"Running all models on {data_dir} and saving plots to {output_root}")
@@ -236,7 +283,10 @@ def run_regression(
                 calculate_features=calculate_features,
                 plot_path=str(out_dir),
                 file_name=file_name,
-                gram_mode=gram_mode
+                gram_mode=gram_mode,
+                split=split,
+                seed=seed,
+                n_jobs=1 if model_tag in _SERIAL_GRID_MODELS else n_jobs,
             )
             results.append({
                 "name": file_name,
@@ -264,7 +314,7 @@ if __name__ == "__main__":
     classifier_grids = [
         config.dummy_param_grid,
         config.logreg_param_grid,
-        config.xtra_gram_param_grid,
+        config.xtra_cls_param_grid,
         config.xgb_cls_param_grid,
         config.svc_cls_param_grid,
     ]
@@ -283,7 +333,7 @@ if __name__ == "__main__":
     regressor_grids = [
         config.dummy_param_grid,
         config.ridge_param_grid,
-        config.xtra_gram,
+        config.xtra_param_grid,
         config.xgb_param_grid,
         config.svr_param_grid
     ]
