@@ -64,6 +64,10 @@ def load_model(path):
     return model
 
 
+write_run_artifacts = eval_utils.write_run_artifacts
+collect_run_metrics = eval_utils.collect_run_metrics
+
+
 
 print_regression_metrics = eval_utils.print_regression_metrics
 
@@ -79,26 +83,12 @@ def get_model_stats(model, plot_dir: str, feature_data, target_data, logger: log
 
 
 def _remap_grid_to_model(param_grid):
-    """
-    Normalise param-grid keys to the estimator step of the pipeline.
-
-    Grids in config.py mix bare keys (tree models) and estimator-prefixed keys
-    (``svr__C``, ``svc__C``). Since the estimator now always lives under the
-    ``model`` step of the full featurising pipeline, every key is rewritten to
-    ``model__<param>`` so the grids themselves stay untouched.
-    """
+    """Rewrite param-grid keys to target the ``model`` step of the pipeline."""
     return {f"model__{k.split('__')[-1]}": v for k, v in param_grid.items()}
 
 
-def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_train, task):
-    """
-    Setup for the Gridsearch in machine learning logic.
-
-    ``pipeline`` is the full featurising pipeline (k-mer TF-IDF -> SVD, optional
-    descriptors and scaler, then the estimator under the ``model`` step). Because
-    the featuriser is part of the pipeline, GridSearchCV refits it inside every
-    CV fold, so no preprocessing is fit on a fold's held-out data.
-    """
+def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_train, task, seed=42, n_jobs=-1):
+    """Run GridSearchCV and return (best_estimator, grid_search, pipeline)."""
     if task == 'hemo':
         scoring = {
             'roc_auc': 'roc_auc',
@@ -106,7 +96,7 @@ def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_tr
             'f1': 'f1'
         }
         refit = 'roc_auc'
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     elif task == 'mic':
         scoring = {
             'r2': 'r2',
@@ -120,7 +110,7 @@ def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_tr
 
     grid = _remap_grid_to_model(param_grid)
     grid_search = GridSearchCV(estimator=pipeline, param_grid=grid, return_train_score=True, refit=refit,
-                               n_jobs=-1, verbose=3, cv=cv, scoring=scoring).fit(x_train, y_train)
+                               n_jobs=n_jobs, verbose=3, cv=cv, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
     save_model(model=best_estimator, path=f"{model_dir}{model_name}.keras")
     return best_estimator, grid_search, pipeline
@@ -217,10 +207,6 @@ def prepare_df(file_path, task):
     else:
         raise ValueError("Invalid task. Please choose 'mic' or 'hemo'.")
 
-    # Fold the validation split into the development pool, so hyperparameters are
-    # chosen by 5-fold CV over train+val. This matches the data budget BERT uses
-    # (train for fitting, val for early stopping). The test split stays untouched
-    # and is only used for the final reported metrics.
     if val_df is not None:
         train_df = pd.concat([train_df, val_df], ignore_index=True)
 
@@ -295,15 +281,7 @@ def evaluate_hemo_model(best_estimator, model_name, plot_path, x_data, y_true, t
 
 
 class SafeTruncatedSVD(TruncatedSVD):
-    """
-    TruncatedSVD that clamps ``n_components`` to the available feature count.
-
-    Inside a CV fold the k-mer vocabulary can occasionally be smaller than the
-    requested number of components (small or low-diversity folds). TruncatedSVD
-    requires ``n_components < n_features``, so we clamp at fit time. GridSearchCV
-    clones the estimator before each fit, so the original 128 is always restored
-    for the next fold.
-    """
+    """TruncatedSVD that clamps n_components to min(n_components, n_features - 1)."""
     def fit(self, X, y=None):
         n_features = X.shape[1]
         if self.n_components >= n_features:
@@ -318,15 +296,7 @@ class SafeTruncatedSVD(TruncatedSVD):
 
 
 def build_xy(train_df, test_df, target_col, calculate_features):
-    """
-    Build the *raw* model inputs (a DataFrame with a ``sequence`` column and,
-    optionally, deterministic per-sequence descriptors) plus the target arrays.
-
-    No fitted transformation happens here: descriptors are a pure function of the
-    sequence, so computing them outside the CV loop does not leak. Everything that
-    is *fit* (TF-IDF, SVD, imputer, scaler) lives in the pipeline from
-    ``build_feature_pipeline`` and is therefore refit per CV fold.
-    """
+    """Build raw model inputs (sequence column + optional descriptors) and target arrays."""
     y_train = train_df[target_col].astype(float).to_numpy()
     y_test = test_df[target_col].astype(float).to_numpy()
 
@@ -345,14 +315,7 @@ def build_xy(train_df, test_df, target_col, calculate_features):
 
 
 def build_feature_pipeline(estimator, model_name, calculate_features, desc_cols, n_components=128):
-    """
-    Full featurising pipeline ending in the estimator under the ``model`` step.
-
-    Sequence branch: char k-mer TF-IDF (3-4mers) -> SVD. Descriptor branch (only
-    when ``calculate_features``): median imputation. SVR/SVC additionally get a
-    StandardScaler on the combined feature matrix. Because the whole thing is one
-    pipeline, GridSearchCV refits every fitted step inside each CV fold.
-    """
+    """Build the featurisation + estimator pipeline for GridSearchCV."""
     seq_branch = Pipeline([
         ('tfidf', TfidfVectorizer(analyzer='char',
                                   ngram_range=(3, 4),  # 3- and 4-mers

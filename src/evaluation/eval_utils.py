@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ from sklearn.metrics import (
     r2_score, mean_absolute_error, explained_variance_score, mean_squared_error,
     roc_auc_score, average_precision_score, roc_curve, precision_recall_curve,
     classification_report, ConfusionMatrixDisplay, matthews_corrcoef,
+    f1_score, accuracy_score,
 )
 
 # Ordered most-specific first to avoid prefix collisions (e.g. staphylococcus_aureus before staphylococcus_epi)
@@ -209,3 +211,69 @@ def evaluate_hemo(y_true, y_score, y_pred, plot_path, tag, file_name, model_name
         plt.savefig(f'{plot_path}/{tag}_{i}_confusion_matrix{name_infix}.png')
         plt.close()
         plt.clf()
+
+
+# --------------------------------------------------------------- run artifacts
+# Shared by the BERT and classical-ML pipelines so both emit the same
+# self-describing test artifacts, decoupling compute from later analysis.
+
+def _regression_metrics(y_true, y_pred):
+    return {
+        "r2": float(r2_score(y_true, y_pred)),
+        "mse": float(mean_squared_error(y_true, y_pred)),
+        "mae": float(mean_absolute_error(y_true, y_pred)),
+        "n": int(len(y_true)),
+    }
+
+
+def _classification_metrics(y_true, y_pred, y_score):
+    return {
+        "acc": float(accuracy_score(y_true, y_pred)),
+        "f1_macro": float(f1_score(y_true, y_pred, average="macro")),
+        "mcc": float(matthews_corrcoef(y_true, y_pred)),
+        "auroc": float(roc_auc_score(y_true, y_score)),
+        "ap": float(average_precision_score(y_true, y_score)),
+        "n": int(len(y_true)),
+        "n_pos": int(np.sum(y_true)),
+    }
+
+
+def write_run_artifacts(out_dir, *, data_name, model_name, task, split, seed,
+                        features, y_true, y_pred, y_score=None, sequences=None):
+    """Persist one run's test predictions and a self-describing metrics.json."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    y_true = np.asarray(y_true).reshape(-1)
+    y_pred = np.asarray(y_pred).reshape(-1)
+    cols = {}
+    if sequences is not None:
+        cols["sequence"] = np.asarray(sequences).reshape(-1)
+    cols["y_true"] = y_true
+    cols["y_pred"] = y_pred
+    if y_score is not None:
+        cols["y_score"] = np.asarray(y_score).reshape(-1)
+    pd.DataFrame(cols).to_csv(out / "predictions.csv", index=False)
+
+    record = {
+        "data_name": data_name,
+        "model": model_name,
+        "task": task,
+        "split": split,
+        "seed": seed,
+        "features": bool(features),
+    }
+    if task == "mic":
+        record.update(_regression_metrics(y_true, y_pred))
+    else:
+        record.update(_classification_metrics(y_true, y_pred, cols.get("y_score")))
+
+    with open(out / "metrics.json", "w", encoding="utf8") as f:
+        json.dump(record, f, indent=2)
+    return record
+
+
+def collect_run_metrics(root):
+    """Merge every metrics.json under ``root`` into one long-format DataFrame."""
+    rows = [json.loads(p.read_text(encoding="utf8")) for p in Path(root).rglob("metrics.json")]
+    return pd.DataFrame(rows)
