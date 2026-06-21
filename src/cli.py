@@ -2,7 +2,6 @@ import argparse
 import os
 from pathlib import Path
 
-from src.bert_model.fine_tune_protBERT import fine_tune
 from src.data_preprocessing.data_splitter import data_splitter
 
 _SRC_DIR = Path(__file__).resolve().parent
@@ -31,6 +30,7 @@ def main():
     args, parser = parse_inputs()
 
     if args.command == 'bert_model':
+        from src.bert_model.fine_tune_protBERT import fine_tune
         # Check if bert_model flags are proper set
         if args.config_path and args.pipe_configs:
             parser.error("Please provide either --config_path or --pipe_configs, not both.")
@@ -49,22 +49,26 @@ def main():
         if args.config_path:
             if '/' not in args.config_path:
                 args.config_path = _resolve_config_shortname(args.config_path)
-            # Main function Wrapper for the Training Pipeline. Any additional settings are done via the config.yaml inside peptideBERT_configs directory
             fine_tune(
                 config_path=args.config_path
             )
 
     elif args.command == 'data_init':
-        data_splitter(task=args.task, data_dir=args.data_dir if args.data_dir else None)
+        data_splitter(task=args.task,
+                      data_dir=args.data_dir if args.data_dir else None,
+                      out_dir=args.out_dir if args.out_dir else None,
+                      random_state=args.seed)
 
     elif args.command == 'cluster_init':
         from src.data_preprocessing.cluster_data_splitter import cluster_data_splitter
         cluster_data_splitter(
             task=args.task,
             data_dir=args.data_dir if args.data_dir else None,
+            out_dir=args.out_dir if args.out_dir else None,
             min_seq_id=args.min_seq_id,
             coverage=args.coverage,
             kmer=args.kmer,
+            random_state=args.seed,
         )
 
     elif args.command == 'ml_classify':
@@ -75,8 +79,6 @@ def main():
         from sklearn.linear_model import LogisticRegression
         from sklearn.svm import SVC
         from xgboost import XGBClassifier
-        # Baseline-Set: ein Vertreter je Modellfamilie, ohne Redundanz.
-        # dummy (Boden), logreg (linear), xtra (Bagging), xgb (Boosting), svc (Kernel).
         model_list = [
             ('dummy', DummyClassifier(strategy='prior')),
             ('logreg', LogisticRegression(max_iter=1000)),
@@ -87,7 +89,7 @@ def main():
         param_grids = [
             config.dummy_param_grid,
             config.logreg_param_grid,
-            config.xtra_gram_param_grid,
+            config.xtra_cls_param_grid,
             config.xgb_cls_param_grid,
             config.svc_cls_param_grid,
         ]
@@ -97,6 +99,8 @@ def main():
             models=model_list,
             grids=param_grids,
             calculate_features=args.features,
+            seed=args.seed,
+            organism=args.organism,
         )
 
     elif args.command == 'ml_regress':
@@ -107,8 +111,6 @@ def main():
         from sklearn.linear_model import Ridge
         from sklearn.svm import SVR
         from xgboost import XGBRegressor
-        # Baseline-Set: ein Vertreter je Modellfamilie, ohne Redundanz.
-        # dummy (Boden), ridge (linear), xtra (Bagging), xgb (Boosting), svr (Kernel).
         model_list = [
             ('dummy', DummyRegressor(strategy='mean')),
             ('ridge', Ridge()),
@@ -119,7 +121,7 @@ def main():
         param_grids = [
             config.dummy_param_grid,
             config.ridge_param_grid,
-            config.xtra_gram,
+            config.xtra_param_grid,
             config.xgb_param_grid,
             config.svr_param_grid,
         ]
@@ -129,10 +131,11 @@ def main():
             models=model_list,
             grids=param_grids,
             calculate_features=args.features,
+            seed=args.seed,
+            organism=args.organism,
         )
 
     elif args.command == 'generate_bert_model_config':
-        # Call your config generation function here
         from src.bert_model.fine_tune_utils import generate_custom_yaml_file
         generate_custom_yaml_file(config_name=args.config_name,
                                   file_path=args.file_path,
@@ -152,23 +155,31 @@ def parse_inputs():
     data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
     data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["cls", "regression", "gram"]')
     data_preprocess_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory (uses repo default if omitted)')
+    data_preprocess_parser.add_argument('--out_dir', type=str, default=None, help='Write splits here instead of next to the base files')
+    data_preprocess_parser.add_argument('--seed', type=int, default=42, help='Random seed for the split (default 42)')
     # Subparser for similarity-aware (MMseqs2 cluster) splitting
-    cluster_init_parser = subparsers.add_parser('cluster_init', help='Create similarity-aware (MMseqs2 cluster) train/val/test splits into a parallel <dir>_cluster folder')
+    cluster_init_parser = subparsers.add_parser('cluster_init', help='Create similarity-aware (MMseqs2 cluster) train/val/test splits')
     cluster_init_parser.add_argument('--task', type=str, required=True, help='task of the train data ["cls", "regression", "gram"]')
-    cluster_init_parser.add_argument('--data_dir', type=str, default=None, help='Input data directory (repo default if omitted); output goes to <dir>_cluster')
+    cluster_init_parser.add_argument('--data_dir', type=str, default=None, help='Input data directory (repo default if omitted)')
+    cluster_init_parser.add_argument('--out_dir', type=str, default=None, help='Write cluster splits here instead of <dir>_cluster')
     cluster_init_parser.add_argument('--min_seq_id', type=float, default=0.5, help='MMseqs2 minimum sequence identity for clustering (default 0.5)')
     cluster_init_parser.add_argument('--coverage', type=float, default=0.8, help='MMseqs2 coverage threshold -c (default 0.8)')
-    cluster_init_parser.add_argument('--kmer', type=int, default=5, help='MMseqs2 k-mer size -k; 5 is the smallest value supported for amino acid sequences (default 5)')
+    cluster_init_parser.add_argument('--kmer', type=int, default=5, help='MMseqs2 k-mer size -k (default 5)')
+    cluster_init_parser.add_argument('--seed', type=int, default=42, help='Random seed for the cluster-to-split assignment (default 42)')
     # Subparser for ml_classify
     ml_classify_parser = subparsers.add_parser('ml_classify', help='Train classical ML classification models')
     ml_classify_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory')
     ml_classify_parser.add_argument('--output_dir', type=str, default=None, help='Path to output directory')
     ml_classify_parser.add_argument('--features', action='store_true', help='Enable biochemical feature engineering')
+    ml_classify_parser.add_argument('--seed', type=int, default=42, help='Seed for CV folds (default 42)')
+    ml_classify_parser.add_argument('--organism', type=str, default=None, help='Run only base files matching this substring')
     # Subparser for ml_regress
     ml_regress_parser = subparsers.add_parser('ml_regress', help='Train classical ML regression models')
     ml_regress_parser.add_argument('--data_dir', type=str, default=None, help='Path to data directory')
     ml_regress_parser.add_argument('--output_dir', type=str, default=None, help='Path to output directory')
     ml_regress_parser.add_argument('--features', action='store_true', help='Enable biochemical feature engineering')
+    ml_regress_parser.add_argument('--seed', type=int, default=42, help='Seed for CV folds (default 42)')
+    ml_regress_parser.add_argument('--organism', type=str, default=None, help='Run only base files matching this substring')
 
     # Subparser for autogernerating a config file
     generate_config_parser = subparsers.add_parser('generate_bert_model_config',
