@@ -80,13 +80,9 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
     else:
         cls_strat = tmp_df[['sequence', target_col]]
 
-    # ORDER-DEPENDENT: mask is built from strat_df (groupby-sorted) and applied to
-    # cls_strat (from tmp_df). Index alignment is correct only because all base
-    # regression/gram files are sorted by sequence — same order as the groupby output.
-    # If a base file is ever shuffled, use cls_strat['sequence'].isin(...) instead.
-    train_df = cls_strat[strat_df['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
-    val_df   = cls_strat[strat_df['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
-    test_df  = cls_strat[strat_df['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
+    train_df = cls_strat[cls_strat['sequence'].isin(seq_train['sequence'])].rename(columns={"strat": target_col})
+    val_df   = cls_strat[cls_strat['sequence'].isin(seq_val['sequence'])].rename(columns={"strat": target_col})
+    test_df  = cls_strat[cls_strat['sequence'].isin(seq_test['sequence'])].rename(columns={"strat": target_col})
 
 
 
@@ -94,9 +90,16 @@ def split_with_val(tmp_df: pd.DataFrame, *, task: str, target_col: str,
 
 def data_splitter(task: str,
                   data_dir: Path | str | None = None,
+                  out_dir: Path | str | None = None,
                   test_size=0.20, val_size=0.16, random_state=42):
 
     target_col = datasets.target_col(task)
+
+    # Splits land next to the base file by default. Pass out_dir to write into a
+    # parallel directory instead, so seeded re-splits do not overwrite each other.
+    out = Path(out_dir) if out_dir else None
+    if out is not None:
+        out.mkdir(parents=True, exist_ok=True)
 
     # Base files only (the registry's globs never match generated _train/_val/_test).
     for train_file in datasets.base_files(task, data_dir):
@@ -112,7 +115,7 @@ def data_splitter(task: str,
             test_size=test_size, val_size=val_size, random_state=random_state
         )
 
-        out_base = train_file.with_suffix("")  # strip .csv suffix
+        out_base = (out / train_file.stem) if out is not None else train_file.with_suffix("")
         train_df.to_csv(out_base.with_name(out_base.name + "_train.csv"), sep=';', index=False)
         val_df.to_csv(out_base.with_name(out_base.name + "_val.csv"), sep=';', index=False)
         test_df.to_csv(out_base.with_name(out_base.name + "_test.csv"), sep=';', index=False)
