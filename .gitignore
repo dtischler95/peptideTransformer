@@ -50,6 +50,7 @@ output/
 models/
 */mlm_bert/*
 */binary_bert/*
+results/
 
 # Project-specific
 src/bert_model/try_out_zone.py
