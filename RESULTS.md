@@ -3,8 +3,8 @@
 
 # Results
 
-Status 2026-06-21. The classical ML baseline (sequence only) is complete and reported below. ProtBERT
-and ESM sweeps are running and will be added as model columns.
+Status 2026-06-22. The classical ML baseline (sequence only) is complete. The ProtBERT sweep is partially
+in: the `bert` column covers 7 of the 12 MIC organisms so far, the rest is pending. ESM is still queued.
 
 All numbers are test-set metrics, mean ± SD over five seeds (1, 2, 3, 4, 42). The `dummy` column is a
 mean / majority-class baseline (floor); `ridge` / `logreg` is a linear reference. `svr`/`svc`, `xgb` and
@@ -58,81 +58,141 @@ five seeds (1, 2, 3, 4, 42) and the tables report mean ± SD across them. Per-mo
 each run's `metrics.json`. No cross-organism averages are reported: the organisms are clinically selected,
 independent datasets, so each one stands on its own.
 
-## MIC regression — classical ML baseline (sequence only)
+## MIC regression (sequence only)
 
 Per organism, mean ± SD over five seeds. `dummy` predicts the train mean.
+
+The `bert` column is the fine-tuned ProtBERT sweep, mean ± SD over the same five seeds. It currently
+covers 7 of the 12 organisms. A `—` in the `bert` column means that organism's BERT run is still pending.
 
 ### Test R² (higher is better)
 
 **Random split**
 
-| Organism | n test | dummy | ridge | svr | xgb | xtra |
-|---|---|---|---|---|---|---|
-| *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.24 ±0.01 | 0.32 ±0.01 | 0.37 ±0.02 | 0.37 ±0.02 |
-| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.14 ±0.01 | 0.22 ±0.02 | 0.28 ±0.01 | 0.28 ±0.01 |
-| *Pseudomonas aeruginosa* | 1298 | -0.00 ±0.00 | 0.24 ±0.03 | 0.36 ±0.02 | 0.41 ±0.02 | 0.41 ±0.03 |
-| *Candida albicans* | 696 | -0.00 ±0.00 | 0.18 ±0.03 | 0.24 ±0.03 | 0.32 ±0.04 | 0.33 ±0.03 |
-| *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.29 ±0.02 | 0.34 ±0.02 | 0.38 ±0.03 | 0.39 ±0.03 |
-| *Klebsiella pneumoniae* | 462 | -0.00 ±0.00 | 0.29 ±0.02 | 0.37 ±0.03 | 0.40 ±0.04 | 0.42 ±0.03 |
-| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.23 ±0.03 | 0.26 ±0.04 | 0.31 ±0.03 | 0.31 ±0.02 |
-| *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.20 ±0.08 | 0.26 ±0.10 | 0.29 ±0.08 | 0.30 ±0.07 |
-| *Acinetobacter baumannii* | 342 | -0.00 ±0.00 | 0.30 ±0.03 | 0.40 ±0.04 | 0.44 ±0.06 | 0.45 ±0.04 |
-| *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.28 ±0.05 | 0.33 ±0.05 | 0.35 ±0.06 | 0.37 ±0.06 |
-| *Micrococcus luteus* | 223 | -0.00 ±0.00 | 0.23 ±0.05 | 0.26 ±0.07 | 0.26 ±0.07 | 0.28 ±0.05 |
-| *Enterobacter sp.* | 102 | -0.00 ±0.00 | 0.31 ±0.07 | 0.34 ±0.10 | 0.30 ±0.09 | 0.34 ±0.06 |
+| Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
+|---|---|---|---|---|---|---|---|
+| *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.24 ±0.01 | 0.32 ±0.01 | 0.37 ±0.02 | 0.37 ±0.02 | 0.38 ±0.03 |
+| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.14 ±0.01 | 0.22 ±0.02 | 0.28 ±0.01 | 0.28 ±0.01 | — |
+| *Pseudomonas aeruginosa* | 1298 | -0.00 ±0.00 | 0.24 ±0.03 | 0.36 ±0.02 | 0.41 ±0.02 | 0.41 ±0.03 | — |
+| *Candida albicans* | 696 | -0.00 ±0.00 | 0.18 ±0.03 | 0.24 ±0.03 | 0.32 ±0.04 | 0.33 ±0.03 | 0.20 ±0.07 |
+| *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.29 ±0.02 | 0.34 ±0.02 | 0.38 ±0.03 | 0.39 ±0.03 | 0.36 ±0.05 |
+| *Klebsiella pneumoniae* | 462 | -0.00 ±0.00 | 0.29 ±0.02 | 0.37 ±0.03 | 0.40 ±0.04 | 0.42 ±0.03 | 0.33 ±0.06 |
+| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.23 ±0.03 | 0.26 ±0.04 | 0.31 ±0.03 | 0.31 ±0.02 | — |
+| *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.20 ±0.08 | 0.26 ±0.10 | 0.29 ±0.08 | 0.30 ±0.07 | 0.18 ±0.08 |
+| *Acinetobacter baumannii* | 342 | -0.00 ±0.00 | 0.30 ±0.03 | 0.40 ±0.04 | 0.44 ±0.06 | 0.45 ±0.04 | 0.43 ±0.06 |
+| *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.28 ±0.05 | 0.33 ±0.05 | 0.35 ±0.06 | 0.37 ±0.06 | — |
+| *Micrococcus luteus* | 223 | -0.00 ±0.00 | 0.23 ±0.05 | 0.26 ±0.07 | 0.26 ±0.07 | 0.28 ±0.05 | — |
+| *Enterobacter sp.* | 102 | -0.00 ±0.00 | 0.31 ±0.07 | 0.34 ±0.10 | 0.30 ±0.09 | 0.34 ±0.06 | 0.13 ±0.05 |
 
 **Cluster split** (MMseqs2, min-seq-id 0.5)
 
-| Organism | n test | dummy | ridge | svr | xgb | xtra |
-|---|---|---|---|---|---|---|
-| *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.16 ±0.01 | 0.20 ±0.02 | 0.23 ±0.02 | 0.19 ±0.02 |
-| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.08 ±0.02 | 0.11 ±0.03 | 0.14 ±0.02 | 0.14 ±0.02 |
-| *Pseudomonas aeruginosa* | 1299 | -0.00 ±0.00 | 0.17 ±0.02 | 0.21 ±0.01 | 0.24 ±0.01 | 0.24 ±0.01 |
-| *Candida albicans* | 697 | -0.00 ±0.00 | 0.06 ±0.02 | 0.10 ±0.01 | 0.16 ±0.04 | 0.18 ±0.03 |
-| *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.24 ±0.05 | 0.32 ±0.02 | 0.34 ±0.01 | 0.33 ±0.01 |
-| *Klebsiella pneumoniae* | 463 | -0.00 ±0.00 | 0.30 ±0.01 | 0.25 ±0.03 | 0.31 ±0.05 | 0.31 ±0.01 |
-| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.08 ±0.04 | 0.08 ±0.04 | 0.10 ±0.03 | 0.14 ±0.02 |
-| *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.14 ±0.04 | 0.14 ±0.04 | 0.17 ±0.05 | 0.20 ±0.04 |
-| *Acinetobacter baumannii* | 343 | -0.00 ±0.00 | 0.30 ±0.02 | 0.13 ±0.06 | 0.30 ±0.07 | 0.26 ±0.05 |
-| *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.09 ±0.04 | 0.05 ±0.04 | 0.09 ±0.06 | 0.09 ±0.03 |
-| *Micrococcus luteus* | 223 | -0.00 ±0.00 | 0.09 ±0.08 | 0.09 ±0.08 | 0.09 ±0.06 | 0.12 ±0.06 |
-| *Enterobacter sp.* | 102 | -0.00 ±0.00 | 0.05 ±0.04 | 0.04 ±0.04 | 0.03 ±0.05 | 0.06 ±0.04 |
+| Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
+|---|---|---|---|---|---|---|---|
+| *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.16 ±0.01 | 0.20 ±0.02 | 0.23 ±0.02 | 0.19 ±0.02 | 0.28 ±0.03 |
+| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.08 ±0.02 | 0.11 ±0.03 | 0.14 ±0.02 | 0.14 ±0.02 | — |
+| *Pseudomonas aeruginosa* | 1299 | -0.00 ±0.00 | 0.17 ±0.02 | 0.21 ±0.01 | 0.24 ±0.01 | 0.24 ±0.01 | — |
+| *Candida albicans* | 697 | -0.00 ±0.00 | 0.06 ±0.02 | 0.10 ±0.01 | 0.16 ±0.04 | 0.18 ±0.03 | 0.08 ±0.05 |
+| *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.24 ±0.05 | 0.32 ±0.02 | 0.34 ±0.01 | 0.33 ±0.01 | 0.31 ±0.06 |
+| *Klebsiella pneumoniae* | 463 | -0.00 ±0.00 | 0.30 ±0.01 | 0.25 ±0.03 | 0.31 ±0.05 | 0.31 ±0.01 | 0.20 ±0.10 |
+| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.08 ±0.04 | 0.08 ±0.04 | 0.10 ±0.03 | 0.14 ±0.02 | — |
+| *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.14 ±0.04 | 0.14 ±0.04 | 0.17 ±0.05 | 0.20 ±0.04 | 0.16 ±0.06 |
+| *Acinetobacter baumannii* | 343 | -0.00 ±0.00 | 0.30 ±0.02 | 0.13 ±0.06 | 0.30 ±0.07 | 0.26 ±0.05 | 0.34 ±0.06 |
+| *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.09 ±0.04 | 0.05 ±0.04 | 0.09 ±0.06 | 0.09 ±0.03 | — |
+| *Micrococcus luteus* | 223 | -0.00 ±0.00 | 0.09 ±0.08 | 0.09 ±0.08 | 0.09 ±0.06 | 0.12 ±0.06 | — |
+| *Enterobacter sp.* | 102 | -0.00 ±0.00 | 0.05 ±0.04 | 0.04 ±0.04 | 0.03 ±0.05 | 0.06 ±0.04 | -0.11 ±0.10 |
 
 ### Test MSE (lower is better)
 
 **Random split**
 
-| Organism | n test | dummy | ridge | svr | xgb | xtra |
-|---|---|---|---|---|---|---|
-| *Escherichia coli* | 1906 | 0.53 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.33 ±0.01 | 0.33 ±0.01 |
-| *Staphylococcus aureus* | 1823 | 0.46 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.34 ±0.01 | 0.33 ±0.01 |
-| *Pseudomonas aeruginosa* | 1298 | 0.50 ±0.02 | 0.38 ±0.01 | 0.32 ±0.01 | 0.30 ±0.01 | 0.30 ±0.01 |
-| *Candida albicans* | 696 | 0.48 ±0.02 | 0.39 ±0.01 | 0.36 ±0.02 | 0.32 ±0.02 | 0.32 ±0.01 |
-| *Bacillus subtilis* | 598 | 0.59 ±0.01 | 0.41 ±0.02 | 0.39 ±0.02 | 0.36 ±0.02 | 0.36 ±0.02 |
-| *Klebsiella pneumoniae* | 462 | 0.46 ±0.02 | 0.33 ±0.01 | 0.29 ±0.02 | 0.28 ±0.02 | 0.27 ±0.02 |
-| *Staphylococcus epidermidis* | 462 | 0.48 ±0.01 | 0.37 ±0.02 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 |
-| *Enterococcus faecalis* | 351 | 0.56 ±0.04 | 0.45 ±0.07 | 0.42 ±0.07 | 0.40 ±0.06 | 0.39 ±0.06 |
-| *Acinetobacter baumannii* | 342 | 0.57 ±0.02 | 0.40 ±0.01 | 0.34 ±0.02 | 0.32 ±0.04 | 0.31 ±0.03 |
-| *Salmonella enterica* | 330 | 0.55 ±0.03 | 0.40 ±0.03 | 0.37 ±0.04 | 0.36 ±0.04 | 0.35 ±0.04 |
-| *Micrococcus luteus* | 223 | 0.64 ±0.01 | 0.50 ±0.04 | 0.48 ±0.05 | 0.47 ±0.05 | 0.47 ±0.03 |
-| *Enterobacter sp.* | 102 | 0.44 ±0.02 | 0.30 ±0.03 | 0.29 ±0.04 | 0.30 ±0.04 | 0.29 ±0.03 |
+| Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
+|---|---|---|---|---|---|---|---|
+| *Escherichia coli* | 1906 | 0.53 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.33 ±0.01 | 0.33 ±0.01 | 0.33 ±0.01 |
+| *Staphylococcus aureus* | 1823 | 0.46 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.34 ±0.01 | 0.33 ±0.01 | — |
+| *Pseudomonas aeruginosa* | 1298 | 0.50 ±0.02 | 0.38 ±0.01 | 0.32 ±0.01 | 0.30 ±0.01 | 0.30 ±0.01 | — |
+| *Candida albicans* | 696 | 0.48 ±0.02 | 0.39 ±0.01 | 0.36 ±0.02 | 0.32 ±0.02 | 0.32 ±0.01 | 0.38 ±0.03 |
+| *Bacillus subtilis* | 598 | 0.59 ±0.01 | 0.41 ±0.02 | 0.39 ±0.02 | 0.36 ±0.02 | 0.36 ±0.02 | 0.38 ±0.03 |
+| *Klebsiella pneumoniae* | 462 | 0.46 ±0.02 | 0.33 ±0.01 | 0.29 ±0.02 | 0.28 ±0.02 | 0.27 ±0.02 | 0.31 ±0.03 |
+| *Staphylococcus epidermidis* | 462 | 0.48 ±0.01 | 0.37 ±0.02 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 | — |
+| *Enterococcus faecalis* | 351 | 0.56 ±0.04 | 0.45 ±0.07 | 0.42 ±0.07 | 0.40 ±0.06 | 0.39 ±0.06 | 0.46 ±0.07 |
+| *Acinetobacter baumannii* | 342 | 0.57 ±0.02 | 0.40 ±0.01 | 0.34 ±0.02 | 0.32 ±0.04 | 0.31 ±0.03 | 0.32 ±0.03 |
+| *Salmonella enterica* | 330 | 0.55 ±0.03 | 0.40 ±0.03 | 0.37 ±0.04 | 0.36 ±0.04 | 0.35 ±0.04 | — |
+| *Micrococcus luteus* | 223 | 0.64 ±0.01 | 0.50 ±0.04 | 0.48 ±0.05 | 0.47 ±0.05 | 0.47 ±0.03 | — |
+| *Enterobacter sp.* | 102 | 0.44 ±0.02 | 0.30 ±0.03 | 0.29 ±0.04 | 0.30 ±0.04 | 0.29 ±0.03 | 0.38 ±0.02 |
 
 **Cluster split**
 
-| Organism | n test | dummy | ridge | svr | xgb | xtra |
+| Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
+|---|---|---|---|---|---|---|---|
+| *Escherichia coli* | 1906 | 0.55 ±0.01 | 0.46 ±0.01 | 0.44 ±0.01 | 0.42 ±0.01 | 0.44 ±0.02 | 0.39 ±0.01 |
+| *Staphylococcus aureus* | 1823 | 0.47 ±0.03 | 0.43 ±0.03 | 0.42 ±0.03 | 0.40 ±0.03 | 0.40 ±0.02 | — |
+| *Pseudomonas aeruginosa* | 1299 | 0.48 ±0.01 | 0.40 ±0.01 | 0.38 ±0.01 | 0.36 ±0.01 | 0.36 ±0.01 | — |
+| *Candida albicans* | 697 | 0.50 ±0.03 | 0.47 ±0.02 | 0.45 ±0.02 | 0.42 ±0.02 | 0.41 ±0.01 | 0.45 ±0.03 |
+| *Bacillus subtilis* | 598 | 0.66 ±0.01 | 0.50 ±0.04 | 0.45 ±0.02 | 0.44 ±0.01 | 0.44 ±0.01 | 0.46 ±0.04 |
+| *Klebsiella pneumoniae* | 463 | 0.48 ±0.01 | 0.34 ±0.01 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 | 0.39 ±0.05 |
+| *Staphylococcus epidermidis* | 462 | 0.50 ±0.01 | 0.46 ±0.02 | 0.46 ±0.03 | 0.45 ±0.01 | 0.43 ±0.01 | — |
+| *Enterococcus faecalis* | 351 | 0.47 ±0.01 | 0.40 ±0.02 | 0.40 ±0.02 | 0.39 ±0.02 | 0.38 ±0.02 | 0.39 ±0.02 |
+| *Acinetobacter baumannii* | 343 | 0.65 ±0.01 | 0.45 ±0.01 | 0.56 ±0.03 | 0.45 ±0.04 | 0.48 ±0.03 | 0.43 ±0.04 |
+| *Salmonella enterica* | 330 | 0.63 ±0.01 | 0.57 ±0.03 | 0.59 ±0.02 | 0.57 ±0.03 | 0.57 ±0.02 | — |
+| *Micrococcus luteus* | 223 | 0.66 ±0.01 | 0.60 ±0.06 | 0.60 ±0.05 | 0.60 ±0.04 | 0.58 ±0.04 | — |
+| *Enterobacter sp.* | 102 | 0.44 ±0.03 | 0.42 ±0.04 | 0.42 ±0.03 | 0.43 ±0.04 | 0.41 ±0.04 | 0.49 ±0.04 |
+
+## Statistical comparison — Wilcoxon signed-rank (MIC)
+
+Paired Wilcoxon signed-rank tests over the 12 MIC organisms. Each organism contributes one value per
+model, its mean test R² over the five seeds, and the 12 organisms are the paired units. Only the four
+classical models are compared here. BERT is left out until its sweep covers all 12 organisms, since the
+paired test needs the full set. Hemolysis has just two datasets, too few pairs for the test. Values come
+from the full-precision per-run metrics, not the rounded table cells above, so a few near-ties resolve
+differently.
+
+### Random vs cluster split
+
+Same model, the two splits paired per organism. A positive Δ means the random split scores higher, that
+is a drop under clustering.
+
+| Model | n | mean random | mean cluster | mean Δ | W | p |
 |---|---|---|---|---|---|---|
-| *Escherichia coli* | 1906 | 0.55 ±0.01 | 0.46 ±0.01 | 0.44 ±0.01 | 0.42 ±0.01 | 0.44 ±0.02 |
-| *Staphylococcus aureus* | 1823 | 0.47 ±0.03 | 0.43 ±0.03 | 0.42 ±0.03 | 0.40 ±0.03 | 0.40 ±0.02 |
-| *Pseudomonas aeruginosa* | 1299 | 0.48 ±0.01 | 0.40 ±0.01 | 0.38 ±0.01 | 0.36 ±0.01 | 0.36 ±0.01 |
-| *Candida albicans* | 697 | 0.50 ±0.03 | 0.47 ±0.02 | 0.45 ±0.02 | 0.42 ±0.02 | 0.41 ±0.01 |
-| *Bacillus subtilis* | 598 | 0.66 ±0.01 | 0.50 ±0.04 | 0.45 ±0.02 | 0.44 ±0.01 | 0.44 ±0.01 |
-| *Klebsiella pneumoniae* | 463 | 0.48 ±0.01 | 0.34 ±0.01 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 |
-| *Staphylococcus epidermidis* | 462 | 0.50 ±0.01 | 0.46 ±0.02 | 0.46 ±0.03 | 0.45 ±0.01 | 0.43 ±0.01 |
-| *Enterococcus faecalis* | 351 | 0.47 ±0.01 | 0.40 ±0.02 | 0.40 ±0.02 | 0.39 ±0.02 | 0.38 ±0.02 |
-| *Acinetobacter baumannii* | 343 | 0.65 ±0.01 | 0.45 ±0.01 | 0.56 ±0.03 | 0.45 ±0.04 | 0.48 ±0.03 |
-| *Salmonella enterica* | 330 | 0.63 ±0.01 | 0.57 ±0.03 | 0.59 ±0.02 | 0.57 ±0.03 | 0.57 ±0.02 |
-| *Micrococcus luteus* | 223 | 0.66 ±0.01 | 0.60 ±0.06 | 0.60 ±0.05 | 0.60 ±0.04 | 0.58 ±0.04 |
-| *Enterobacter sp.* | 102 | 0.44 ±0.03 | 0.42 ±0.04 | 0.42 ±0.03 | 0.43 ±0.04 | 0.41 ±0.04 |
+| ridge | 12 | 0.245 | 0.146 | +0.098 | 2 | 0.0015 |
+| svr | 12 | 0.307 | 0.143 | +0.165 | 0 | 0.0005 |
+| xgb | 12 | 0.343 | 0.184 | +0.160 | 0 | 0.0005 |
+| xtra | 12 | 0.354 | 0.189 | +0.165 | 0 | 0.0005 |
+
+Every model drops under the cluster split and every drop is significant (p ≤ 0.0015). The effect is large
+and uniform, a mean Δ of about 0.10 to 0.17 R².
+
+### Model vs model, same split
+
+All six pairwise comparisons of the four headline models. Δ = R²(first) − R²(second), so a negative Δ
+means the second model is the stronger one.
+
+**Random split**
+
+| Comparison | n | mean Δ | Δ>0 | Δ<0 | W | p |
+|---|---|---|---|---|---|---|
+| ridge vs svr | 12 | -0.063 | 0 | 12 | 0 | 0.0005 |
+| ridge vs xgb | 12 | -0.099 | 1 | 11 | 1 | 0.0010 |
+| ridge vs xtra | 12 | -0.110 | 0 | 12 | 0 | 0.0005 |
+| svr vs xgb | 12 | -0.036 | 1 | 11 | 4 | 0.0034 |
+| svr vs xtra | 12 | -0.047 | 1 | 11 | 1 | 0.0010 |
+| xgb vs xtra | 12 | -0.011 | 1 | 11 | 3 | 0.0024 |
+
+**Cluster split**
+
+| Comparison | n | mean Δ | Δ>0 | Δ<0 | W | p |
+|---|---|---|---|---|---|---|
+| ridge vs svr | 12 | +0.003 | 5 | 7 | 33 | 0.6772 |
+| ridge vs xgb | 12 | -0.038 | 3 | 9 | 8 | 0.0122 |
+| ridge vs xtra | 12 | -0.042 | 1 | 11 | 6 | 0.0068 |
+| svr vs xgb | 12 | -0.041 | 1 | 11 | 2 | 0.0015 |
+| svr vs xtra | 12 | -0.046 | 1 | 11 | 1 | 0.0010 |
+| xgb vs xtra | 12 | -0.005 | 5 | 7 | 33 | 0.6772 |
+
+On the random split all six pairs separate significantly, but the magnitudes are small and shrink as the
+models get stronger. Ridge against the trees spans about 0.10 to 0.11 R², the two tree models differ by
+only 0.011. Under the cluster split the tree-versus-tree and ridge-versus-svr pairs are no longer
+distinguishable (p ≈ 0.68). Read against the uniform 0.10 to 0.17 R² drop from clustering, the gaps among
+the strong models (svr, xgb, xtra) are the smaller lever.
 
 ## Hemolysis classification — classical ML baseline (sequence only)
 
@@ -188,9 +248,11 @@ WhiteLab, so this is one set of peptides under two labeling rules.
 
 ---
 
-## ProtBERT (pending)
+## ProtBERT (partial)
 
-Sweep running. Columns will be added to the tables above.
+The `bert` column in the MIC tables above holds the finished runs (7 of 12 organisms, random and cluster,
+five seeds each). Pending organisms: *Micrococcus luteus*, *Pseudomonas aeruginosa*, *Salmonella
+enterica*, *Staphylococcus aureus*, *Staphylococcus epidermidis*. Hemolysis BERT is not started yet.
 
 ## ESM (pending)
 
