@@ -64,3 +64,8 @@ peptideTransformer.egg-info/
 
 # Large files not needed for reproduction
 data/data_from_database/APD_Hs_all.fasta
+
+# Materialized train/val/test splits (regenerate via data_init / cluster_init)
+data/**/*_train.csv
+data/**/*_val.csv
+data/**/*_test.csv
