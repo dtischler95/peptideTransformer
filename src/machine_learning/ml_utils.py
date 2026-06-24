@@ -112,7 +112,7 @@ def grid_search_setup(pipeline, model_dir, model_name, param_grid, x_train, y_tr
     grid_search = GridSearchCV(estimator=pipeline, param_grid=grid, return_train_score=True, refit=refit,
                                n_jobs=n_jobs, verbose=3, cv=cv, scoring=scoring).fit(x_train, y_train)
     best_estimator = grid_search.best_estimator_
-    save_model(model=best_estimator, path=f"{model_dir}{model_name}.keras")
+    save_model(model=best_estimator, path=f"{model_dir}{model_name}.pkl")
     return best_estimator, grid_search, pipeline
 
 
@@ -148,11 +148,11 @@ def add_descriptors(df):
 def print_results_tabular(results: list[dict], logger: logging.Logger):
     for results in results:
         logger.info(
-            f"{results['name']}\t{results['model_tag']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_val']:.3f}\t"
-            f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_val']:.3f}")
+            f"{results['name']}\t{results['model_tag']}\tR2 Train: {results['r2_train']:.3f}\tR2 Test: {results['r2_test']:.3f}\t"
+            f"MSE Train: {results['mse_train']:.3f}\tMSE Test: {results['mse_test']:.3f}")
 
 
-def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_val, logger, file_name, model_name):
+def evaluate_mic_models(best_estimator, plot_path, x_train, x_test, y_train, y_test, logger, file_name, model_name):
     train_r2, train_mse = get_model_stats(model=best_estimator,
                                           plot_dir=plot_path,
                                           feature_data=x_train,
@@ -161,14 +161,14 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
                                           file_name=file_name,
                                           tag="Training",
                                           model_name=model_name)
-    val_r2, val_mse = get_model_stats(model=best_estimator,
-                                      plot_dir=plot_path,
-                                      feature_data=x_val,
-                                      target_data=y_val,
-                                      logger=logger,
-                                      file_name=file_name,
-                                      tag="Test",
-                                      model_name=model_name)
+    test_r2, test_mse = get_model_stats(model=best_estimator,
+                                        plot_dir=plot_path,
+                                        feature_data=x_test,
+                                        target_data=y_test,
+                                        logger=logger,
+                                        file_name=file_name,
+                                        tag="Test",
+                                        model_name=model_name)
 
     overall_stats(best_estimator=best_estimator,
                   x_test=x_train,
@@ -178,13 +178,13 @@ def evaluate_mic_models(best_estimator, plot_path, x_train, x_val, y_train, y_va
                   file_name=file_name,
                   model_name=model_name)
     overall_stats(best_estimator=best_estimator,
-                  x_test=x_val,
-                  y_test=y_val,
+                  x_test=x_test,
+                  y_test=y_test,
                   save_path=plot_path,
                   tag='Test',
                   file_name=file_name,
                   model_name=model_name)
-    return train_mse, train_r2, val_mse, val_r2
+    return train_mse, train_r2, test_mse, test_r2
 
 
 def prepare_df(file_path, task):

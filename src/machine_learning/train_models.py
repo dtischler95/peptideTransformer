@@ -160,15 +160,15 @@ def train_regressors(file_path: str,
             calculate_features=calculate_features,
         )
 
-    train_mse, train_r2, val_mse, val_r2 = ml_utils.evaluate_mic_models(best_estimator,
-                                                                        plot_path,
-                                                                        x_train,
-                                                                        x_test,
-                                                                        y_train,
-                                                                        y_test,
-                                                                        logger,
-                                                                        file_name,
-                                                                        model_name)
+    train_mse, train_r2, test_mse, test_r2 = ml_utils.evaluate_mic_models(best_estimator,
+                                                                          plot_path,
+                                                                          x_train,
+                                                                          x_test,
+                                                                          y_train,
+                                                                          y_test,
+                                                                          logger,
+                                                                          file_name,
+                                                                          model_name)
 
     y_pred_test = best_estimator.predict(x_test)
     ml_utils.write_run_artifacts(
@@ -184,7 +184,7 @@ def train_regressors(file_path: str,
         sequences=x_test["sequence"].to_numpy() if "sequence" in x_test.columns else None,
     )
 
-    return train_r2, train_mse, val_r2, val_mse
+    return train_r2, train_mse, test_r2, test_mse
 
 
 def run_classification(
@@ -275,7 +275,7 @@ def run_regression(
             out_dir = output_root / file_name / model_tag
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            train_r2, train_mse, val_r2, val_mse = train_regressors(
+            train_r2, train_mse, test_r2, test_mse = train_regressors(
                 file_path=str(csv_path),
                 regressor=estimator,
                 param_grid=grid,
@@ -292,9 +292,9 @@ def run_regression(
                 "name": file_name,
                 "model_tag": model_tag,
                 "r2_train": train_r2,
-                "r2_val": val_r2,
+                "r2_test": test_r2,
                 "mse_train": train_mse,
-                "mse_val": val_mse,
+                "mse_test": test_mse,
             })
 
     ml_utils.print_results_tabular(results, logger=logger)
