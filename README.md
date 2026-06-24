@@ -1,220 +1,136 @@
 # PeptideTransformer
 
-Fine-tuning [ProtBERT](https://huggingface.co/Rostlab/prot_bert_bfd) for two antimicrobial peptide tasks:
-- **Hemolysis classification** - binary prediction of hemolytic activity against human blood cells
-- **MIC regression** - prediction of the minimum inhibitory concentration (log₁₀ µM) per organism
-
-Created as part of my Master's thesis. Classical ML baselines (ExtraTrees, XGBoost, RF, SVC/SVR) are included for comparison.
+Model comparison for antimicrobial peptide property prediction, built around a data-quality
+question. Fine-tunes [ProtBERT](https://huggingface.co/Rostlab/prot_bert_bfd) and compares it
+against classical ML baselines.
 
 ---
 
-## What this project shows
+## Overview
 
-This isn't an attempt to top AMP-activity-prediction leaderboards - it's the codebase behind a Master's thesis on **data quality in AMP modeling**, asking whether prediction accuracy is limited more by the model or by the data.
+Codebase for a Master's thesis on data quality in antimicrobial peptide (AMP) modeling. The question
+is whether prediction accuracy is limited more by the model or by the data. Two tasks are covered:
 
-**The main finding:** across both tasks (MIC regression, hemolysis classification) and every model class — classical ML baselines and fine-tuned ProtBERT alike — performance is **capped by the measurement variability in the underlying experimental data, not by model architecture**. For the MIC data, repeated measurements of the same peptide differ by ~0.4 log₁₀ (a ~3-fold concentration range) — the same order of magnitude as the best achievable test error. Added physicochemical features helped only selectively, with no systematic gain.
+- **Hemolysis classification** - hemolytic vs non-hemolytic against human erythrocytes.
+- **MIC regression** - minimum inhibitory concentration (log₁₀ µM), one dataset per organism.
 
-So the models here are built to be **honest, not flashy**: de-duplicated sequences, sequence-level train/val/test splits (no peptide appears in more than one split), and train/test gaps reported as-is. A stricter, similarity-aware split (`cluster_init`, see Usage) is also included, since a random sequence-level split can still share near-duplicate peptides across train and test and flatter the test score, the cluster split keeps whole similarity clusters in one split and gives a more conservative read on generalization (see [RESULTS.md](RESULTS.md)). The numbers are what the data allows, which is exactly the point.
+Each is evaluated across model families (fine-tuned ProtBERT and classical ML baselines: Dummy,
+Ridge/LogReg, ExtraTrees, XGBoost, SVR/SVC), input representations (sequence only vs sequence plus
+biochemical descriptors), and two splits (random sequence-level vs a similarity-aware cluster split).
 
 ---
 
 ## Repository structure
 
 ```
-data/                   # Default input location for the commands below, not mandatory - custom paths via --data_dir possible
-  hemo_train/           # Hemolysis classification data (pre-split)
-  regression_data/      # MIC regression data per organism (pre-split)
-  gram/                 # Gram staining classification data
-  data_from_database/   # Raw data from public databases
-
-notebooks/              # Data-quality notebooks (see Results below) + shared nb_utils.py
-
+data/
+  regression_data/      # MIC base data, one CSV per organism
+  hemo_train/           # hemolysis base data (WhiteLab + Threshold labeling)
+  gram/                 # Gram-staining data (deferred exploratory analysis)
+  data_from_database/   # raw public-database sources for preprocessing
+notebooks/              # data-quality analysis + shared nb_utils.py
 src/
-  cli.py                # CLI logic (all subcommands)
-  __main__.py           # Entry point for `python -m src`
-  bert_model/
-    PeptideBERTClasses/ # Model, trainer, dataset, callbacks
-    peptideBERT_configs/# YAML configs - one per organism / run
-    fine_tune_protBERT.py
-    fine_tune_utils.py
-    transformer_metrics.py
-  data_preprocessing/   # Data preparation and train/val/test split (see note below)
-  data_analysis/        # Embedding clustering (PCA, t-SNE, UMAP) + data inspection plots
-  evaluation/           # Shared evaluation and plotting utilities
-  machine_learning/     # Classical ML training (train_models.py) and grid search
+  cli.py                # subcommand dispatch (python -m src)
+  bert_model/           # ProtBERT model, trainer, per-organism configs
+  machine_learning/     # classical ML training + grid search
+  data_preprocessing/   # split + dataset prep (random + MMseqs2 cluster)
+  data_analysis/        # embedding clustering, data inspection
+  evaluation/           # shared eval, paired test, variance metrics
 ```
 
----
-
-## Note on `data_preprocessing/`
-
-These scripts rely on internal raw data and are not directly runnable without it.
-They are included in the repository to make the preparation workflow traceable.
+Splits (`_train/_val/_test.csv`) are generated by `data_init` / `cluster_init`, not shipped.
+`data_preprocessing/` needs internal raw data for the MIC set and is included for traceability,
+not full reproducibility.
 
 ---
 
 ## Setup
 
-**Option A - conda (recommended):**
+Conda (recommended):
 ```bash
 conda env create -f environment.yml
 conda activate peptide-transformer
 ```
-> Adjust `pytorch-cuda` in `environment.yml` to match your driver version (11.8 / 12.1 / 12.4).
-> For CPU-only, simply remove that line.
+Adjust `pytorch-cuda` in `environment.yml` to your driver version, or drop it for CPU-only.
 
-**Option B - pip:**
+Or pip:
 ```bash
-# First install PyTorch (adjust the CUDA version):
 pip install torch==2.4.0 --extra-index-url https://download.pytorch.org/whl/cu121
-# Then the rest:
 pip install -r requirements.txt
 ```
-
-**Install as an editable package**
-```bash
-pip install -e .
-```
-> `-e` makes code changes (e.g. new configs) take effect immediately, without reinstalling.
-
-This makes the `peptide-transformer` command available system-wide, usable instead of `python -m src`, regardless of the current working directory:
-```bash
-peptide-transformer ml_classify --data_dir data/hemo_train/
-```
-
-Without installing as a package, all commands below (`python -m src ...`) assume execution from the **repo root**.
+Optionally `pip install -e .` to expose the `peptide-transformer` command instead of `python -m src`.
 
 ---
 
 ## Usage
 
-### Splitting data
+All commands run from the repo root as `python -m src <subcommand>`.
 
-Creates `_train.csv`, `_val.csv`, `_test.csv` next to each source file.
-Stratified by label (classification) or quantile bins (regression), and split at the
-**sequence level** - each unique peptide goes into exactly one split, so no sequence
-leaks across train/val/test.
-
-Must be run once before training so that fixed splits exist for all models/comparisons.
-
-> **Important:** `train_file` (BERT configs) and `--data_dir` (ML baselines) reference the
-> **base name without** the `_train`/`_val`/`_test` suffix - the suffixes are appended internally by the code.
-
+**1. Create splits** (run once; splits are not shipped). Splitting is at the sequence level, so no
+peptide leaks across train/val/test.
 ```bash
-python -m src data_init --task cls         # Hemolysis classification
-python -m src data_init --task regression  # MIC regression
-python -m src data_init --task gram        # Gram classification
+python -m src data_init    --task regression   # or: cls, gram
+python -m src cluster_init --task regression    # similarity-aware split, writes to <dir>_cluster/
 ```
+Splits land next to each base file. `cluster_init` needs the MMseqs2 binary on PATH
+(`conda install -c bioconda mmseqs2`); defaults `--min_seq_id 0.5 --coverage 0.8 --kmer 5`.
 
-Custom data directory:
+The `gram` task is a deferred exploratory analysis (Gram-positive vs negative), not part of the main
+results. It is just another dataset that runs through the same split and training commands.
+
+**2. Train classical ML baselines.** Grid search over Dummy, Ridge/LogReg, ExtraTrees, XGBoost and
+SVR/SVC on k-mer TF-IDF features.
 ```bash
-python -m src data_init --task cls --data_dir path/to/csvs/
+python -m src ml_regress  --data_dir data/regression_data/ --output_dir ml_plots/
+python -m src ml_classify --data_dir data/hemo_train/      --output_dir ml_plots/
 ```
+`--features` adds biochemical descriptors, `--seed` sets the CV seed, `--organism <substring>`
+restricts the run. Point `--data_dir` at a `*_cluster/` folder to train on the cluster split.
 
-**Similarity-aware (cluster) split.** `data_init` splits at the sequence level, but near-duplicate
-peptides (e.g. a single point mutation) can still land on opposite sides of the split. `cluster_init`
-groups sequences into similarity clusters with MMseqs2 and keeps whole clusters in one split, writing
-into a parallel `<data_dir>_cluster/` folder. The matching BERT configs live in
-`src/bert_model/peptideBERT_configs/cluster_split/`.
-
+**3. Fine-tune ProtBERT.** Configs live in `src/bert_model/peptideBERT_configs/{random_split,cluster_split}/`,
+one per organism; a bare `--config_path` name is resolved across those folders.
 ```bash
-python -m src cluster_init --task regression   # MIC,        into data/regression_data_cluster/
-python -m src cluster_init --task cls          # Hemolysis,  into data/hemo_train_cluster/
-python -m src cluster_init --task gram         # Gram
+python -m src bert_model --config_path <name>.yaml   # single config
+python -m src bert_model --pipe_configs default       # all configs in a directory
+python -m src generate_bert_model_config --config_name x.yaml --file_path configs/ --model_class regression
 ```
-> Requires the MMseqs2 binary on PATH (`conda install -c bioconda mmseqs2`, or the static Windows build).
-> Defaults: `--min_seq_id 0.5 --coverage 0.8 --kmer 5`. CPU-only.
-
----
-
-### Fine-tuning PeptideBERT
-
-Generate a new YAML config (`--model_class` is `binary_dense` for hemolysis classification or `regression` for MIC):
-```bash
-python -m src generate_bert_model_config \
-    --config_name your_config.yaml \
-    --file_path path/to/your/configs/ \
-    --model_class regression
-```
-
-Creates a fully commented template. Required fields to fill in: `train_file`, `model_save_path`, `output_dir`, `logging_dir`.
-
-Single config (custom path):
-```bash
-python -m src bert_model --config_path path/to/your_config.yaml
-```
-
-Short name - looked up in `src/bert_model/peptideBERT_configs/`:
-```bash
-python -m src bert_model --config_path your_config.yaml
-```
-
-Batch - runs all `.yaml` files in a directory:
-```bash
-python -m src bert_model --pipe_configs path/to/your/config_dir/
-python -m src bert_model --pipe_configs default   # default directory for batch runs: src/bert_model/peptideBERT_configs/config_pipe_dir/
-```
-
----
-
-### Classical ML baselines
-
-Grid search over ExtraTrees, XGBoost, RF, SVC/SVR. Uses k-mer TF-IDF + optional peptide descriptors.
-Results (plots, metrics) are saved to `ml_plots/` by default.
-
-```bash
-python -m src ml_classify --data_dir data/hemo_train/      --output_dir ml_plots/  # Hemolysis classification
-python -m src ml_regress  --data_dir data/regression_data/ --output_dir ml_plots/  # MIC regression
-```
-
-> `--features` additionally enables biochemical feature engineering (otherwise k-mer TF-IDF only).
-
-> To train on the similarity-aware splits, point `--data_dir` at the matching `*_cluster/` folder
-> (e.g. `data/regression_data_cluster/`). Datasets are discovered from the split files, so the base
-> CSV does not need to be duplicated into the cluster folder.
 
 ---
 
 ## Config reference
 
-Important fields of a training YAML:
+Essential fields in a training YAML:
 
 | Field | Description |
 |---|---|
 | `model_class` | `binary_dense` (classification) or `regression` |
-| `train_file` | Repo-root-relative path to the base CSV |
-| `model_path` | HuggingFace model ID or local path |
-| `model_save_path` | Where to save the trained model |
-| `num_train_epochs` | Maximum number of epochs |
-| `early_stopping_patience` | Epochs without improvement before stopping |
-| `early_stop_warm_up` | Epochs before early stopping becomes active |
-| `early_stop_metric` | Monitored metric (e.g. `eval_loss`) |
-| `use_cpu` | `true` to force training on CPU |
-| `fast_debug_mode` | `true` to truncate training data to 100 rows for pipeline tests |
+| `train_file` | repo-root-relative path to the base CSV (split suffixes added internally) |
+| `model_save_path` | where to save the trained model |
 
-For all other options, see an existing config in `src/bert_model/peptideBERT_configs/`.
+Training-control fields (epochs, early stopping, `use_cpu`, `fast_debug_mode`) are documented in a
+generated template and in the existing configs under `peptideBERT_configs/`.
 
 ---
 
 ## Reproducibility
 
-Data splits, ML baselines and clustering use a fixed `random_state=42`.
-For BERT training, the default seed (`42`) of HuggingFace `TrainingArguments` is used.
+Splitting, ML baselines and clustering default to seed `42`. BERT uses the HuggingFace
+`TrainingArguments` default seed `42`. Regenerate the exact splits with `data_init` / `cluster_init`,
+then run the training commands above on the matching CSVs.
 
-The thesis configs/results were produced with `python -m src ml_classify` / `python -m src ml_regress`
-and the corresponding BERT configs in `src/bert_model/peptideBERT_configs/`, given the matching CSVs
-in `data/`. Re-running these commands with the same data reproduces the numbers below.
+For variance estimates, `run_variance_sweep.py` retrains each baseline across five seeds
+(`42, 1, 2, 3, 4`) on freshly regenerated random and cluster splits, and
+`src/evaluation/paired_test.py` runs a paired Wilcoxon test across organisms. Both consume the per-run
+`metrics.json` / `predictions.csv` written into each output dir.
 
 ---
 
 ## Results
 
-Results for all classification/regression models (classical ML baselines and BERT), including some
-example plots, are listed in [RESULTS.md](RESULTS.md).
-
-For the data side of the story, [notebooks/data_quality_mic.ipynb](notebooks/data_quality_mic.ipynb) and
-[notebooks/data_quality_hemo.ipynb](notebooks/data_quality_hemo.ipynb) walk through the dataset, the
-measurement/label noise, and how it caps achievable performance for each task.
+Model results (classical ML and BERT) are in [RESULTS.md](RESULTS.md). The measurement and label noise
+that limits achievable performance is analyzed in
+[notebooks/data_quality_mic.ipynb](notebooks/data_quality_mic.ipynb) and
+[notebooks/data_quality_hemo.ipynb](notebooks/data_quality_hemo.ipynb).
 
 ---
 
