@@ -8,18 +8,19 @@ class PeptideDataset(Dataset):
 
     This class tokenizes the peptide sequences and returns the tokenized input_ids and attention_mask tensors.
     """
-    def __init__(self, peptides, features, tokenizer, model_class, labels, max_length=36, join_residues=True):
+    def __init__(self, peptides, features, tokenizer, model_class, labels, max_length=36, backbone='bert'):
         """
         Args:
             peptides: List of peptide sequences.
             labels: List of labels (for binary classification or regression).
             tokenizer: Tokenizer to tokenize the peptide sequences.
             max_length: Maximum length for padding/truncation.
-            join_residues: Space-separate residues ("M K L V"), required by the ProtBERT
-                tokenizer. Set False for ESM, whose tokenizer expects raw sequences ("MKLV").
+            backbone: Encoder family. ProtBERT ('bert') needs space-separated residues
+                ("M K L V"); ESM ('esm') tokenizes the raw sequence ("MKLV"). Whether to
+                space-separate is fully implied by this, so no separate flag is needed.
         """
         # ProtBERT expects space-separated residues; ESM tokenizes the raw sequence.
-        self.peptides = [' '.join(seq) for seq in peptides] if join_residues else list(peptides)
+        self.peptides = list(peptides) if backbone == 'esm' else [' '.join(seq) for seq in peptides]
 
         self.features = features
         self.labels = labels

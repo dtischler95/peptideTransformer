@@ -113,7 +113,7 @@ def prepare_datasets(model_class: str,
     def _make_dataset(df, labels, features):
         return PeptideDataset(peptides=df['sequence'], features=features, tokenizer=tokenizer,
                               labels=labels, max_length=max_length, model_class=model_class,
-                              join_residues=(backbone != 'esm'))
+                              backbone=backbone)
 
     train_dataset = _make_dataset(df_train, label_train, feat_train)
     val_dataset = _make_dataset(df_val, label_val, feat_val)
