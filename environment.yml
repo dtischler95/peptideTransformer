@@ -11,8 +11,8 @@ name: peptide-transformer
 # ──────────────────────────────────────────────────────────────────
 channels:
   - pytorch
+  - nvidia
   - conda-forge
-  - defaults
 dependencies:
   - python=3.12
   # PyTorch (CUDA 12.1 — change pytorch-cuda if needed)
