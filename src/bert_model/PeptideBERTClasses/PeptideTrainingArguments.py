@@ -15,6 +15,8 @@ class PeptideTrainingArguments(TrainingArguments):
     def __init__(self, *args,
                  model_class: str,
                  train_file=None,
+                 backbone: Literal['bert', 'esm'] = 'bert',
+                 model_name: str = None,
                  model_path: str = 'Rostlab/prot_bert_bfd',
                  model_save_path: str = str(_REPO_ROOT / 'default_path_BERT'),
                  plot_path: str = str(_REPO_ROOT / 'plots'),
@@ -37,6 +39,8 @@ class PeptideTrainingArguments(TrainingArguments):
 
         :param model_class: One of binary_dense, regression.
         :param train_file: Path to the training file
+        :param backbone: Encoder family to use. 'bert' (ProtBERT, space-separated residues) or 'esm' (ESM-2, raw residues)
+        :param model_name: Identifier written into metrics.json and used as the grouping key in evaluation. Defaults to the backbone ('bert'/'esm'); set explicitly to keep e.g. several ESM sizes separable
         :param model_path: Path to the model to be used. Can be huggingFace Repository or local path
         :param model_save_path: Path to save the model to
         :param plot_path: Path to save the plots to
@@ -64,6 +68,8 @@ class PeptideTrainingArguments(TrainingArguments):
         super().__init__(*args, **kwargs)
         self.model_class = model_class
         self.train_file = train_file
+        self.backbone = backbone
+        self.model_name = model_name if model_name is not None else backbone
         self.model_path = model_path
         self.model_save_path = model_save_path
         self.plot_path = plot_path

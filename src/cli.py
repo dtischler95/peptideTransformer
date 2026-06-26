@@ -36,6 +36,11 @@ def main():
             parser.error("Please provide either --config_path or --pipe_configs, not both.")
         if not args.config_path and not args.pipe_configs:
             parser.error("Please provide either --config_path or --pipe_configs.")
+        # Collect optional backbone overrides; lets the existing ProtBERT configs drive an
+        # ESM run unchanged (same hyperparameters/train_file, different encoder).
+        overrides = {k: v for k, v in (('backbone', args.backbone),
+                                       ('model_path', args.model_path),
+                                       ('model_name', args.model_name)) if v is not None}
         # If we have configs in our config dir we can just pass the config name.
         if args.pipe_configs:
             # If no path provides use a default path
@@ -44,13 +49,14 @@ def main():
             for file in os.listdir(path):
                 if file.endswith('.yaml'):
                     tmp_config = os.path.join(path, file)
-                    fine_tune(config_path=tmp_config)
+                    fine_tune(config_path=tmp_config, overrides=overrides)
 
         elif args.config_path:
             if '/' not in args.config_path:
                 args.config_path = _resolve_config_shortname(args.config_path)
             fine_tune(
-                config_path=args.config_path
+                config_path=args.config_path,
+                overrides=overrides
             )
 
     elif args.command == 'data_init':
@@ -151,6 +157,12 @@ def parse_inputs():
     fine_tune_parser = subparsers.add_parser('bert_model', help='Fine-tune the model')
     fine_tune_parser.add_argument('--config_path', type=str, required=False, help='Path to the config file')
     fine_tune_parser.add_argument('--pipe_configs', type=str, required=False, help='Path to the Directory containing config files. Will use every config inside this dir.')
+    fine_tune_parser.add_argument('--backbone', type=str, choices=['bert', 'esm'], default=None,
+                                  help='Override the encoder backbone, reusing the config with a different model family (e.g. esm)')
+    fine_tune_parser.add_argument('--model_path', type=str, default=None,
+                                  help='Override model_path (HF id or local path), e.g. facebook/esm2_t33_650M_UR50D')
+    fine_tune_parser.add_argument('--model_name', type=str, default=None,
+                                  help='Override model_name: grouping key in metrics.json and output-path suffix, e.g. esm650m')
     # Subparser for data_preprocess
     data_preprocess_parser = subparsers.add_parser('data_init', help='Preprocess the data')
     data_preprocess_parser.add_argument('--task', type=str, required=True, help='task of the train data ["cls", "regression", "gram"]')

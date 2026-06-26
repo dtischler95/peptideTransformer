@@ -8,11 +8,13 @@ import torch
 import yaml
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from transformers import DefaultDataCollator, BertConfig
-from transformers import BertTokenizer
+from transformers import DefaultDataCollator, BertConfig, AutoConfig
+from transformers import BertTokenizer, AutoTokenizer
 
 from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
 from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
+from src.bert_model.PeptideBERTClasses.PeptideEsmForBinaryClassification import PeptideEsmForBinaryClassification
+from src.bert_model.PeptideBERTClasses.PeptideEsmForRegression import PeptideEsmForRegression
 from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
@@ -60,6 +62,7 @@ def prepare_datasets(model_class: str,
                      model_path: str,
                      train_file: str,
                      logger: logging.Logger,
+                     backbone: str = 'bert',
                      show_encoding: bool = False,
                      ignore_leakage: bool = False,
                      max_length: int = 36,
@@ -73,6 +76,7 @@ def prepare_datasets(model_class: str,
     :param model_path: HuggingFace repo or local path to the pretrained model
     :param train_file: Path to the base CSV (expects _train/_val/_test variants alongside it)
     :param logger: Logger instance
+    :param backbone: 'bert' (ProtBERT, space-separated residues) or 'esm' (ESM-2, raw residues)
     :param show_encoding: Print the tokenizer vocabulary encoding
     :param ignore_leakage: Suppress the ValueError on data leakage (keeps a warning)
     :param max_length: Padding/truncation length for the tokenizer
@@ -94,7 +98,10 @@ def prepare_datasets(model_class: str,
     label_val, feat_val = _get_labels_and_features(df_val, model_class, add_features)
     label_test, feat_test = _get_labels_and_features(df_test, model_class, add_features)
 
-    tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
+    if backbone == 'esm':
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+    else:
+        tokenizer = BertTokenizer.from_pretrained(model_path, clean_up_tokenization_spaces=True, do_lower_case=False)
 
     if add_features:
         imp = SimpleImputer(strategy='median')
@@ -105,7 +112,8 @@ def prepare_datasets(model_class: str,
 
     def _make_dataset(df, labels, features):
         return PeptideDataset(peptides=df['sequence'], features=features, tokenizer=tokenizer,
-                              labels=labels, max_length=max_length, model_class=model_class)
+                              labels=labels, max_length=max_length, model_class=model_class,
+                              join_residues=(backbone != 'esm'))
 
     train_dataset = _make_dataset(df_train, label_train, feat_train)
     val_dataset = _make_dataset(df_val, label_val, feat_val)
@@ -211,15 +219,43 @@ def _resolve_paths(config: dict) -> None:
         config['model_path'] = str(_REPO_ROOT / mp)
 
 
-def load_training_arguments(config_file: str, logger: logging.Logger) -> PeptideTrainingArguments:
+_OUTPUT_PATH_KEYS = ('model_save_path', 'plot_path', 'output_dir', 'logging_dir')
+
+
+def _apply_overrides(config: dict, overrides: dict) -> None:
+    """Apply CLI overrides (backbone/model_path/model_name) onto the config dict in-place.
+
+    This is what lets the existing ProtBERT YAMLs double as the single source of truth for
+    a different backbone (e.g. ESM): the hyperparameters/train_file stay identical, only the
+    encoder is swapped at launch. When an override changes the model identity, the output
+    paths are suffixed with the effective model_name so override runs do not overwrite the
+    base (ProtBERT) outputs. Operates on the raw relative paths, before _resolve_paths().
+    """
+    if not overrides:
+        return
+    for key in ('backbone', 'model_path', 'model_name'):
+        if overrides.get(key) is not None:
+            config[key] = overrides[key]
+    # Only an override that changes the model identity triggers path suffixing.
+    if 'backbone' in overrides or 'model_name' in overrides:
+        suffix = config.get('model_name') or config.get('backbone') or 'bert'
+        for key in _OUTPUT_PATH_KEYS:
+            if config.get(key):
+                config[key] = f"{config[key]}_{suffix}"
+
+
+def load_training_arguments(config_file: str, logger: logging.Logger,
+                            overrides: dict = None) -> PeptideTrainingArguments:
     """Load training arguments from a YAML config file.
 
     Relative file paths are resolved against the repository root so the script
-    can be launched from any working directory.
+    can be launched from any working directory. ``overrides`` (from the CLI) may carry
+    backbone/model_path/model_name to reuse a config with a different backbone.
     """
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
 
+    _apply_overrides(config, overrides)
     _resolve_paths(config)
 
     print("Set Parameters for this training run:")
@@ -397,29 +433,38 @@ def get_bce_label_weight(labels):
 
 
 def init_model(train_dataset, training_args, n_features):
+    backbone = getattr(training_args, 'backbone', 'bert')
+    is_esm = backbone == 'esm'
+    # ESM-2 hidden size differs per checkpoint and is read from the loaded config; ProtBERT
+    # keeps its established 1024 override on the regression path for backward compatibility.
+    config_cls = AutoConfig if is_esm else BertConfig
+    cls_model_cls = PeptideEsmForBinaryClassification if is_esm else PeptideBertForBinaryClassification
+    reg_model_cls = PeptideEsmForRegression if is_esm else PeptideBertForRegression
+
     if training_args.model_class == 'binary_dense':
 
         # ('GrimSqueaker/proteinBERT')
-        config = BertConfig.from_pretrained(training_args.model_path)
-        model = PeptideBertForBinaryClassification(config,
-                                                   model_path=training_args.model_path,
-                                                   loss_function=training_args.loss_function,
-                                                   bce_logit_weight=get_bce_label_weight(
-                                                       labels=train_dataset.labels).to(training_args.device),
-                                                   n_features=n_features)
+        config = config_cls.from_pretrained(training_args.model_path)
+        model = cls_model_cls(config,
+                              model_path=training_args.model_path,
+                              loss_function=training_args.loss_function,
+                              bce_logit_weight=get_bce_label_weight(
+                                  labels=train_dataset.labels).to(training_args.device),
+                              n_features=n_features)
         data_collator = DefaultDataCollator()
         run_metric = binary_metrics
 
 
     elif training_args.model_class == 'regression':
         # raise NotImplementedError("Custom task not implemented yet")
-        config = BertConfig.from_pretrained(training_args.model_path)
-        config.hidden_size = 1024
+        config = config_cls.from_pretrained(training_args.model_path)
+        if not is_esm:
+            config.hidden_size = 1024
         config.num_labels = 1
         # model = BertForSequenceClassification.from_pretrained(training_args.model_path, config=config)
-        model = PeptideBertForRegression(config,
-                                         model_path=training_args.model_path,
-                                         n_features=n_features)
+        model = reg_model_cls(config,
+                              model_path=training_args.model_path,
+                              n_features=n_features)
         data_collator = DefaultDataCollator()
         run_metric = regression_metrics
 

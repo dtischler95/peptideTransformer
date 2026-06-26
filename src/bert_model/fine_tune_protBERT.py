@@ -33,8 +33,13 @@ def _bert_split(train_file) -> str:
     return "cluster" if "cluster" in str(train_file) else "random"
 
 
-def fine_tune(config_path: str):
-    """Fine-tune ProtBERT on a single dataset defined by a YAML config."""
+def fine_tune(config_path: str, overrides: dict = None):
+    """Fine-tune the configured backbone on a single dataset defined by a YAML config.
+
+    :param config_path: Path to the training YAML.
+    :param overrides: Optional CLI overrides (backbone/model_path/model_name) that reuse the
+        config with a different backbone, e.g. ESM-2 against the existing ProtBERT configs.
+    """
 
     # --------------------- Setup logging and configs ---------------------
     # Setup logging
@@ -46,7 +51,8 @@ def fine_tune(config_path: str):
 
     # Load training params into PeptideTrainingArguments class. Adjust if we need other params
     training_args = load_training_arguments(config_file=config_path,
-                                            logger=logger)
+                                            logger=logger,
+                                            overrides=overrides)
 
     # logging logging logging
     log_level = training_args.get_process_log_level()
@@ -78,6 +84,7 @@ def fine_tune(config_path: str):
         model_class=training_args.model_class,
         model_path=training_args.model_path,
         train_file=training_args.train_file,
+        backbone=getattr(training_args, "backbone", "bert"),
         ignore_leakage=training_args.ignore_leakage,
         max_length=training_args.max_length,
         logger=logger,
@@ -154,7 +161,7 @@ def fine_tune(config_path: str):
                     write_run_artifacts(
                         out_dir=training_args.plot_path + f"/{split_dir}",
                         data_name=datasets.organism_slug(file_name),
-                        model_name="bert",
+                        model_name=getattr(training_args, "model_name", "bert"),
                         task="hemo",
                         split=_bert_split(training_args.train_file),
                         seed=getattr(training_args, "seed", 42),
@@ -192,7 +199,7 @@ def fine_tune(config_path: str):
                     write_run_artifacts(
                         out_dir=training_args.plot_path,
                         data_name=datasets.organism_slug(file_name),
-                        model_name="bert",
+                        model_name=getattr(training_args, "model_name", "bert"),
                         task="mic",
                         split=_bert_split(training_args.train_file),
                         seed=getattr(training_args, "seed", 42),
