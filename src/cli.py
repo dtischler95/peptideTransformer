@@ -46,7 +46,7 @@ def main():
                     tmp_config = os.path.join(path, file)
                     fine_tune(config_path=tmp_config)
 
-        if args.config_path:
+        elif args.config_path:
             if '/' not in args.config_path:
                 args.config_path = _resolve_config_shortname(args.config_path)
             fine_tune(
