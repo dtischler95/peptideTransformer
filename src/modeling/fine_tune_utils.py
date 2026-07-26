@@ -11,13 +11,13 @@ from sklearn.preprocessing import StandardScaler
 from transformers import DefaultDataCollator, BertConfig, AutoConfig
 from transformers import BertTokenizer, AutoTokenizer
 
-from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
-from src.bert_model.PeptideBERTClasses.PeptideEsmForBinaryClassification import PeptideEsmForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideEsmForRegression import PeptideEsmForRegression
-from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
-from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.transformer_metrics import binary_metrics, regression_metrics
+from src.modeling.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.modeling.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
+from src.modeling.PeptideBERTClasses.PeptideEsmForBinaryClassification import PeptideEsmForBinaryClassification
+from src.modeling.PeptideBERTClasses.PeptideEsmForRegression import PeptideEsmForRegression
+from src.modeling.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.modeling.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.modeling.transformer_metrics import binary_metrics, regression_metrics
 from src.evaluation.eval_utils import evaluate_hemo
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -382,7 +382,7 @@ fast_debug_mode: false                                 # Developer mode for pipe
 
 def generate_custom_yaml_file(config_name: str,
                               model_class: str = 'binary_dense',
-                              file_path: str = './bert_model/peptideBERT_configs/'):
+                              file_path: str = './modeling/configs/'):
     """
     Generates a YAML config file template for a new training run.
     The template mirrors the current production config structure exactly.
@@ -391,7 +391,7 @@ def generate_custom_yaml_file(config_name: str,
     - config_name (str): Filename of the YAML to create (e.g. 'my_organism.yaml').
     - model_class (str): Task type — 'binary_dense' for hemolysis classification,
                          'regression' for MIC regression.
-    - file_path (str): Directory where the YAML will be saved. Should be the peptideBERT_configs folder.
+    - file_path (str): Directory where the YAML will be saved. Should be the configs folder.
     """
     if model_class == 'binary_dense':
         yaml_content = _CLS_YAML_TEMPLATE
@@ -479,4 +479,4 @@ def init_model(train_dataset, training_args, n_features):
 if __name__ == '__main__':
     # data_leakage_wrapper()
     generate_custom_yaml_file(config_name="custom_config.yaml",
-                              file_path='peptideBERT_configs/')
+                              file_path='configs/')

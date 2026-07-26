@@ -43,7 +43,7 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     :return: dictionary with the metrics
     """
-    from src.bert_model.fine_tune_utils import format_logit_to_label
+    from src.modeling.fine_tune_utils import format_logit_to_label
     accuracy = evaluate.load("accuracy")
 
     logits, labels = eval_preds

@@ -14,7 +14,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import DefaultDataCollator
 
-from src.bert_model.fine_tune_utils import prepare_datasets, init_model
+from src.modeling.fine_tune_utils import prepare_datasets, init_model
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get("RUN_INTEGRATION"),

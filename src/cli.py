@@ -10,9 +10,9 @@ _REPO_ROOT = _SRC_DIR.parent
 
 def _resolve_config_shortname(name: str) -> str:
     """Resolve a bare config filename to a full path, searching subfolders of
-    peptideBERT_configs so configs organised into random_split/ and cluster_split/
+    configs so configs organised into random_split/ and cluster_split/
     still work as `--config_path name.yaml`."""
-    cfg_root = _SRC_DIR / 'bert_model' / 'peptideBERT_configs'
+    cfg_root = _SRC_DIR / 'modeling' / 'configs'
     flat = cfg_root / name
     if flat.exists():
         return str(flat)
@@ -30,7 +30,7 @@ def main():
     args, parser = parse_inputs()
 
     if args.command == 'bert_model':
-        from src.bert_model.fine_tune_protBERT import fine_tune
+        from src.modeling.fine_tune import fine_tune
         # Check if bert_model flags are proper set
         if args.config_path and args.pipe_configs:
             parser.error("Please provide either --config_path or --pipe_configs, not both.")
@@ -44,7 +44,7 @@ def main():
         # If we have configs in our config dir we can just pass the config name.
         if args.pipe_configs:
             # If no path provides use a default path
-            path = str(_SRC_DIR / 'bert_model' / 'peptideBERT_configs' / 'config_pipe_dir') if args.pipe_configs == 'default' else args.pipe_configs
+            path = str(_SRC_DIR / 'modeling' / 'configs' / 'config_pipe_dir') if args.pipe_configs == 'default' else args.pipe_configs
 
             for file in os.listdir(path):
                 if file.endswith('.yaml'):
@@ -142,7 +142,7 @@ def main():
         )
 
     elif args.command == 'generate_bert_model_config':
-        from src.bert_model.fine_tune_utils import generate_custom_yaml_file
+        from src.modeling.fine_tune_utils import generate_custom_yaml_file
         generate_custom_yaml_file(config_name=args.config_name,
                                   file_path=args.file_path,
                                   model_class=args.model_class)

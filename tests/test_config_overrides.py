@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.bert_model.fine_tune_utils import _apply_overrides
+from src.modeling.fine_tune_utils import _apply_overrides
 import src.cli as cli
 
 
@@ -48,7 +48,7 @@ def test_backbone_only_override_suffixes_with_backbone():
 
 
 def _make_cfg_tree(root):
-    base = root / "bert_model" / "peptideBERT_configs"
+    base = root / "modeling" / "configs"
     (base / "random_split").mkdir(parents=True)
     (base / "cluster_split").mkdir(parents=True)
     return base

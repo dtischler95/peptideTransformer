@@ -2,8 +2,8 @@ from typing import Union, Optional, Dict, Any
 import torch
 from torch import nn
 from transformers import Trainer, PreTrainedModel
-from src.bert_model.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
-from src.bert_model.fine_tune_utils import format_logit_to_label
+from src.modeling.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
+from src.modeling.fine_tune_utils import format_logit_to_label
 
 
 

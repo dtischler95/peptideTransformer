@@ -7,12 +7,12 @@ warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash a
 from transformers.utils.logging import enable_default_handler, enable_explicit_format
 import logging
 
-from src.bert_model.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
-from src.bert_model.fine_tune_utils import prepare_datasets, load_training_arguments, \
+from src.modeling.PeptideBERTClasses.PeptideTrainer import PeptideTrainer
+from src.modeling.fine_tune_utils import prepare_datasets, load_training_arguments, \
     prepare_hemo_eval, init_model
 from src.evaluation.eval_utils import overall_stats, get_model_stats, write_run_artifacts
 from src.data_preprocessing import datasets
-from src.bert_model.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
+from src.modeling.PeptideBERTClasses.PeptideCallbackTrainer import LearningCurveCallback, EarlyStoppingCallback, \
     PlotMetricsCallback, CollectBatchWiseTrainMetrics
 
 import matplotlib as mpl
@@ -219,4 +219,4 @@ def fine_tune(config_path: str, overrides: dict = None):
 
 
 if __name__ == '__main__':
-    fine_tune(config_path='peptideBERT_configs/debug_clsBERT_config.yaml')  # Path to the config file
+    fine_tune(config_path='configs/debug_clsBERT_config.yaml')  # Path to the config file

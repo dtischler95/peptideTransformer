@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.bert_model.PeptideBERTClasses.PeptideDataset import PeptideDataset
-from src.bert_model.fine_tune_utils import _get_labels_and_features, check_data_loader_for_leakage
+from src.modeling.PeptideBERTClasses.PeptideDataset import PeptideDataset
+from src.modeling.fine_tune_utils import _get_labels_and_features, check_data_loader_for_leakage
 
 _LOGGER = logging.getLogger("test")
 

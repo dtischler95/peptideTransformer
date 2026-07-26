@@ -8,10 +8,10 @@ concat, head, loss, and that gradients actually flow.
 import pytest
 import torch
 
-from src.bert_model.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
-from src.bert_model.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
-from src.bert_model.PeptideBERTClasses.PeptideEsmForRegression import PeptideEsmForRegression
-from src.bert_model.PeptideBERTClasses.PeptideEsmForBinaryClassification import PeptideEsmForBinaryClassification
+from src.modeling.PeptideBERTClasses.PeptideBertForRegression import PeptideBertForRegression
+from src.modeling.PeptideBERTClasses.PeptideBertForBinaryClassification import PeptideBertForBinaryClassification
+from src.modeling.PeptideBERTClasses.PeptideEsmForRegression import PeptideEsmForRegression
+from src.modeling.PeptideBERTClasses.PeptideEsmForBinaryClassification import PeptideEsmForBinaryClassification
 
 
 def _backward_has_grad(loss, model):
