@@ -3,8 +3,9 @@
 
 # Results
 
-Status 2026-06-24. The classical ML baseline (sequence only) is complete. The ProtBERT sweep is partially
-in: the `bert` column covers 12 of the 12 MIC organisms so far, the rest is pending. ESM is still queued.
+Status 2026-07-26. The classical ML baseline (sequence only) is complete and the ProtBERT MIC sweep now
+covers 12 of the 12 organisms (random and cluster, five seeds each). Hemolysis BERT and ESM are
+still pending.
 
 All numbers are test-set metrics, mean ± SD over five seeds (1, 2, 3, 4, 42). The `dummy` column is a
 mean / majority-class baseline (floor); `ridge` / `logreg` is a linear reference. `svr`/`svc`, `xgb` and
@@ -57,6 +58,13 @@ The test split is never seen during model selection in either pipeline. Each con
 five seeds (1, 2, 3, 4, 42) and the tables report mean ± SD across them. Per-model numbers are read from
 each run's `metrics.json`. No cross-organism averages are reported: the organisms are clinically selected,
 independent datasets, so each one stands on its own.
+
+One asymmetry to keep in mind when reading the model comparison: the classical models are tuned by
+per-organism grid search, while BERT runs one fixed optimizer configuration for every organism (learning
+rate 1e-5, weight decay 0.01, ReduceLROnPlateau, up to 50 epochs with early stopping on validation loss,
+patience 5). BERT is therefore evaluated at a single sensible setting, not a per-dataset-tuned optimum. A
+BERT deficit on small datasets should be read with this in mind, it can reflect the fixed configuration
+rather than the architecture.
 
 ## MIC regression (sequence only)
 
@@ -137,62 +145,100 @@ covers 12 of the 12 organisms. A `—` in the `bert` column means that organism'
 | *Micrococcus luteus* | 223 | 0.66 ±0.01 | 0.60 ±0.06 | 0.60 ±0.05 | 0.60 ±0.04 | 0.58 ±0.04 | 0.64 ±0.03 |
 | *Enterobacter sp.* | 102 | 0.44 ±0.03 | 0.42 ±0.04 | 0.42 ±0.03 | 0.43 ±0.04 | 0.41 ±0.04 | 0.49 ±0.04 |
 
-## Statistical comparison — Wilcoxon signed-rank (MIC)
+## Statistical comparison (MIC)
 
-Paired Wilcoxon signed-rank tests over the 12 MIC organisms. Each organism contributes one value per
-model, its mean test R² over the five seeds, and the 12 organisms are the paired units. Only the four
-classical models are compared here. BERT is left out until its sweep covers all 12 organisms, since the
-paired test needs the full set. Hemolysis has just two datasets, too few pairs for the test. Values come
-from the full-precision per-run metrics, not the rounded table cells above, so a few near-ties resolve
-differently.
+Paired tests over the 12 MIC organisms. Each organism contributes one value per model, its mean test R²
+over the five seeds, and the 12 organisms are the paired units. All five candidate models are compared,
+BERT included now that its sweep covers all 12 organisms. Values come from the full-precision per-run
+metrics, not the rounded table cells above, so a few near-ties resolve differently.
 
-### Random vs cluster split
+### Model ranking — Friedman + Nemenyi
 
-Same model, the two splits paired per organism. A positive Δ means the random split scores higher, that
-is a drop under clustering.
-
-| Model | n | mean random | mean cluster | mean Δ | W | p |
-|---|---|---|---|---|---|---|
-| ridge | 12 | 0.245 | 0.146 | +0.098 | 2 | 0.0015 |
-| svr | 12 | 0.307 | 0.143 | +0.165 | 0 | 0.0005 |
-| xgb | 12 | 0.343 | 0.184 | +0.160 | 0 | 0.0005 |
-| xtra | 12 | 0.354 | 0.189 | +0.165 | 0 | 0.0005 |
-
-Every model drops under the cluster split and every drop is significant (p ≤ 0.0015). The effect is large
-and uniform, a mean Δ of about 0.10 to 0.17 R².
-
-### Model vs model, same split
-
-All six pairwise comparisons of the four headline models. Δ = R²(first) − R²(second), so a negative Δ
-means the second model is the stronger one.
+The Demšar (2006) protocol for comparing several models over several datasets: a Friedman omnibus on the
+per-organism ranks, then the Nemenyi post-hoc. Two models differ significantly only if their mean ranks
+are more than one critical difference (CD) apart. This is the primary model comparison, it controls the
+family-wise error that running all pairwise tests separately does not.
 
 **Random split**
 
-| Comparison | n | mean Δ | Δ>0 | Δ<0 | W | p |
-|---|---|---|---|---|---|---|
-| ridge vs svr | 12 | -0.063 | 0 | 12 | 0 | 0.0005 |
-| ridge vs xgb | 12 | -0.099 | 1 | 11 | 1 | 0.0010 |
-| ridge vs xtra | 12 | -0.110 | 0 | 12 | 0 | 0.0005 |
-| svr vs xgb | 12 | -0.036 | 1 | 11 | 4 | 0.0034 |
-| svr vs xtra | 12 | -0.047 | 1 | 11 | 1 | 0.0010 |
-| xgb vs xtra | 12 | -0.011 | 1 | 11 | 3 | 0.0024 |
+Friedman χ²(4) = 29.87, p = 5.21e-06, N = 12 organisms.
+
+| Rank | Model | mean rank |
+|---|---|---|
+| 1 | xtra | 1.33 |
+| 2 | xgb | 2.33 |
+| 3 | svr | 3.33 |
+| 4 | bert | 3.33 |
+| 5 | ridge | 4.67 |
+
+Nemenyi critical difference (α = 0.05): CD = 1.76 mean-rank units. Pairs beyond CD: xgb > ridge, xtra > ridge, xtra > svr, xtra > bert.
 
 **Cluster split**
 
-| Comparison | n | mean Δ | Δ>0 | Δ<0 | W | p |
-|---|---|---|---|---|---|---|
-| ridge vs svr | 12 | +0.003 | 5 | 7 | 33 | 0.6772 |
-| ridge vs xgb | 12 | -0.038 | 3 | 9 | 8 | 0.0122 |
-| ridge vs xtra | 12 | -0.042 | 1 | 11 | 6 | 0.0068 |
-| svr vs xgb | 12 | -0.041 | 1 | 11 | 2 | 0.0015 |
-| svr vs xtra | 12 | -0.046 | 1 | 11 | 1 | 0.0010 |
-| xgb vs xtra | 12 | -0.005 | 5 | 7 | 33 | 0.6772 |
+Friedman χ²(4) = 15.20, p = 4.30e-03, N = 12 organisms.
 
-On the random split all six pairs separate significantly, but the magnitudes are small and shrink as the
-models get stronger. Ridge against the trees spans about 0.10 to 0.11 R², the two tree models differ by
-only 0.011. Under the cluster split the tree-versus-tree and ridge-versus-svr pairs are no longer
-distinguishable (p ≈ 0.68). Read against the uniform 0.10 to 0.17 R² drop from clustering, the gaps among
-the strong models (svr, xgb, xtra) are the smaller lever.
+| Rank | Model | mean rank |
+|---|---|---|
+| 1 | xtra | 2.00 |
+| 2 | xgb | 2.33 |
+| 3 | bert | 2.83 |
+| 4 | svr | 3.83 |
+| 5 | ridge | 4.00 |
+
+Nemenyi critical difference (α = 0.05): CD = 1.76 mean-rank units. Pairs beyond CD: xtra > ridge, xtra > svr.
+
+### Random vs cluster split (per model)
+
+Same model, the two splits paired per organism. A positive Δ means the random split scores higher, that
+is a drop under clustering. `r` is the matched-pairs rank-biserial effect size (+1 = every organism drops).
+
+| Model | n | mean random | mean cluster | mean Δ | r | W | p |
+|---|---|---|---|---|---|---|---|
+| ridge | 12 | 0.245 | 0.146 | +0.098 | +0.95 | 2 | 0.0015 |
+| svr | 12 | 0.307 | 0.143 | +0.165 | +1.00 | 0 | 0.0005 |
+| xgb | 12 | 0.343 | 0.184 | +0.160 | +1.00 | 0 | 0.0005 |
+| xtra | 12 | 0.354 | 0.189 | +0.165 | +1.00 | 0 | 0.0005 |
+| bert | 12 | 0.292 | 0.167 | +0.125 | +1.00 | 0 | 0.0005 |
+
+### Model vs model, same split
+
+All ten pairwise comparisons of the five models, Holm-corrected within each split. Δ = R²(first) −
+R²(second), so a negative Δ means the second model is stronger. `r` is the rank-biserial effect size.
+These pairwise tests are secondary to the Friedman + Nemenyi ranking above and should be read for
+direction and effect size, not for the p-values alone: with 12 pairs the two-sided Wilcoxon floors at
+p ≈ 0.0005, so a small but perfectly consistent gap and a large one land at the same p.
+
+**Random split**
+
+| Comparison | n | mean Δ | r | Δ>0 | Δ<0 | W | p | p (Holm) |
+|---|---|---|---|---|---|---|---|---|
+| ridge vs svr | 12 | -0.063 | -1.00 | 0 | 12 | 0 | 0.0005 | 0.0049 |
+| ridge vs xgb | 12 | -0.099 | -0.97 | 1 | 11 | 1 | 0.0010 | 0.0078 |
+| ridge vs xtra | 12 | -0.110 | -1.00 | 0 | 12 | 0 | 0.0005 | 0.0049 |
+| ridge vs bert | 12 | -0.047 | -0.54 | 3 | 9 | 18 | 0.1099 | 0.2197 |
+| svr vs xgb | 12 | -0.036 | -0.90 | 1 | 11 | 4 | 0.0034 | 0.0171 |
+| svr vs xtra | 12 | -0.047 | -0.97 | 1 | 11 | 1 | 0.0010 | 0.0078 |
+| svr vs bert | 12 | +0.015 | +0.10 | 6 | 6 | 35 | 0.7910 | 0.7910 |
+| xgb vs xtra | 12 | -0.011 | -0.92 | 1 | 11 | 3 | 0.0024 | 0.0146 |
+| xgb vs bert | 12 | +0.052 | +0.79 | 9 | 3 | 8 | 0.0122 | 0.0366 |
+| xtra vs bert | 12 | +0.062 | +0.85 | 10 | 2 | 6 | 0.0068 | 0.0273 |
+
+**Cluster split**
+
+| Comparison | n | mean Δ | r | Δ>0 | Δ<0 | W | p | p (Holm) |
+|---|---|---|---|---|---|---|---|---|
+| ridge vs svr | 12 | +0.003 | -0.15 | 5 | 7 | 33 | 0.6772 | 1.0000 |
+| ridge vs xgb | 12 | -0.038 | -0.79 | 3 | 9 | 8 | 0.0122 | 0.0854 |
+| ridge vs xtra | 12 | -0.042 | -0.85 | 1 | 11 | 6 | 0.0068 | 0.0547 |
+| ridge vs bert | 12 | -0.021 | -0.33 | 3 | 9 | 26 | 0.3394 | 1.0000 |
+| svr vs xgb | 12 | -0.041 | -0.95 | 1 | 11 | 2 | 0.0015 | 0.0132 |
+| svr vs xtra | 12 | -0.046 | -0.97 | 1 | 11 | 1 | 0.0010 | 0.0098 |
+| svr vs bert | 12 | -0.024 | -0.31 | 5 | 7 | 27 | 0.3804 | 1.0000 |
+| xgb vs xtra | 12 | -0.005 | -0.15 | 5 | 7 | 33 | 0.6772 | 1.0000 |
+| xgb vs bert | 12 | +0.017 | +0.23 | 7 | 5 | 30 | 0.5186 | 1.0000 |
+| xtra vs bert | 12 | +0.022 | +0.28 | 7 | 5 | 28 | 0.4238 | 1.0000 |
+
+The split effect is uniform and large: every model loses between 0.10 and 0.17 R² under clustering, with rank-biserial r at or near +1. The model ranking is the smaller lever. By Nemenyi, on the random split it separates xtra > svr, xtra > bert among the strong models, and on the cluster split it separates xtra > svr among the strong models. Read against the split drop, the gaps among the strong models are second order, the split is the dominant axis.
 
 ## Hemolysis classification — classical ML baseline (sequence only)
 
