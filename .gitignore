@@ -69,3 +69,6 @@ data/data_from_database/APD_Hs_all.fasta
 data/**/*_train.csv
 data/**/*_val.csv
 data/**/*_test.csv
+
+# Local working notes, not tracked (kept in history up to here)
+plan.md
