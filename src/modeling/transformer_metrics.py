@@ -1,4 +1,3 @@
-import evaluate
 from sklearn.metrics import (
     matthews_corrcoef,
     roc_auc_score,
@@ -43,6 +42,9 @@ def binary_metrics(eval_preds, debug_print: bool = True) -> dict:
 
     :return: dictionary with the metrics
     """
+    # Lazy import: only needed when the Trainer computes classification metrics, so it does
+    # not become an import-time dependency for the rest of the pipeline (or the test suite).
+    import evaluate
     from src.modeling.fine_tune_utils import format_logit_to_label
     accuracy = evaluate.load("accuracy")
 
