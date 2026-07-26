@@ -44,17 +44,17 @@ logger.setLevel(logging.INFO)
 _SERIAL_GRID_MODELS = {"svr", "svc"}
 
 
-def train_classificators(file_path: str,
-                         regressor,
-                         param_grid,
-                         plot_path: str,
-                         model_name: str,
-                         data_name: str,
-                         calculate_features: bool = True,
-                         split: str = "random",
-                         seed: int = 42,
-                         n_jobs: int = -1
-                         ):
+def train_classifiers(file_path: str,
+                      estimator,
+                      param_grid,
+                      plot_path: str,
+                      model_name: str,
+                      data_name: str,
+                      calculate_features: bool = True,
+                      split: str = "random",
+                      seed: int = 42,
+                      n_jobs: int = -1
+                      ):
     train_df, test_df, target_col = ml_utils.prepare_df(file_path, 'hemo')
 
     x_train, y_train, x_test, y_test, desc_cols = ml_utils.build_xy(train_df,
@@ -66,7 +66,7 @@ def train_classificators(file_path: str,
                 f"\nTrain target shape: {len(y_train)}\tTest target shape: {len(y_test)}\n"
                 f"For File {file_path}")
 
-    pipeline = ml_utils.build_feature_pipeline(regressor, model_name, calculate_features, desc_cols)
+    pipeline = ml_utils.build_feature_pipeline(estimator, model_name, calculate_features, desc_cols)
 
     best_estimator, grid_search, _ = ml_utils.grid_search_setup(pipeline, plot_path + '/', model_name, param_grid,
                                                                 x_train,
@@ -222,9 +222,9 @@ def run_classification(
             logger.info(f"Running {model_tag} on {file_name} and saving plots to {out_dir}")
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            train_classificators(
+            train_classifiers(
                 file_path=str(csv_path),
-                regressor=estimator,
+                estimator=estimator,
                 param_grid=grid,
                 model_name=model_tag,
                 calculate_features=calculate_features,

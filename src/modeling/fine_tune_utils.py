@@ -19,6 +19,7 @@ from src.modeling.PeptideBERTClasses.PeptideDataset import PeptideDataset
 from src.modeling.PeptideBERTClasses.PeptideTrainingArguments import PeptideTrainingArguments
 from src.modeling.transformer_metrics import binary_metrics, regression_metrics
 from src.evaluation.eval_utils import evaluate_hemo
+from src.modeling.config_templates import CLS_YAML_TEMPLATE, REG_YAML_TEMPLATE
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _FILE_PATH_KEYS = frozenset({'train_file', 'model_save_path', 'plot_path', 'output_dir', 'logging_dir'})
@@ -279,105 +280,6 @@ def format_one_hot_to_label(one_hot_tensor):
     """
     return np.argmax(one_hot_tensor, axis=1).flatten()
 
-# TODO Update this function for all new parameters and formats
-_CLS_YAML_TEMPLATE = """\
-# Training and Evaluation Settings
-model_class: 'binary_dense'                            # 'binary_dense' for hemolysis classification
-do_train: true                                         # Train the model
-do_eval: true                                          # Evaluate the model
-num_train_epochs: 50                                   # Number of epochs to train the model
-per_device_train_batch_size: 64                        # Batch size for training
-per_device_eval_batch_size: 64                         # Batch size for evaluation
-early_stopping_patience: 5                             # Patience for early stopping
-early_stop_metric: 'eval_loss'                         # Metric for early stopping
-early_stop_mode: 'min'                                 # Mode for early stopping
-early_stop_warm_up: 8                                  # Warm-up period for early stopping
-dataloader_num_workers: 1                              # Number of dataloader workers (higher can affect performance)
-load_best_model_at_end: true                           # Load the best model at the end of training
-
-# Model and Optimizer Settings
-learning_rate: 0.00001                                 # Learning rate for optimizer
-weight_decay: 0.01                                     # Weight decay for optimizer
-lr_scheduler_type: 'reduce_lr_on_plateau'              # Learning rate scheduler type
-lr_scheduler_kwargs:                                   # Additional scheduler arguments
-  patience: 4                                          # Patience for ReduceLROnPlateau scheduler
-max_length: 36                                         # Maximum input sequence length
-
-# Binary Classification Settings
-label_0_cluster_data: 500                              # Number of data points for label 0 used in downstream clustering
-label_1_cluster_data: 500                              # Number of data points for label 1 used in downstream clustering
-loss_function: 'bce_logit_loss'                        # Possible Choices ['bce', 'bce_logit_loss']
-add_features: false                                    # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
-
-
-# Dataset and File Paths
-train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
-model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
-model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
-plot_path: 'bert_plots/MY_RUN_NAME'                   # Where to save evaluation plots
-
-# Logging Settings
-output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints
-logging_dir: 'logs/MY_RUN_NAME'                        # Path to logging directory
-logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
-log_level: 'info'                                      # Log level
-eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
-save_strategy: 'epoch'                                 # Save strategy (set to 'epoch' for this logic)
-
-# Hardware Settings
-use_cpu: false                                         # Use CPU for training
-
-# Miscellaneous Settings
-ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
-fast_debug_mode: false                                 # Developer mode for pipeline testing
-"""
-
-_REG_YAML_TEMPLATE = """\
-# Training and Evaluation Settings
-model_class: 'regression'                              # 'regression' for MIC regression
-do_train: true                                         # Train the model
-do_eval: true                                          # Evaluate the model
-num_train_epochs: 50                                   # Number of epochs to train the model
-per_device_train_batch_size: 64                        # Batch size for training
-per_device_eval_batch_size: 64                         # Batch size for evaluation
-early_stopping_patience: 5                             # Patience for early stopping
-early_stop_metric: 'eval_loss'                         # Metric for early stopping
-early_stop_mode: 'min'                                 # Mode for early stopping
-early_stop_warm_up: 8                                  # Warm-up period for early stopping
-dataloader_num_workers: 1                              # Number of dataloader workers (higher can affect performance)
-load_best_model_at_end: true                           # Load the best model at the end of training
-add_features: false                                    # Use concentration as extra feature [WARNING] U need a prepared train datafile for this
-
-# Model and Optimizer Settings
-learning_rate: 0.00001                                 # Learning rate for optimizer
-weight_decay: 0.01                                     # Weight decay for optimizer
-lr_scheduler_type: 'reduce_lr_on_plateau'              # Learning rate scheduler type
-lr_scheduler_kwargs:                                   # Additional scheduler arguments
-  patience: 4                                          # Patience for ReduceLROnPlateau scheduler
-max_length: 36                                         # Maximum input sequence length
-
-
-# Dataset and File Paths
-train_file: 'data/PATH_TO_TRAIN_FILE'                  # Repo-root-relative path to training data
-model_path: 'Rostlab/prot_bert_bfd'                    # HuggingFace model ID or local path
-model_save_path: 'models/MY_RUN_NAME'                  # Where to save the trained model
-plot_path: 'bert_plots/MY_RUN_NAME'                   # Where to save evaluation plots
-
-# Logging Settings
-output_dir: 'results/MY_RUN_NAME'                      # Path to checkpoints
-logging_dir: 'logs/MY_RUN_NAME'                        # Path to logging directory
-logging_strategy: 'epoch'                              # Logging strategy (set to 'epoch' for this logic)
-log_level: 'info'                                      # Log level
-eval_strategy: 'epoch'                                 # Evaluation strategy (set to 'epoch' for this logic)
-save_strategy: 'epoch'                                 # Save strategy (set to 'epoch' for this logic)
-
-# Hardware Settings
-use_cpu: false                                         # Use CPU for training
-
-# Miscellaneous Settings
-ignore_leakage: false                                  # Ignore leakage in training data (only if certain)
-fast_debug_mode: false                                 # Developer mode for pipeline testing
-"""
 
 
 def generate_custom_yaml_file(config_name: str,
@@ -394,9 +296,9 @@ def generate_custom_yaml_file(config_name: str,
     - file_path (str): Directory where the YAML will be saved. Should be the configs folder.
     """
     if model_class == 'binary_dense':
-        yaml_content = _CLS_YAML_TEMPLATE
+        yaml_content = CLS_YAML_TEMPLATE
     elif model_class == 'regression':
-        yaml_content = _REG_YAML_TEMPLATE
+        yaml_content = REG_YAML_TEMPLATE
     else:
         raise ValueError(f"model_class must be 'binary_dense' or 'regression', got: {model_class!r}")
 
