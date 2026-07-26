@@ -2,9 +2,9 @@ name: tests
 
 on:
   push:
-    branches: [master, add-esm-backbone]
+    branches: [master]
   pull_request:
-    branches: [master, add-esm-backbone]
+    branches: [master]
 
 jobs:
   pytest:
