@@ -11,10 +11,12 @@ class PeptideBertForRegression(BertPreTrainedModel):
     Regression model using the BertModel as a base with a linear regression head on top of the [CLS] token embedding.
     """
 
-    def __init__(self, config, model_path: str, n_features: int):
+    def __init__(self, config, model_path: str, n_features: int, pretrained: bool = True):
         config.return_dict = False
         super().__init__(config)
-        self.bert = BertModel.from_pretrained(model_path, config=config)
+        # pretrained=False builds the encoder with random weights (no checkpoint download).
+        # Only the test suite passes False, to exercise the pipeline without the multi-GB weights.
+        self.bert = BertModel.from_pretrained(model_path, config=config) if pretrained else BertModel(config)
 
 
         # ----------------- Add regression head -----------------

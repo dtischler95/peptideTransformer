@@ -13,7 +13,8 @@ class PeptideBertForBinaryClassification(BertPreTrainedModel):
     We now receive a single logit for binary classification instead of n logits for each class like in the inherited class.
     """
 
-    def __init__(self, config, model_path: str, n_features, bce_logit_weight, loss_function: str = 'bce'):
+    def __init__(self, config, model_path: str, n_features, bce_logit_weight, loss_function: str = 'bce',
+                 pretrained: bool = True):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.classifier_dropout = 0.15
         config.return_dict = False
@@ -22,7 +23,9 @@ class PeptideBertForBinaryClassification(BertPreTrainedModel):
         self.num_labels = config.num_labels
         self.loss_function = loss_function
         self.bce_logit_weight = bce_logit_weight
-        self.bert = BertModel.from_pretrained(model_path, config=config)
+        # pretrained=False builds the encoder with random weights (no checkpoint download).
+        # Only the test suite passes False, to exercise the pipeline without the multi-GB weights.
+        self.bert = BertModel.from_pretrained(model_path, config=config) if pretrained else BertModel(config)
         self.dropout = nn.Dropout(config.classifier_dropout)
         self.norm = nn.LayerNorm(config.hidden_size + n_features, eps=config.layer_norm_eps)
 

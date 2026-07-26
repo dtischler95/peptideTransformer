@@ -15,10 +15,13 @@ class PeptideEsmForRegression(EsmPreTrainedModel):
     config and must not be overridden (ESM-2 sizes differ per checkpoint: 320/480/640/1280/...).
     """
 
-    def __init__(self, config, model_path: str, n_features: int):
+    def __init__(self, config, model_path: str, n_features: int, pretrained: bool = True):
         config.return_dict = False
         super().__init__(config)
-        self.esm = EsmModel.from_pretrained(model_path, config=config, add_pooling_layer=True)
+        # pretrained=False builds the encoder with random weights (no checkpoint download).
+        # Only the test suite passes False, to exercise the pipeline without the multi-GB weights.
+        self.esm = (EsmModel.from_pretrained(model_path, config=config, add_pooling_layer=True)
+                    if pretrained else EsmModel(config, add_pooling_layer=True))
 
         # ----------------- Add regression head -----------------
         self.norm = nn.LayerNorm(config.hidden_size + n_features, eps=config.layer_norm_eps)

@@ -15,7 +15,8 @@ class PeptideEsmForBinaryClassification(EsmPreTrainedModel):
     embeddings). The CLS pooler output (outputs[1]) is used exactly as in the BERT path.
     """
 
-    def __init__(self, config, model_path: str, n_features, bce_logit_weight, loss_function: str = 'bce'):
+    def __init__(self, config, model_path: str, n_features, bce_logit_weight, loss_function: str = 'bce',
+                 pretrained: bool = True):
         config.num_labels = 1  # Set num_labels to 1 for binary classification output
         config.classifier_dropout = 0.15
         config.return_dict = False
@@ -24,7 +25,10 @@ class PeptideEsmForBinaryClassification(EsmPreTrainedModel):
         self.num_labels = config.num_labels
         self.loss_function = loss_function
         self.bce_logit_weight = bce_logit_weight
-        self.esm = EsmModel.from_pretrained(model_path, config=config, add_pooling_layer=True)
+        # pretrained=False builds the encoder with random weights (no checkpoint download).
+        # Only the test suite passes False, to exercise the pipeline without the multi-GB weights.
+        self.esm = (EsmModel.from_pretrained(model_path, config=config, add_pooling_layer=True)
+                    if pretrained else EsmModel(config, add_pooling_layer=True))
         self.dropout = nn.Dropout(config.classifier_dropout)
         self.norm = nn.LayerNorm(config.hidden_size + n_features, eps=config.layer_norm_eps)
 
