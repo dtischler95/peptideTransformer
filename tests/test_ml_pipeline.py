@@ -11,13 +11,25 @@ from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.svm import SVC, SVR
 from xgboost import XGBClassifier, XGBRegressor
 
-from src.machine_learning.train_models import run_regression, run_classification
+from src.machine_learning.train_models import (
+    run_regression, run_classification, default_classifiers, default_regressors,
+)
 
 
 def _assert_pkls(output_root, model_tags):
     saved = {p.stem for p in output_root.rglob("*.pkl")}
     for tag in model_tags:
         assert tag in saved, f"missing saved model for {tag} (found {saved})"
+
+
+def test_default_model_factories_pair_models_and_grids():
+    for factory in (default_classifiers, default_regressors):
+        models, grids = factory()
+        assert len(models) == len(grids) > 0
+        for (tag, estimator), grid in zip(models, grids):
+            assert isinstance(tag, str) and tag
+            assert hasattr(estimator, "fit")
+            assert isinstance(grid, dict)
 
 
 def test_run_regression_smoke(mic_data_dir, tmp_path):

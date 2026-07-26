@@ -1,4 +1,6 @@
-"""CLI override application and config-shortname resolution."""
+"""CLI override application, config-shortname resolution and argument parsing."""
+
+import sys
 
 import pytest
 
@@ -78,3 +80,22 @@ def test_shortname_missing_returns_flat_path(tmp_path, monkeypatch):
     # Not found: returns a path (downstream open() raises the clear error), no crash here.
     resolved = cli._resolve_config_shortname("missing.yaml")
     assert resolved.endswith("missing.yaml")
+
+
+def test_bert_model_requires_a_config_source(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["prog", "bert_model"])
+    with pytest.raises(SystemExit):  # mutually exclusive group is required
+        cli.parse_inputs()
+
+
+def test_bert_model_rejects_both_config_sources(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["prog", "bert_model", "--config_path", "a.yaml", "--pipe_configs", "d"])
+    with pytest.raises(SystemExit):
+        cli.parse_inputs()
+
+
+def test_bert_model_dispatches_to_its_handler(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["prog", "bert_model", "--config_path", "a.yaml"])
+    args, _ = cli.parse_inputs()
+    assert args.config_path == "a.yaml"
+    assert args.func is cli.cmd_bert_model

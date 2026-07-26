@@ -300,44 +300,52 @@ def run_regression(
     ml_utils.print_results_tabular(results, logger=logger)
 
 
-if __name__ == "__main__":
-
-    data_dir = _REPO_ROOT / "data" / "hemo_train"
-
-    classifier_list = [
+def default_classifiers():
+    """The default classification models paired with their param grids (same order)."""
+    models = [
         ('dummy', DummyClassifier(strategy='prior')),
         ('logreg', LogisticRegression(max_iter=1000)),
         ('xtra', ExtraTreesClassifier()),
         ('xgb', XGBClassifier()),
         ('svc', SVC(probability=True)),
     ]
-    classifier_grids = [
+    grids = [
         config.dummy_param_grid,
         config.logreg_param_grid,
         config.xtra_cls_param_grid,
         config.xgb_cls_param_grid,
         config.svc_cls_param_grid,
     ]
-    run_classification(calculate_features=False,
-                       data_dir=data_dir,
-                       models=classifier_list,
-                       grids=classifier_grids)
+    return models, grids
 
-    regressor_list = [
+
+def default_regressors():
+    """The default regression models paired with their param grids (same order)."""
+    models = [
         ('dummy', DummyRegressor(strategy='mean')),
         ('ridge', Ridge()),
         ('xtra', ExtraTreesRegressor(n_jobs=1)),
         ('xgb', XGBRegressor(n_jobs=1, tree_method="hist")),
-        ('svr', SVR())
+        ('svr', SVR()),
     ]
-    regressor_grids = [
+    grids = [
         config.dummy_param_grid,
         config.ridge_param_grid,
         config.xtra_param_grid,
         config.xgb_param_grid,
-        config.svr_param_grid
+        config.svr_param_grid,
     ]
-    run_regression(calculate_features=False,
-                   data_dir=data_dir,
-                   models=regressor_list,
-                   grids=regressor_grids)
+    return models, grids
+
+
+if __name__ == "__main__":
+
+    data_dir = _REPO_ROOT / "data" / "hemo_train"
+
+    cls_models, cls_grids = default_classifiers()
+    run_classification(calculate_features=False, data_dir=data_dir,
+                       models=cls_models, grids=cls_grids)
+
+    reg_models, reg_grids = default_regressors()
+    run_regression(calculate_features=False, data_dir=data_dir,
+                   models=reg_models, grids=reg_grids)
