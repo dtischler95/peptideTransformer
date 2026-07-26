@@ -1,0 +1,12 @@
+# Test dependencies (CI + local). Versions pinned to the `regressor` env.
+# torch is installed separately from the CPU wheel index in the CI workflow.
+transformers==4.48.3
+scikit-learn==1.5.2
+xgboost==2.1.1
+peptides==0.3.4
+pandas==2.2.3
+numpy==1.26.4
+pyyaml==6.0.2
+matplotlib>=3.8
+seaborn>=0.13
+pytest>=8
