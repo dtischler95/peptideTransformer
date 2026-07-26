@@ -4,7 +4,7 @@
 # Results
 
 Status 2026-06-24. The classical ML baseline (sequence only) is complete. The ProtBERT sweep is partially
-in: the `bert` column covers 10 of the 12 MIC organisms so far, the rest is pending. ESM is still queued.
+in: the `bert` column covers 12 of the 12 MIC organisms so far, the rest is pending. ESM is still queued.
 
 All numbers are test-set metrics, mean ± SD over five seeds (1, 2, 3, 4, 42). The `dummy` column is a
 mean / majority-class baseline (floor); `ridge` / `logreg` is a linear reference. `svr`/`svc`, `xgb` and
@@ -63,7 +63,7 @@ independent datasets, so each one stands on its own.
 Per organism, mean ± SD over five seeds. `dummy` predicts the train mean.
 
 The `bert` column is the fine-tuned ProtBERT sweep, mean ± SD over the same five seeds. It currently
-covers 10 of the 12 organisms. A `—` in the `bert` column means that organism's BERT run is still pending.
+covers 12 of the 12 organisms. A `—` in the `bert` column means that organism's BERT run is still pending.
 
 ### Test R² (higher is better)
 
@@ -72,12 +72,12 @@ covers 10 of the 12 organisms. A `—` in the `bert` column means that organism'
 | Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
 |---|---|---|---|---|---|---|---|
 | *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.24 ±0.01 | 0.32 ±0.01 | 0.37 ±0.02 | 0.37 ±0.02 | 0.38 ±0.03 |
-| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.14 ±0.01 | 0.22 ±0.02 | 0.28 ±0.01 | 0.28 ±0.01 | — |
+| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.14 ±0.01 | 0.22 ±0.02 | 0.28 ±0.01 | 0.28 ±0.01 | 0.28 ±0.04 |
 | *Pseudomonas aeruginosa* | 1298 | -0.00 ±0.00 | 0.24 ±0.03 | 0.36 ±0.02 | 0.41 ±0.02 | 0.41 ±0.03 | 0.43 ±0.05 |
 | *Candida albicans* | 696 | -0.00 ±0.00 | 0.18 ±0.03 | 0.24 ±0.03 | 0.32 ±0.04 | 0.33 ±0.03 | 0.20 ±0.07 |
 | *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.29 ±0.02 | 0.34 ±0.02 | 0.38 ±0.03 | 0.39 ±0.03 | 0.36 ±0.05 |
 | *Klebsiella pneumoniae* | 462 | -0.00 ±0.00 | 0.29 ±0.02 | 0.37 ±0.03 | 0.40 ±0.04 | 0.42 ±0.03 | 0.33 ±0.06 |
-| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.23 ±0.03 | 0.26 ±0.04 | 0.31 ±0.03 | 0.31 ±0.02 | — |
+| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.23 ±0.03 | 0.26 ±0.04 | 0.31 ±0.03 | 0.31 ±0.02 | 0.28 ±0.01 |
 | *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.20 ±0.08 | 0.26 ±0.10 | 0.29 ±0.08 | 0.30 ±0.07 | 0.18 ±0.08 |
 | *Acinetobacter baumannii* | 342 | -0.00 ±0.00 | 0.30 ±0.03 | 0.40 ±0.04 | 0.44 ±0.06 | 0.45 ±0.04 | 0.43 ±0.06 |
 | *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.28 ±0.05 | 0.33 ±0.05 | 0.35 ±0.06 | 0.37 ±0.06 | 0.29 ±0.06 |
@@ -89,12 +89,12 @@ covers 10 of the 12 organisms. A `—` in the `bert` column means that organism'
 | Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
 |---|---|---|---|---|---|---|---|
 | *Escherichia coli* | 1906 | -0.00 ±0.00 | 0.16 ±0.01 | 0.20 ±0.02 | 0.23 ±0.02 | 0.19 ±0.02 | 0.28 ±0.03 |
-| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.08 ±0.02 | 0.11 ±0.03 | 0.14 ±0.02 | 0.14 ±0.02 | — |
+| *Staphylococcus aureus* | 1823 | -0.00 ±0.00 | 0.08 ±0.02 | 0.11 ±0.03 | 0.14 ±0.02 | 0.14 ±0.02 | 0.18 ±0.05 |
 | *Pseudomonas aeruginosa* | 1299 | -0.00 ±0.00 | 0.17 ±0.02 | 0.21 ±0.01 | 0.24 ±0.01 | 0.24 ±0.01 | 0.23 ±0.06 |
 | *Candida albicans* | 697 | -0.00 ±0.00 | 0.06 ±0.02 | 0.10 ±0.01 | 0.16 ±0.04 | 0.18 ±0.03 | 0.08 ±0.05 |
 | *Bacillus subtilis* | 598 | -0.00 ±0.00 | 0.24 ±0.05 | 0.32 ±0.02 | 0.34 ±0.01 | 0.33 ±0.01 | 0.31 ±0.06 |
 | *Klebsiella pneumoniae* | 463 | -0.00 ±0.00 | 0.30 ±0.01 | 0.25 ±0.03 | 0.31 ±0.05 | 0.31 ±0.01 | 0.20 ±0.10 |
-| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.08 ±0.04 | 0.08 ±0.04 | 0.10 ±0.03 | 0.14 ±0.02 | — |
+| *Staphylococcus epidermidis* | 462 | -0.00 ±0.00 | 0.08 ±0.04 | 0.08 ±0.04 | 0.10 ±0.03 | 0.14 ±0.02 | 0.21 ±0.09 |
 | *Enterococcus faecalis* | 351 | -0.00 ±0.00 | 0.14 ±0.04 | 0.14 ±0.04 | 0.17 ±0.05 | 0.20 ±0.04 | 0.16 ±0.06 |
 | *Acinetobacter baumannii* | 343 | -0.00 ±0.00 | 0.30 ±0.02 | 0.13 ±0.06 | 0.30 ±0.07 | 0.26 ±0.05 | 0.34 ±0.06 |
 | *Salmonella enterica* | 330 | -0.00 ±0.00 | 0.09 ±0.04 | 0.05 ±0.04 | 0.09 ±0.06 | 0.09 ±0.03 | 0.10 ±0.04 |
@@ -108,12 +108,12 @@ covers 10 of the 12 organisms. A `—` in the `bert` column means that organism'
 | Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
 |---|---|---|---|---|---|---|---|
 | *Escherichia coli* | 1906 | 0.53 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.33 ±0.01 | 0.33 ±0.01 | 0.33 ±0.01 |
-| *Staphylococcus aureus* | 1823 | 0.46 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.34 ±0.01 | 0.33 ±0.01 | — |
+| *Staphylococcus aureus* | 1823 | 0.46 ±0.01 | 0.40 ±0.01 | 0.36 ±0.01 | 0.34 ±0.01 | 0.33 ±0.01 | 0.33 ±0.02 |
 | *Pseudomonas aeruginosa* | 1298 | 0.50 ±0.02 | 0.38 ±0.01 | 0.32 ±0.01 | 0.30 ±0.01 | 0.30 ±0.01 | 0.29 ±0.02 |
 | *Candida albicans* | 696 | 0.48 ±0.02 | 0.39 ±0.01 | 0.36 ±0.02 | 0.32 ±0.02 | 0.32 ±0.01 | 0.38 ±0.03 |
 | *Bacillus subtilis* | 598 | 0.59 ±0.01 | 0.41 ±0.02 | 0.39 ±0.02 | 0.36 ±0.02 | 0.36 ±0.02 | 0.38 ±0.03 |
 | *Klebsiella pneumoniae* | 462 | 0.46 ±0.02 | 0.33 ±0.01 | 0.29 ±0.02 | 0.28 ±0.02 | 0.27 ±0.02 | 0.31 ±0.03 |
-| *Staphylococcus epidermidis* | 462 | 0.48 ±0.01 | 0.37 ±0.02 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 | — |
+| *Staphylococcus epidermidis* | 462 | 0.48 ±0.01 | 0.37 ±0.02 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 | 0.35 ±0.02 |
 | *Enterococcus faecalis* | 351 | 0.56 ±0.04 | 0.45 ±0.07 | 0.42 ±0.07 | 0.40 ±0.06 | 0.39 ±0.06 | 0.46 ±0.07 |
 | *Acinetobacter baumannii* | 342 | 0.57 ±0.02 | 0.40 ±0.01 | 0.34 ±0.02 | 0.32 ±0.04 | 0.31 ±0.03 | 0.32 ±0.03 |
 | *Salmonella enterica* | 330 | 0.55 ±0.03 | 0.40 ±0.03 | 0.37 ±0.04 | 0.36 ±0.04 | 0.35 ±0.04 | 0.39 ±0.03 |
@@ -125,12 +125,12 @@ covers 10 of the 12 organisms. A `—` in the `bert` column means that organism'
 | Organism | n test | dummy | ridge | svr | xgb | xtra | bert |
 |---|---|---|---|---|---|---|---|
 | *Escherichia coli* | 1906 | 0.55 ±0.01 | 0.46 ±0.01 | 0.44 ±0.01 | 0.42 ±0.01 | 0.44 ±0.02 | 0.39 ±0.01 |
-| *Staphylococcus aureus* | 1823 | 0.47 ±0.03 | 0.43 ±0.03 | 0.42 ±0.03 | 0.40 ±0.03 | 0.40 ±0.02 | — |
+| *Staphylococcus aureus* | 1823 | 0.47 ±0.03 | 0.43 ±0.03 | 0.42 ±0.03 | 0.40 ±0.03 | 0.40 ±0.02 | 0.39 ±0.04 |
 | *Pseudomonas aeruginosa* | 1299 | 0.48 ±0.01 | 0.40 ±0.01 | 0.38 ±0.01 | 0.36 ±0.01 | 0.36 ±0.01 | 0.37 ±0.03 |
 | *Candida albicans* | 697 | 0.50 ±0.03 | 0.47 ±0.02 | 0.45 ±0.02 | 0.42 ±0.02 | 0.41 ±0.01 | 0.45 ±0.03 |
 | *Bacillus subtilis* | 598 | 0.66 ±0.01 | 0.50 ±0.04 | 0.45 ±0.02 | 0.44 ±0.01 | 0.44 ±0.01 | 0.46 ±0.04 |
 | *Klebsiella pneumoniae* | 463 | 0.48 ±0.01 | 0.34 ±0.01 | 0.36 ±0.02 | 0.33 ±0.02 | 0.33 ±0.01 | 0.39 ±0.05 |
-| *Staphylococcus epidermidis* | 462 | 0.50 ±0.01 | 0.46 ±0.02 | 0.46 ±0.03 | 0.45 ±0.01 | 0.43 ±0.01 | — |
+| *Staphylococcus epidermidis* | 462 | 0.50 ±0.01 | 0.46 ±0.02 | 0.46 ±0.03 | 0.45 ±0.01 | 0.43 ±0.01 | 0.40 ±0.04 |
 | *Enterococcus faecalis* | 351 | 0.47 ±0.01 | 0.40 ±0.02 | 0.40 ±0.02 | 0.39 ±0.02 | 0.38 ±0.02 | 0.39 ±0.02 |
 | *Acinetobacter baumannii* | 343 | 0.65 ±0.01 | 0.45 ±0.01 | 0.56 ±0.03 | 0.45 ±0.04 | 0.48 ±0.03 | 0.43 ±0.04 |
 | *Salmonella enterica* | 330 | 0.63 ±0.01 | 0.57 ±0.03 | 0.59 ±0.02 | 0.57 ±0.03 | 0.57 ±0.02 | 0.57 ±0.03 |
@@ -275,8 +275,8 @@ as MIC, the near-duplicate peptides in the random split flatter the test score.
 
 ## ProtBERT (partial)
 
-The `bert` column in the MIC tables above holds the finished runs (10 of 12 organisms, random and
-cluster, five seeds each). Pending organisms: *Staphylococcus aureus*, *Staphylococcus epidermidis*. Hemolysis BERT is not started yet.
+The `bert` column in the MIC tables above holds the finished runs (12 of 12 organisms, random and
+cluster, five seeds each). Pending organisms: none. Hemolysis BERT is not started yet.
 
 ## ESM (pending)
 
