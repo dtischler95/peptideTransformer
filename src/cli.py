@@ -36,7 +36,8 @@ def cmd_bert_model(args):
     # unchanged (same hyperparameters/train_file, different encoder).
     overrides = {k: v for k, v in (('backbone', args.backbone),
                                    ('model_path', args.model_path),
-                                   ('model_name', args.model_name)) if v is not None}
+                                   ('model_name', args.model_name),
+                                   ('learning_rate', args.learning_rate)) if v is not None}
     # Exactly one of config_path / pipe_configs is guaranteed by the mutually
     # exclusive group in parse_inputs().
     if args.pipe_configs:
@@ -122,6 +123,8 @@ def parse_inputs():
                                   help='Override model_path (HF id or local path), e.g. facebook/esm2_t33_650M_UR50D')
     fine_tune_parser.add_argument('--model_name', type=str, default=None,
                                   help='Override model_name: grouping key in metrics.json and output-path suffix, e.g. esm650m')
+    fine_tune_parser.add_argument('--learning_rate', type=float, default=None,
+                                  help='Override the config learning_rate without editing the YAML (used by the LR sweep)')
     fine_tune_parser.set_defaults(func=cmd_bert_model)
 
     # data_init: random stratified splits

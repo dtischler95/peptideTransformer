@@ -216,6 +216,11 @@ def fine_tune(config_path: str, overrides: dict = None):
                     f.write(f"{tag} R2: {round(r2, 4)}\n"
                             f"{tag} MSE: {round(mse, 4)}\n")
 
+            # Returned so callers (e.g. the LR sweep) can select on the validation metric
+            # without re-parsing the txt. Keyed by split tag -> (r2, mse). Test values here
+            # are the same numbers written to metrics.json; selection must use "Validation".
+            return stats
+
 
 
 if __name__ == '__main__':

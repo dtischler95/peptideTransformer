@@ -224,7 +224,7 @@ _OUTPUT_PATH_KEYS = ('model_save_path', 'plot_path', 'output_dir', 'logging_dir'
 
 
 def _apply_overrides(config: dict, overrides: dict) -> None:
-    """Apply CLI overrides (backbone/model_path/model_name) onto the config dict in-place.
+    """Apply CLI overrides (backbone/model_path/model_name/learning_rate) onto the config in-place.
 
     This is what lets the existing ProtBERT YAMLs double as the single source of truth for
     a different backbone (e.g. ESM): the hyperparameters/train_file stay identical, only the
@@ -234,7 +234,9 @@ def _apply_overrides(config: dict, overrides: dict) -> None:
     """
     if not overrides:
         return
-    for key in ('backbone', 'model_path', 'model_name'):
+    # backbone/model_path/model_name swap the encoder; learning_rate is a hyperparameter
+    # override used by the LR sweep (and the pending ESM sweep) without editing the YAML.
+    for key in ('backbone', 'model_path', 'model_name', 'learning_rate'):
         if overrides.get(key) is not None:
             config[key] = overrides[key]
     # Only an override that changes the model identity triggers path suffixing.
